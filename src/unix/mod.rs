@@ -2,8 +2,6 @@
 #![allow(warnings, unused)]
 
 use crate::lab_sims::*;
-use crate::cloud_game::*;
-use crate::color_studies::*;
 use crate::ui_tools::ui_test;
 
 use crate::x11::xlib;
@@ -168,8 +166,6 @@ pub fn make_window() {unsafe{
     let mut keyboardinfo = KeyboardInfo{key: Vec::new(), status:Vec::new()};
 
     let mut ls_app_storage = LS_AppStorage::new();
-    let mut cs_app_storage = CS_AppStorage::new();
-    let mut cg_app_storage = CG_AppStorage::new();
 
     let mut stopwatch = StopWatch::new();
     let mut stopwatch_lbutton = StopWatch::new();
