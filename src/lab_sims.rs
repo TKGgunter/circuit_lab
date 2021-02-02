@@ -2671,6 +2671,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
             if in_rect(mouseinfo.x, mouseinfo.y, save_rect)
             && mouseinfo.lclicked(){
                 save_circuit_diagram(CUSTOM_FILE_NAME, &app_storage.custom_circuit_elements);
+                app_storage.messages.push((MessageType::Default, "Message: A custom circuit set has been saved.".to_string()));
             }
 
             change_font(FONT_NOTOSANS_BOLD);
@@ -3035,7 +3036,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
             { //Wire
                 let wire_xy = [20, 237+alter_offset_y];
                 draw_rect(&mut app_storage.circuit_element_canvas.canvas, [wire_xy[0], wire_xy[1], 50, 2], C4_WHITE, true);
-                draw_string(&mut app_storage.circuit_element_canvas.canvas, "Wire", wire_xy[0]+5, wire_xy[1]-35, COLOR_TEXT, 23.0);
+                draw_string(&mut app_storage.circuit_element_canvas.canvas, "Wire", wire_xy[0]+5, wire_xy[1]-45, COLOR_TEXT, 23.0);
 
                 let _rect = [wire_xy[0]-15+x_offset, wire_xy[1]-35+y_offset, 80, 65];
                 if in_rect(mouseinfo.x, mouseinfo.y, _rect ){
@@ -3050,7 +3051,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 let ammeter_xy = [110, 212+alter_offset_y];
 
                 draw_bmp(&mut app_storage.circuit_element_canvas.canvas, &app_storage.ammeter_bmp, ammeter_xy[0], ammeter_xy[1], 0.98, Some(50), Some(50));
-                draw_string(&mut app_storage.circuit_element_canvas.canvas, "Ammeter", ammeter_xy[0]-15, ammeter_xy[1]-10, COLOR_TEXT, 23.0);
+                draw_string(&mut app_storage.circuit_element_canvas.canvas, "Ammeter", ammeter_xy[0]-15, ammeter_xy[1]-20, COLOR_TEXT, 23.0);
 
                 let _rect = [ammeter_xy[0]-15+x_offset, ammeter_xy[1]-10+y_offset, 80, 65];
                 if in_rect(mouseinfo.x, mouseinfo.y, _rect ){
