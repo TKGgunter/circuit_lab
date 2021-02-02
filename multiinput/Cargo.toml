@@ -1,0 +1,16 @@
+[package]
+name = "multiinput"
+version = "0.0.15"
+authors = ["Alex Jones <alexander.jones@softwire.com>"]
+description = """
+A pure rust gamepad/mouse/keyboard input library based off of rawinput for the windows platform
+"""
+documentation = "http://jonesey13.github.io/multiinput-rust/doc/multiinput/index.html"
+homepage = "https://github.com/Jonesey13/multiinput-rust"
+repository = "https://github.com/Jonesey13/multiinput-rust"
+readme = "README.md"
+license = "MIT"
+keywords = ["keyboard", "mouse", "gamepad", "hid"]
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["winuser", "basetsd", "hidpi", "winnt", "libloaderapi", "fileapi", "hidsdi", "handleapi"] }

@@ -1,0 +1,101 @@
+DATE OF LAST UPDATE: 05/2020
+
+Instructions
+
+  Introduction:
+XCOPYFGC is a general purpose fighting game ai tool to be used with 2D fighting games on Windows.
+The tool is designed for games that are styled after Capcom and 
+Snk's Street Fighter and King of Fighter franchises. Platform fighters like Nintendo's Smash 
+and 3D fighters like Tekken are not actively supported.
+
+
+XCOPYFGC utilizes audio/visual elements common to 2D fighters to deduce gamestate.
+When used on games that do not include these elements the program's performance will suffer.
+A non-exhaustive list of the audio/visual elements used are given below:
+
++ 2 Health bars depicted as rectangles in the upper fourth of the screen reflected about the horizontal mid point.
++ 2 playable characters that occupy significant screen area.
++ sound effects that effectively indicated the game state.
+...
+
+
+XCOPYFGC works by parsing data from screenshots and audio buffer captures.
+XCOPYFGC does NOT read or manipulate the memory of the game.
+Because XCOPYFGC uses screenshots and audio information directly it is susceptible
+ to much the same confusion and inaccuracy a human player is. When using XCOPYFGC characters should be
+ given distinct colors from each other and the background.  
+Additionally sound effects should be easy to hear over other in game or out game audio sources.
+
+
+
+  Installation:
+XCOPYFGC requires no installation. Double click the executable and things should work.
+
+
+
+
+  Quick Start:
+This quick start guide is aimed to help the user create and play against an ai copy of themselves.
+
+
+NOTE: This section is for Jon. At some point this will need to update for more general use.
+
+
+
+1) Start the XCOPYFGC program.
+
+2) Set up controller/arcade stick/ keyboard by following on screen directions.
+
+3) Open Guilty Gear and navigate to training mode.
+
+4) In Guilty Gear training mode select characters and stages, be sure to select palettes and stages that do not over lap. 
+   **For initial testing please select character: "Leo",  color: 3, stage "Heaven's Edge",
+     Player 2 character: "Leo", color: 18.
+
+5) Once training mode has loaded in XCOPYFGC set of character/background model by clicking on "Initialize Visual ai model" button.
+   After which you should see an image of the frame the background was training on in the left hand side of the XCOPYFGC application.
+
+6) In Guilty Gear exit training mode and select 1v1 battle. Set the difficulty *easy, then reselect the 
+   characters and stage in step 4.
+
+7) Preceding the start of the match click on "Train Ai" to begin training the algorithm. To end training make XCOPYFGC the foreground application***.
+   *Note when in pre-training a grey rectangle will appear on the left side of the XCOPYFGC application.
+    This rectangle will turn red when the application has begun training.
+
+8) repeat steps 6-7 with progressively harder Ai opponents.
+
+9) After training on 3+ matches set Guilty Gear to 1v1 battle setting your input device to player 2 
+   and the keyboard to player 1. In XCOPYFGC set input device by following the directions on screen.
+
+10) Select the same characters and stages from step 4. Then before the match in XCOPYFGC set the ai to "Run Ai". 
+    To end playing make XCOPYFGC the foreground application***.
+
+11) Enjoy!!
+
+
+
+*** The traing will end if any application that is not the game XCOPYFGC is linked to, the game you are currently playing, is brought to the foreground.
+
+
+  Questionnaire:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,10 @@
+/package_tools
+/target
+**/*.rs.bk
+**/*.swp
+**/target/*
+**/*.swo
+*.csv
+**/*.app
+**/*.exp
+**/*.DS_Store

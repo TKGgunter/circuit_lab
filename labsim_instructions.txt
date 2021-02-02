@@ -1,0 +1,118 @@
+README
+
+Author : Thoth Gunter
+email:  thothgunter@live.com
+
+
+This package contains a circuit simulation program usable on Windows, MacOs and Linux machines.
+The simulation is intended to be a technical demo for future circuit labs.  The following is a set of 
+instructions intended to help on board beta users.
+
+
+General Warning:
+This program is in beta, there are bugs that need to be swashed and features
+to be added. Do not move executables. Additional files are needed for 
+program to run which are unpacked along with the executable. 
+If you use MacOs or Linux Terminal will be needed to configure the executable file.
+One MacOs you can access terminal using Launchpad, should see its icon, a little
+rocket ship, on the dock at the bottom of your desktop. Type "Terminal" in the 
+search bar and the program should pop up. 
+
+Both MacOs and Linux users have access to the same terminal commands. Before
+continuing on to you sections you will need to navigate the terminal program to 
+the appropriate directory. Assuming you have not moved the extracted zip file
+you can use the following command to move to the appropriate folder, "cd ~/Downloads/lab_sims".
+
+
+Windows:
+Windows user should double click application file "lab_sims_windows.exe". 
+Windows may ask you to verify that the application comes from a trusted source.
+You must agree to this for the program to run.
+
+
+MacOs:
+MacOs users will note that the file is shown to be a text file. 
+To run you must change the files executable permissions.
+In the terminal run "chmod 744 lab_sims_macos". This will allow only 
+the user to execute the program. MacOS may remind you that this 
+program did not come from a verified source. You may need to to navigate 
+through the “System Preferences” -> “Security and Privacy” -> 
+“General” sub menus and select “Allow apps downloaded from anywhere.”. 
+Otherwise select "Open".
+
+
+Linux: 
+Linux users will need to set execution permissions and run the program from the terminal.
+To set executable permission run "chmod 744 lab_sims_linux". 
+To run circuit sim "./lab_sims_linux"
+
+
+Bugs and Issues:
+If you encounter an issue with the simulation's results, like the circuit delivering 
+incorrect voltages, please save a circuit copy of the circuit and email it to me with
+ a description of the problem. If you experience a crash please send an email detailing what you did before the crash.
+If you are able to reproduce the crash please try and include a description of the steps 
+you went through.
+
+Here is a list of the few known bugs:
++ when a circuit elements is place on top of one another the simulation 
+will crash or perform improperly.
++ if there are many paths to and from the oldest placed circuit element the program may get 
+confused. And a path may not be taken or the simulation will refuse to run (there will be no
+current or voltage calculation.)
+
+If you encounter the second bug please send me a copy of the save file and 
+a description of what went wrong.
+
+
+Advanced users:
+This program is to be used by both students and TAs/professors. As such there is a teacher mode.
+By pressing 'Tab' you enter TA mode. Press 'Space' to exit TA mode.
+When 'Tab' is pressed "circuit_panels.txt" is written in the directory of the executable.
+By altering "circuit_panels.txt" one can alter the text displayed in the panel on  
+right side of the screen. Please use "circuit_panels.txt" as a template when altering the panel.
+
+
+===========================================
+Below are the current key words needed when working working in TA mode 
+(all keywords are indifferent to case):
+#Section    This creates a new empty page
+
+#Text       Renders text that follows the command. Text can begin on the same line. If this command 
+            is not invoked no text will be displayed.
+
+#Image      Renders image in panel. Give local path (path from the directory of executable). 
+            If path is incorrect the program will render nothing.
+
+#Question   Renders following text and primes program to receive #AnswerCorrect, and #AnswerWrong.
+            If followed by command that is not #AnswerCorrect or #AnswerWrong, 
+            nothing will render.
+
+#AnswerCorrect  Renders the text that follows. This will not render if #Question is not the 
+#AnswerWrong    proceeding command. Only 7 answers are allowed. If there is no correct answer neither 
+                the question or answers are rendered.
+
+//          Comments can be written using double back slashes.
+===========================================
+
+NOTE:
+Often errors associated with teacher mode are printed in your terminal.
+
+When exiting teacher mode "circuit_worksheet.exp" is save in the same directory.
+This file is a binary version of the text file, meant to hide any answers from students.
+If this file will load upon start up of the program, the text file will not.
+
+UPDATE:
+The text file WILL NOT BE over written when changing to teacher mode, be mindful.
+
+
+
+
+
+
+
+
+
+
+
+
