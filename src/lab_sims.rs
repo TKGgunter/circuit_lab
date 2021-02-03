@@ -2310,7 +2310,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 None=>{},
                             } 
                         } 
-                        if it.circuit_element_type == SelectedCircuitElement::Ammeter{
+                        if it.circuit_element_type == SelectedCircuitElement::Ammeter || it.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
                             match it.print_current{
                                 Some(c)=>{ 
                                     let current = c;
