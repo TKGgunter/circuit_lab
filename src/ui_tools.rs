@@ -19,21 +19,43 @@ static mut BUTTON_TEXT_FONT_SIZE : f32 = 30f32;
 #[derive(Default)]
 pub struct ButtonResult{
     pub in_rect: bool,
-    pub lclicked: bool
+    pub lclicked: bool,
+    pub rect: [i32; 4]
 }
 pub fn set_canvas(wc: &'static mut WindowCanvas){unsafe{
     //TODO set offsets?
     CANVAS = Some(wc);
 }}
+
+
+
 pub fn set_button_bg_color1(c: [f32; 4]){unsafe{
     BUTTON_BG_COLOR1 = c;
 }}
+pub fn reset_button_bg_color1(){unsafe{
+    BUTTON_BG_COLOR1 = C4_DGREY;
+}}
+
+
+
 pub fn set_button_bg_color2(c: [f32; 4]){unsafe{
     BUTTON_BG_COLOR2 = c;
 }}
+pub fn reset_button_bg_color2(){unsafe{
+    BUTTON_BG_COLOR2 = C4_GREY;
+}}
+
+
+
 pub fn set_button_text_color(c: [f32; 4]){unsafe{
     BUTTON_TEXT_COLOR = c;
 }}
+
+pub fn reset_button_text_color(c: [f32; 4]){unsafe{
+    BUTTON_TEXT_COLOR = C4_LGREY;
+}}
+
+
 pub fn calc_button_height(size: f32)->i32{
     let mut rt = size*1.4;
     return rt as i32;
@@ -43,11 +65,17 @@ pub fn basic_button( canvas: &mut WindowCanvas, text: &str, x: i32, y:i32, font_
 
     let mut color_bg = BUTTON_BG_COLOR1;
 
-    let text_len = (get_advance_string(text, BUTTON_TEXT_FONT_SIZE) as f32 * 1.10) as i32;
+    //TODO
+    //let text_len = (get_advance_string(text, BUTTON_TEXT_FONT_SIZE) as f32 * 1.10) as i32;
+    let text_len = (get_advance_string(text, font_size) as f32 * 1.10) as i32;
     let button_height = calc_button_height(font_size);
 
-    let mut rect = [x - text_len / 2 - 6, 
-                    y-font_size as i32/2 - (button_height - font_size as i32) / 2, 
+    //let mut rect = [x - text_len / 2 - 6, 
+    //                y-font_size as i32/2 - (button_height - font_size as i32) / 2, 
+    //                text_len, 
+    //                button_height];
+    let mut rect = [x, 
+                    y, 
                     text_len, 
                     button_height];
 
@@ -58,7 +86,9 @@ pub fn basic_button( canvas: &mut WindowCanvas, text: &str, x: i32, y:i32, font_
     }
 
     draw_rect(canvas, rect, color_bg, true);
-    draw_string(canvas, text, rect[0], rect[1], BUTTON_TEXT_COLOR, BUTTON_TEXT_FONT_SIZE);
+    draw_string(canvas, text, rect[0], rect[1], BUTTON_TEXT_COLOR, font_size);
+
+    rt.rect = rect;
     return rt;
 }}
 

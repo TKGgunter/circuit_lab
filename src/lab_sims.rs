@@ -6,7 +6,9 @@ use crate::stb_image_sys::{StbiImage, stbi_load_from_memory_32bit};
 use crate::miniz;
 use crate::{FONT_NOTOSANS, FONT_NOTOSANS_BOLD};
 use crate::misc::*;
+use crate::ui_tools;
 use matrixmath::*;
+
 
 use std::io::prelude::*;
 use std::ptr::{null, null_mut};
@@ -22,6 +24,7 @@ use rand_distr::{Normal, Distribution};
 
 use crate::eq_potential::*;
 use parser::*;
+
 
 
 
@@ -188,6 +191,8 @@ enum SelectedCircuitElement{
     AC,
     Custom,
     None,
+    CustomVoltmeter,
+    CustomAmmeter,
 }
 
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -234,6 +239,9 @@ struct CircuitElementTextBox{
     unc_inductance_textbox  : TextBox,
     unc_charge_textbox      : TextBox,
     unc_magflux_textbox     : TextBox,
+
+    bias_textbox      : TextBox,
+    noise_textbox     : TextBox,
 }
 
 impl CircuitElementTextBox{
@@ -270,6 +278,9 @@ impl CircuitElementTextBox{
             unc_inductance_textbox  : fn_textbox(),
             unc_charge_textbox      : fn_textbox(),
             unc_magflux_textbox     : fn_textbox(),
+
+            bias_textbox      : fn_textbox(),
+            noise_textbox     : fn_textbox(),
         }
     }
     fn new_guess_length()->CircuitElementTextBox{
@@ -307,6 +318,9 @@ impl CircuitElementTextBox{
             unc_inductance_textbox  : fn_textbox(),
             unc_charge_textbox      : fn_textbox(),
             unc_magflux_textbox     : fn_textbox(),
+
+            bias_textbox      : fn_textbox(),
+            noise_textbox     : fn_textbox(),
         }
     }
 }
@@ -374,6 +388,9 @@ struct CircuitElement{
 
     properties_z: usize,
     label: TinyString,
+
+    bias: f32,
+    noise: f32,
 }
 
 impl CircuitElement{
@@ -440,6 +457,9 @@ impl CircuitElement{
                 
             properties_z: 0,
             label: TinyString::new(),
+
+            bias: 0f32,
+            noise: 0f32,
         }
 
     }
@@ -510,6 +530,9 @@ impl CircuitElement{
 
             properties_z: 0,
             label: TinyString::new(),
+
+            bias: 0f32,
+            noise: 0f32,
         }
     }
 }
@@ -1114,7 +1137,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
     match app_storage.selected_circuit_element{
         SelectedCircuitElement::Resistor | SelectedCircuitElement::Battery | SelectedCircuitElement::Capacitor | SelectedCircuitElement::Inductor |
         SelectedCircuitElement::Voltmeter| SelectedCircuitElement::Ammeter | SelectedCircuitElement::Switch | SelectedCircuitElement::AC |
-        SelectedCircuitElement::Wire | SelectedCircuitElement::Custom => {
+        SelectedCircuitElement::Wire | SelectedCircuitElement::Custom | SelectedCircuitElement::CustomVoltmeter | SelectedCircuitElement::CustomAmmeter=> {
 
 
             let x = mouseinfo.x - 50/3;
@@ -1148,7 +1171,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 resize_bmp = sampling_reduction_bmp(&app_storage.ac_bmp, 80, 80);
             } else if app_storage.selected_circuit_element == SelectedCircuitElement::Wire{
                 resize_bmp = sampling_reduction_bmp(&app_storage.wire_bmp, 80, 80);
-            } else if app_storage.selected_circuit_element == SelectedCircuitElement::Custom{
+            } else if app_storage.selected_circuit_element == SelectedCircuitElement::Custom 
+            || app_storage.selected_circuit_element == SelectedCircuitElement::CustomVoltmeter
+            || app_storage.selected_circuit_element == SelectedCircuitElement::CustomAmmeter
+            {
                 resize_bmp = sampling_reduction_bmp(&app_storage.custom_bmp, 80, 80);
             }
 
@@ -1236,8 +1262,18 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         element.ac_source_type = ACSourceType::Sin;
                         //TODO maybe
                     },
-                    SelectedCircuitElement::Custom=>{
+                    SelectedCircuitElement::Custom |
+                    SelectedCircuitElement::CustomVoltmeter |
+                    SelectedCircuitElement::CustomAmmeter=>{
                         let c_it = &app_storage.custom_circuit_elements[app_storage.custom_circuit_cursor];
+
+                        if c_it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter { 
+                            app_storage.saved_circuit_volts.insert((element.unique_a_node, element.unique_b_node), [Vec::new(), Vec::new()]);
+                        }
+                        if c_it.circuit_element_type == SelectedCircuitElement::CustomAmmeter { 
+                            app_storage.saved_circuit_currents.insert((element.unique_a_node, element.unique_b_node), [Vec::new(), Vec::new()]);
+                        }
+                        element.circuit_element_type = c_it.circuit_element_type;
 
                         element.label = c_it.label;
 
@@ -1260,6 +1296,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                         element.unc_charge        = sample_normal(c_it.unc_charge);
                         element.unc_magnetic_flux = sample_normal(c_it.unc_magnetic_flux);
+
+                        element.bias  = c_it.bias;
+                        element.noise = c_it.noise;
                     },
 
 
@@ -1339,7 +1378,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 match &it.circuit_element_type{
                     SelectedCircuitElement::Resistor | SelectedCircuitElement::Battery | SelectedCircuitElement::Capacitor | SelectedCircuitElement::Inductor |
                     SelectedCircuitElement::Voltmeter| SelectedCircuitElement::Ammeter | SelectedCircuitElement::Switch | SelectedCircuitElement::AC |
-                    SelectedCircuitElement::Wire | SelectedCircuitElement::Custom=> {
+                    SelectedCircuitElement::Wire | SelectedCircuitElement::Custom | SelectedCircuitElement::CustomVoltmeter | SelectedCircuitElement::CustomAmmeter   => {
 
                       
                         it.x = (it.x as f32 / GRID_SIZE as f32 ).round() as i32 * GRID_SIZE; 
@@ -1445,7 +1484,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 match &it.circuit_element_type{
                     SelectedCircuitElement::Resistor | SelectedCircuitElement::Battery | SelectedCircuitElement::Capacitor | SelectedCircuitElement::Inductor |
                     SelectedCircuitElement::Voltmeter| SelectedCircuitElement::Ammeter | SelectedCircuitElement::Switch | SelectedCircuitElement::AC |
-                    SelectedCircuitElement::Wire | SelectedCircuitElement::Custom=>{
+                    SelectedCircuitElement::Wire | SelectedCircuitElement::Custom | SelectedCircuitElement::CustomVoltmeter | SelectedCircuitElement::CustomAmmeter=>{
                         if it.selected {
                             it.x += mouseinfo.delta_x;
                             it.y += mouseinfo.delta_y;
@@ -1474,7 +1513,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
             match &it.circuit_element_type{
                 SelectedCircuitElement::Resistor | SelectedCircuitElement::Battery | SelectedCircuitElement::Capacitor | SelectedCircuitElement::Inductor |
                 SelectedCircuitElement::Voltmeter| SelectedCircuitElement::Ammeter | SelectedCircuitElement::Switch | SelectedCircuitElement::AC | 
-                SelectedCircuitElement::Wire | SelectedCircuitElement::Custom=>{
+                SelectedCircuitElement::Wire | SelectedCircuitElement::Custom | SelectedCircuitElement::CustomVoltmeter | SelectedCircuitElement::CustomAmmeter=>{
                     //TODO implement battery 
                     let node_a = it.unique_a_node;
                     let node_b = it.unique_b_node;
@@ -1507,7 +1546,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         bmp = &app_storage.ac_bmp;
                     } else if it.circuit_element_type == SelectedCircuitElement::Wire{
                         bmp = &app_storage.wire_bmp;
-                    } else if it.circuit_element_type == SelectedCircuitElement::Custom{
+                    } else if it.circuit_element_type == SelectedCircuitElement::Custom
+                    || it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
+                    || it.circuit_element_type == SelectedCircuitElement::CustomAmmeter
+                    {
                         bmp = &app_storage.custom_bmp;
                     }
 
@@ -1575,11 +1617,13 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     if orientation == 0.0 {
                         let mut _bmp = rotate_bmp(&mut _bmp, it.orientation, false).unwrap();
                         draw_bmp(&mut os_package.window_canvas, &_bmp, it.x, it.y, 0.98, None, None);
-                        if it.circuit_element_type == SelectedCircuitElement::Custom{
+                        if it.circuit_element_type == SelectedCircuitElement::Custom
+                        || it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
+                        || it.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
 
                             change_font(FONT_NOTOSANS_BOLD);
                             let _adv = get_advance_string(it.label.as_ref(), 20f32);
-                            draw_string(&mut os_package.window_canvas, it.label.as_ref(), it.x+_bmp.width/2-_adv/2-6, it.y + 5, C4_WHITE, 20f32);
+                            draw_string(&mut os_package.window_canvas, it.label.as_ref(), it.x+_bmp.width/2-_adv/2-6, it.y + 3, C4_WHITE, 20f32);
                             change_font(FONT_NOTOSANS);
                         }
                     }
@@ -1587,7 +1631,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         let mut _bmp = rotate_bmp(&mut _bmp, it.orientation, false).unwrap();
                         draw_bmp(&mut os_package.window_canvas, &_bmp, it.x, it.y, 0.98, None, None);
 
-                        if it.circuit_element_type == SelectedCircuitElement::Custom{
+                        if it.circuit_element_type == SelectedCircuitElement::Custom
+                        || it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
+                        || it.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
 
                             change_font(FONT_NOTOSANS_BOLD);
                             let _adv = get_advance_string(it.label.as_ref(), 20f32);
@@ -1675,7 +1721,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 let node_b = it.unique_b_node;
 
                 let mut label = String::new();
-                if it.circuit_element_type != SelectedCircuitElement::Custom{
+                if it.circuit_element_type != SelectedCircuitElement::Custom
+                && it.circuit_element_type != SelectedCircuitElement::CustomVoltmeter
+                && it.circuit_element_type != SelectedCircuitElement::CustomAmmeter{
                     label += &format!("{:?}", it.circuit_element_type);
                 } else {
                     label += &format!("{}", it.label.as_ref());
@@ -2027,11 +2075,28 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             }
                             offset_x += draw_char(&mut os_package.window_canvas, '-', properties_x+2+offset_x, properties_y+properties_h-offset_y+1, C4_WHITE, panel_font);
                         },
-                        SelectedCircuitElement::Voltmeter=>{  
+                        SelectedCircuitElement::Voltmeter | SelectedCircuitElement::CustomVoltmeter=>{  
                             draw_string(&mut os_package.window_canvas, "No changeable properties.", properties_x, properties_y+properties_h-offset_y, C4_GREY, 20.0);
+                            if it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
+                            && app_storage.teacher_mode {
+                                offset_y += 20;
+                                draw_string(&mut os_package.window_canvas, &format!("Bias: {}  Noise: {}", it.bias, it.noise), 
+                                    properties_x, properties_y+properties_h-offset_y, C4_LGREY, 20.0);
+                                offset_y += 20;
+
+                            }
+
                         },
-                        SelectedCircuitElement::Ammeter=>{  
+                        SelectedCircuitElement::Ammeter | SelectedCircuitElement::CustomAmmeter=>{  
                             draw_string(&mut os_package.window_canvas, "No changeable properties.", properties_x, properties_y+properties_h-offset_y, C4_GREY, 20.0);
+                            if it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
+                            && app_storage.teacher_mode {
+                                offset_y += 20;
+                                draw_string(&mut os_package.window_canvas, &format!("Bias: : {}  Noise: {}", it.bias, it.noise), 
+                                    properties_x, properties_y+properties_h-offset_y, C4_LGREY, 20.0);
+                                offset_y += 20;
+
+                            }
                         },
                         SelectedCircuitElement::Switch=>{ 
 
@@ -2200,10 +2265,11 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             None=>{},
                         } 
                     } else {
-                        if it.circuit_element_type == SelectedCircuitElement::Voltmeter{
+                        if it.circuit_element_type == SelectedCircuitElement::Voltmeter || it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter{
                             match it.print_voltage{
                                 Some(v)=>{
-                                    draw_string(&mut os_package.window_canvas, &format!("Voltage (V): {:.2}", v), properties_x+2, properties_y+properties_h-offset_y, COLOR_TEXT_SOLV, panel_font);
+                                    let voltage = v;
+                                    draw_string(&mut os_package.window_canvas, &format!("Voltage (V): {:.2}", voltage), properties_x+2, properties_y+properties_h-offset_y, COLOR_TEXT_SOLV, panel_font);
 
                                     offset_y += (properties_h/2 - 5).max(45);
                                     let y_x = app_storage.saved_circuit_volts.get_mut(&(it.unique_a_node, it.unique_b_node)).expect("Could not find node");
@@ -2247,7 +2313,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         if it.circuit_element_type == SelectedCircuitElement::Ammeter{
                             match it.print_current{
                                 Some(c)=>{ 
-                                    draw_string(&mut os_package.window_canvas, &format!("Current(A): {:.2}", c), properties_x+2, properties_y+properties_h-offset_y, COLOR_TEXT_SOLV, panel_font);
+                                    let current = c;
+                                    draw_string(&mut os_package.window_canvas, &format!("Current(A): {:.2}", current), properties_x+2, properties_y+properties_h-offset_y, COLOR_TEXT_SOLV, panel_font);
 
                                     offset_y += (properties_h/2 - 5).max(45);
                                     let y_x = app_storage.saved_circuit_currents.get_mut(&(it.unique_a_node, it.unique_b_node)).expect("Could not find node");
@@ -2368,6 +2435,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             copied_circuit.d_voltage_over_dt  = it.d_voltage_over_dt;
                             copied_circuit.frequency       = it.frequency;
                             copied_circuit.ac_source_type  = it.ac_source_type;
+
+                            copied_circuit.bias   = it.bias;
+                            copied_circuit.noise  = it.noise;
 
                             app_storage.selected_circuit_properties = Some(copied_circuit);
                         }
@@ -2783,7 +2853,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         //TODO we will run into problems if custom names overlap 
                         for jt in app_storage.arr_circuit_elements.iter_mut(){
                             if it.label == jt.label
-                            && jt.circuit_element_type == SelectedCircuitElement::Custom{
+                            && (jt.circuit_element_type == SelectedCircuitElement::Custom 
+                                || jt.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
+                                || jt.circuit_element_type == SelectedCircuitElement::CustomAmmeter){
                                 jt.label.copystr(&c_textbox.label_textbox.text_buffer);
                             }
                         }
@@ -2792,6 +2864,58 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                     prop_y_offset -= (PANEL_FONT + 2f32) as i32;
 
+                    {//Select type of custom element
+                        //TODO 
+                        use ui_tools::*;
+
+                        let mut cl_x_offset = properties_rect[0];
+                        let mut custom_bg = C4_DGREY;
+                        let mut voltme_bg = C4_DGREY;
+                        let mut ammete_bg = C4_DGREY;
+
+                        let font_size = 18f32;
+
+
+                        if it.circuit_element_type == SelectedCircuitElement::Custom{
+                            custom_bg = C4_GREY;
+                        } else if it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter {
+                            voltme_bg = C4_GREY;
+                        } else if it.circuit_element_type == SelectedCircuitElement::CustomAmmeter {
+                            ammete_bg = C4_GREY;
+                        }
+                        
+                        {
+                            set_button_bg_color1(custom_bg);
+                            let brt = basic_button( &mut os_package.window_canvas, "Custom", cl_x_offset, prop_y_offset, font_size, mouseinfo );
+                            cl_x_offset += brt.rect[2];
+
+                            if brt.lclicked {
+                                it.circuit_element_type = SelectedCircuitElement::Custom;
+                            }
+                        }
+                        {
+                            set_button_bg_color1(voltme_bg);
+                            let brt = basic_button( &mut os_package.window_canvas, "Custom Voltmeter", cl_x_offset, prop_y_offset, font_size, mouseinfo );
+                            cl_x_offset += brt.rect[2];
+
+                            if brt.lclicked {
+                                it.circuit_element_type = SelectedCircuitElement::CustomVoltmeter;
+                            }
+                        }
+                        {
+                            set_button_bg_color1(ammete_bg);
+                            let brt = basic_button( &mut os_package.window_canvas, "Custom Ammeter", cl_x_offset, prop_y_offset, font_size, mouseinfo );
+                            cl_x_offset += brt.rect[2];
+
+                            if brt.lclicked {
+                                it.circuit_element_type = SelectedCircuitElement::CustomAmmeter;
+                            }
+                        }
+                        reset_button_bg_color1();
+                        
+                    }
+                    prop_y_offset -= (PANEL_FONT + 2f32) as i32;
+                    prop_y_offset -= (PANEL_FONT + 2f32) as i32;
 
                     fn do_text_box_things( tb: &mut TextBox, properties_x: i32, properties_y: i32,
                                            textinfo: &TextInfo, mouseinfo: &MouseInfo, keyboardinfo: &KeyboardInfo,
@@ -2828,120 +2952,150 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         tb.draw(window_canvas, time);
                     }
 
-                    {
-                        let rstr_len = draw_string(&mut os_package.window_canvas, "Resistance(Ω): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
-                        do_text_box_things( &mut c_textbox.resistance_textbox, properties_rect[0] + rstr_len, prop_y_offset,
-                                               textinfo, mouseinfo, keyboardinfo,
-                                               &mut it.resistance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
-                                               );
 
-                        let _len = properties_rect[0]+rstr_len+c_textbox.resistance_textbox.max_render_length;
-                        let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
-                                                 prop_y_offset, C4_WHITE, PANEL_FONT);
-                        do_text_box_things( &mut c_textbox.unc_resistance_textbox, _len + pm_len, prop_y_offset,
-                                               textinfo, mouseinfo, keyboardinfo,
-                                               &mut it.unc_resistance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
-                                               );
-                        prop_y_offset -= (PANEL_FONT + 2f32) as i32;
+
+                    if it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
+                    || it.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
+                        {
+                            let rstr_len = draw_string(&mut os_package.window_canvas, "Bias: ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.bias_textbox, properties_rect[0] + rstr_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.bias, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+
+                            let _len = properties_rect[0]+rstr_len+c_textbox.bias_textbox.max_render_length;
+                            prop_y_offset -= (PANEL_FONT + 2f32) as i32;
+                            if it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter{
+                                it.resistance = VOLTMETER_RESISTANCE;
+                            }
+                        }
+                        {
+                            let rstr_len = draw_string(&mut os_package.window_canvas, "Noise: ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.noise_textbox, properties_rect[0] + rstr_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.noise, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+
+                            let _len = properties_rect[0]+rstr_len+c_textbox.noise_textbox.max_render_length;
+                            prop_y_offset -= (PANEL_FONT + 2f32) as i32;
+                        }
+
+                    } else if it.circuit_element_type == SelectedCircuitElement::Custom{
+
+                        {
+                            let rstr_len = draw_string(&mut os_package.window_canvas, "Resistance(Ω): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.resistance_textbox, properties_rect[0] + rstr_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.resistance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+
+                            let _len = properties_rect[0]+rstr_len+c_textbox.resistance_textbox.max_render_length;
+                            let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
+                                                     prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.unc_resistance_textbox, _len + pm_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.unc_resistance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+                            prop_y_offset -= (PANEL_FONT + 2f32) as i32;
+                        }
+
+                        {
+                            let vstr_len = draw_string(&mut os_package.window_canvas, "Voltage(V): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.voltage_textbox, properties_rect[0] + vstr_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.voltage, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+
+                            let _len = properties_rect[0]+vstr_len+c_textbox.voltage_textbox.max_render_length;
+                            let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
+                                                     prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.unc_voltage_textbox, _len + pm_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.unc_voltage, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+                            prop_y_offset -= (PANEL_FONT + 2f32) as i32;
+                        }
+
+                        //{
+                        //    let cstr_len = draw_string(&mut os_package.window_canvas, "Current(A): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                        //    do_text_box_things( &mut c_textbox.current_textbox, properties_rect[0] + cstr_len, prop_y_offset,
+                        //                           textinfo, mouseinfo, keyboardinfo,
+                        //                           &mut it.current, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                        //                           );
+                        //    let _len = properties_rect[0]+cstr_len+c_textbox.current_textbox.max_render_length;
+                        //    let pm_len = draw_string(&mut os_package.window_canvas, "±: ", _len,
+                        //                             prop_y_offset, C4_WHITE, PANEL_FONT);
+                        //    do_text_box_things( &mut c_textbox.unc_current_textbox, _len + pm_len, prop_y_offset,
+                        //                           textinfo, mouseinfo, keyboardinfo,
+                        //                           &mut it.unc_current, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                        //                           );
+                        //    prop_y_offset -= (PANEL_FONT + 2f32) as i32;
+                        //}
+
+                        {
+                            let cstr_len = draw_string(&mut os_package.window_canvas, "Capacitance(F): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.capacitance_textbox, properties_rect[0] + cstr_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.capacitance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+                            let _len = properties_rect[0]+cstr_len+c_textbox.capacitance_textbox.max_render_length;
+                            let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
+                                                     prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.unc_capacitance_textbox, _len + pm_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.unc_capacitance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+                            prop_y_offset -= (PANEL_FONT + 2f32) as i32;
+                        }
+
+                        {
+                            let istr_len = draw_string(&mut os_package.window_canvas, "Inductance(H): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.inductance_textbox, properties_rect[0] + istr_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.inductance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+                            let _len = properties_rect[0]+istr_len+c_textbox.inductance_textbox.max_render_length;
+                            let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
+                                                     prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.unc_inductance_textbox, _len + pm_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.unc_inductance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+                            prop_y_offset -= (PANEL_FONT + 2f32) as i32;
+                        }
+
+                        {
+                            let cstr_len = draw_string(&mut os_package.window_canvas, "Charge(C): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.charge_textbox, properties_rect[0] + cstr_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.charge, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+                            let _len = properties_rect[0]+cstr_len+c_textbox.charge_textbox.max_render_length;
+                            let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
+                                                     prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.unc_charge_textbox, _len + pm_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.unc_charge, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+                            prop_y_offset -= (PANEL_FONT + 2f32) as i32;
+                        }
+
+                        {
+                            let mfstr_len = draw_string(&mut os_package.window_canvas, "Flux(Wb): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.magflux_textbox, properties_rect[0] + mfstr_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.magnetic_flux, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+                            let _len = properties_rect[0]+mfstr_len+c_textbox.magflux_textbox.max_render_length;
+                            let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
+                                                     prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.unc_magflux_textbox, _len + pm_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.unc_magnetic_flux, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+                            prop_y_offset -= (PANEL_FONT + 2f32) as i32;
+                        }
                     }
-
-                    {
-                        let vstr_len = draw_string(&mut os_package.window_canvas, "Voltage(V): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
-                        do_text_box_things( &mut c_textbox.voltage_textbox, properties_rect[0] + vstr_len, prop_y_offset,
-                                               textinfo, mouseinfo, keyboardinfo,
-                                               &mut it.voltage, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
-                                               );
-
-                        let _len = properties_rect[0]+vstr_len+c_textbox.voltage_textbox.max_render_length;
-                        let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
-                                                 prop_y_offset, C4_WHITE, PANEL_FONT);
-                        do_text_box_things( &mut c_textbox.unc_voltage_textbox, _len + pm_len, prop_y_offset,
-                                               textinfo, mouseinfo, keyboardinfo,
-                                               &mut it.unc_voltage, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
-                                               );
-                        prop_y_offset -= (PANEL_FONT + 2f32) as i32;
-                    }
-
-                    //{
-                    //    let cstr_len = draw_string(&mut os_package.window_canvas, "Current(A): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
-                    //    do_text_box_things( &mut c_textbox.current_textbox, properties_rect[0] + cstr_len, prop_y_offset,
-                    //                           textinfo, mouseinfo, keyboardinfo,
-                    //                           &mut it.current, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
-                    //                           );
-                    //    let _len = properties_rect[0]+cstr_len+c_textbox.current_textbox.max_render_length;
-                    //    let pm_len = draw_string(&mut os_package.window_canvas, "±: ", _len,
-                    //                             prop_y_offset, C4_WHITE, PANEL_FONT);
-                    //    do_text_box_things( &mut c_textbox.unc_current_textbox, _len + pm_len, prop_y_offset,
-                    //                           textinfo, mouseinfo, keyboardinfo,
-                    //                           &mut it.unc_current, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
-                    //                           );
-                    //    prop_y_offset -= (PANEL_FONT + 2f32) as i32;
-                    //}
-
-                    {
-                        let cstr_len = draw_string(&mut os_package.window_canvas, "Capacitance(F): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
-                        do_text_box_things( &mut c_textbox.capacitance_textbox, properties_rect[0] + cstr_len, prop_y_offset,
-                                               textinfo, mouseinfo, keyboardinfo,
-                                               &mut it.capacitance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
-                                               );
-                        let _len = properties_rect[0]+cstr_len+c_textbox.capacitance_textbox.max_render_length;
-                        let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
-                                                 prop_y_offset, C4_WHITE, PANEL_FONT);
-                        do_text_box_things( &mut c_textbox.unc_capacitance_textbox, _len + pm_len, prop_y_offset,
-                                               textinfo, mouseinfo, keyboardinfo,
-                                               &mut it.unc_capacitance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
-                                               );
-                        prop_y_offset -= (PANEL_FONT + 2f32) as i32;
-                    }
-
-                    {
-                        let istr_len = draw_string(&mut os_package.window_canvas, "Inductance(H): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
-                        do_text_box_things( &mut c_textbox.inductance_textbox, properties_rect[0] + istr_len, prop_y_offset,
-                                               textinfo, mouseinfo, keyboardinfo,
-                                               &mut it.inductance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
-                                               );
-                        let _len = properties_rect[0]+istr_len+c_textbox.inductance_textbox.max_render_length;
-                        let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
-                                                 prop_y_offset, C4_WHITE, PANEL_FONT);
-                        do_text_box_things( &mut c_textbox.unc_inductance_textbox, _len + pm_len, prop_y_offset,
-                                               textinfo, mouseinfo, keyboardinfo,
-                                               &mut it.unc_inductance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
-                                               );
-                        prop_y_offset -= (PANEL_FONT + 2f32) as i32;
-                    }
-
-                    {
-                        let cstr_len = draw_string(&mut os_package.window_canvas, "Charge(C): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
-                        do_text_box_things( &mut c_textbox.charge_textbox, properties_rect[0] + cstr_len, prop_y_offset,
-                                               textinfo, mouseinfo, keyboardinfo,
-                                               &mut it.charge, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
-                                               );
-                        let _len = properties_rect[0]+cstr_len+c_textbox.charge_textbox.max_render_length;
-                        let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
-                                                 prop_y_offset, C4_WHITE, PANEL_FONT);
-                        do_text_box_things( &mut c_textbox.unc_charge_textbox, _len + pm_len, prop_y_offset,
-                                               textinfo, mouseinfo, keyboardinfo,
-                                               &mut it.unc_charge, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
-                                               );
-                        prop_y_offset -= (PANEL_FONT + 2f32) as i32;
-                    }
-
-                    {
-                        let mfstr_len = draw_string(&mut os_package.window_canvas, "Flux(Wb): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
-                        do_text_box_things( &mut c_textbox.magflux_textbox, properties_rect[0] + mfstr_len, prop_y_offset,
-                                               textinfo, mouseinfo, keyboardinfo,
-                                               &mut it.magnetic_flux, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
-                                               );
-                        let _len = properties_rect[0]+mfstr_len+c_textbox.magflux_textbox.max_render_length;
-                        let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
-                                                 prop_y_offset, C4_WHITE, PANEL_FONT);
-                        do_text_box_things( &mut c_textbox.unc_magflux_textbox, _len + pm_len, prop_y_offset,
-                                               textinfo, mouseinfo, keyboardinfo,
-                                               &mut it.unc_magnetic_flux, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
-                                               );
-                        prop_y_offset -= (PANEL_FONT + 2f32) as i32;
-                    }
-
                     //////////
                     //Syncing
                     for jt in app_storage.arr_circuit_elements.iter_mut(){
@@ -2962,6 +3116,51 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             jt.unc_inductance    = sample_normal(it.unc_inductance);
                             jt.unc_charge        = sample_normal(it.unc_charge);
                             jt.unc_magnetic_flux = sample_normal(it.unc_magnetic_flux);
+
+                            jt.bias  = 0f32;
+                            jt.noise = 0f32;
+                        }
+                        if it.label == jt.label
+                        && jt.circuit_element_type == SelectedCircuitElement::CustomVoltmeter{
+                            jt.resistance = VOLTMETER_RESISTANCE;
+                            jt.voltage    = 0f32;
+                            jt.current    = 0f32;
+                            jt.capacitance= 0f32;
+                            jt.inductance = 0f32;
+                            jt.charge     = 0f32;
+                            jt.magnetic_flux = 0f32;
+
+                            jt.unc_resistance    = 0f32;
+                            jt.unc_voltage       = 0f32;
+                            jt.unc_current       = 0f32;
+                            jt.unc_capacitance   = 0f32;
+                            jt.unc_inductance    = 0f32;
+                            jt.unc_charge        = 0f32;
+                            jt.unc_magnetic_flux = 0f32;
+
+                            jt.bias  = it.bias;
+                            jt.noise = it.noise;
+                        }
+                        if it.label == jt.label
+                        && jt.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
+                            jt.resistance = WIRE_RESISTANCE;
+                            jt.voltage    = 0f32;
+                            jt.current    = 0f32;
+                            jt.capacitance= 0f32;
+                            jt.inductance = 0f32;
+                            jt.charge     = 0f32;
+                            jt.magnetic_flux = 0f32;
+
+                            jt.unc_resistance    = 0f32;
+                            jt.unc_voltage       = 0f32;
+                            jt.unc_current       = 0f32;
+                            jt.unc_capacitance   = 0f32;
+                            jt.unc_inductance    = 0f32;
+                            jt.unc_charge        = 0f32;
+                            jt.unc_magnetic_flux = 0f32;
+
+                            jt.bias  = it.bias;
+                            jt.noise = it.noise;
                         }
                     }
                     ////////
@@ -3356,10 +3555,12 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             for it in app_storage.arr_circuit_elements.iter(){
                                 app_storage.circuit_textbox_hash.insert((it.unique_a_node, it.unique_b_node), CircuitElementTextBox::new());
 
-                                if it.circuit_element_type == SelectedCircuitElement::Voltmeter{
+                                if it.circuit_element_type == SelectedCircuitElement::Voltmeter
+                                || it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter{
                                     app_storage.saved_circuit_volts.insert((it.unique_a_node, it.unique_b_node), [Vec::new(), Vec::new()]);
                                 }
-                                if it.circuit_element_type == SelectedCircuitElement::Ammeter{
+                                if it.circuit_element_type == SelectedCircuitElement::Ammeter
+                                || it.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
                                     app_storage.saved_circuit_currents.insert((it.unique_a_node, it.unique_b_node), [Vec::new(), Vec::new()]);
                                 }
                             }
@@ -3656,6 +3857,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                           SelectedCircuitElement::Wire      |
                                           SelectedCircuitElement::AC        |
                                           SelectedCircuitElement::Custom    |
+                                          SelectedCircuitElement::CustomVoltmeter  |
+                                          SelectedCircuitElement::CustomAmmeter    |
                                           SelectedCircuitElement::Capacitor => { (it.x+(40 as f32 * it.orientation.sin().abs()) as i32, 
                                                                                 it.y+(40 as f32 * it.orientation.cos().abs()) as i32) }, //TODO handle rotations
                                           _=>{ panic!("ASDF"); } //TODO more informative panic
@@ -3670,6 +3873,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                           SelectedCircuitElement::Wire      |
                                           SelectedCircuitElement::AC        |
                                           SelectedCircuitElement::Custom    |
+                                          SelectedCircuitElement::CustomVoltmeter  |
+                                          SelectedCircuitElement::CustomAmmeter    |
                                           SelectedCircuitElement::Capacitor => { (jt.x+(40 as f32 * jt.orientation.sin().abs()) as i32, 
                                                                                 jt.y+(40 as f32 * jt.orientation.cos().abs()) as i32) }, //TODO handle rotations
                                           _=>{ panic!("ASDF"); }  //TODO more informative panic
@@ -3847,6 +4052,18 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 print_voltage = if print_current.signum() == -1f32 {  -1f32 * print_voltage.abs() } else { print_voltage.abs() };
 
 
+                let element = app_storage.arr_circuit_elements[it.element_index];
+
+
+
+                if element.circuit_element_type == SelectedCircuitElement::CustomVoltmeter{
+                    print_voltage += element.bias + sample_normal(element.noise);
+                }
+                if element.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
+                    print_current += element.bias + sample_normal(element.noise);
+                }
+
+
                 app_storage.arr_circuit_elements[it.element_index].print_current = Some(print_current);
                 app_storage.arr_circuit_elements[it.element_index].print_voltage = Some(print_voltage);
 
@@ -3873,6 +4090,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             volts_times[1].remove(0);
                         }
 
+                        let element = app_storage.arr_circuit_elements[it.element_index];
                         volts_times[0].push(print_voltage);
                         volts_times[1].push(app_storage.sim_time);
 
@@ -6346,7 +6564,8 @@ impl std::cmp::PartialEq for TinyString{
 impl AsRef<str> for TinyString{
     fn as_ref(&self)->&str{unsafe{
         //TODO 
-        //test me
+        //Some times this does not work wonder if it is a save fail?
+        //should we breaking change things to char? I don't remeber why we didn't choose char in the first place.
         std::str::from_utf8(std::slice::from_raw_parts(self.buffer.as_ptr() , self.cursor)).unwrap() 
     }}
 }
