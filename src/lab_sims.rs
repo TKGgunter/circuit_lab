@@ -3844,7 +3844,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     },
                     _=>{}
                 }
-                print_voltage = if print_current.signum() == -1f32 { print_voltage.abs() } else { -1f32 * print_voltage.abs() };
+                print_voltage = if print_current.signum() == -1f32 {  -1f32 * print_voltage.abs() } else { print_voltage.abs() };
 
 
                 app_storage.arr_circuit_elements[it.element_index].print_current = Some(print_current);
