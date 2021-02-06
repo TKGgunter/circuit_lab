@@ -242,6 +242,7 @@ struct CircuitElementTextBox{
 
     bias_textbox      : TextBox,
     noise_textbox     : TextBox,
+    drift_textbox     : TextBox,
 }
 
 impl CircuitElementTextBox{
@@ -281,6 +282,7 @@ impl CircuitElementTextBox{
 
             bias_textbox      : fn_textbox(),
             noise_textbox     : fn_textbox(),
+            drift_textbox     : fn_textbox(),
         }
     }
     fn new_guess_length()->CircuitElementTextBox{
@@ -321,10 +323,12 @@ impl CircuitElementTextBox{
 
             bias_textbox      : fn_textbox(),
             noise_textbox     : fn_textbox(),
+            drift_textbox     : fn_textbox(),
         }
     }
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug)]
 struct CircuitElement{
     circuit_element_type: SelectedCircuitElement, //Special
@@ -391,6 +395,7 @@ struct CircuitElement{
 
     bias: f32,
     noise: f32,
+    drift: f32,
 }
 
 impl CircuitElement{
@@ -460,6 +465,7 @@ impl CircuitElement{
 
             bias: 0f32,
             noise: 0f32,
+            drift: 0f32,
         }
 
     }
@@ -533,6 +539,7 @@ impl CircuitElement{
 
             bias: 0f32,
             noise: 0f32,
+            drift: 0f32,
         }
     }
 }
@@ -1299,6 +1306,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                         element.bias  = c_it.bias;
                         element.noise = c_it.noise;
+                        element.drift = c_it.drift;
                     },
 
 
@@ -2080,7 +2088,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             if it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
                             && app_storage.teacher_mode {
                                 offset_y += 20;
-                                draw_string(&mut os_package.window_canvas, &format!("Bias: {}  Noise: {}", it.bias, it.noise), 
+                                draw_string(&mut os_package.window_canvas, &format!("Bias: {}  Noise: {}  Drift: {}", it.bias, it.noise, it.drift), 
                                     properties_x, properties_y+properties_h-offset_y, C4_LGREY, 20.0);
                                 offset_y += 20;
 
@@ -2089,10 +2097,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         },
                         SelectedCircuitElement::Ammeter | SelectedCircuitElement::CustomAmmeter=>{  
                             draw_string(&mut os_package.window_canvas, "No changeable properties.", properties_x, properties_y+properties_h-offset_y, C4_GREY, 20.0);
-                            if it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
+                            if it.circuit_element_type == SelectedCircuitElement::CustomAmmeter
                             && app_storage.teacher_mode {
                                 offset_y += 20;
-                                draw_string(&mut os_package.window_canvas, &format!("Bias: : {}  Noise: {}", it.bias, it.noise), 
+                                draw_string(&mut os_package.window_canvas, &format!("Bias: : {}  Noise: {}  Drift: {}", it.bias, it.noise, it.drift), 
                                     properties_x, properties_y+properties_h-offset_y, C4_LGREY, 20.0);
                                 offset_y += 20;
 
@@ -2438,6 +2446,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                             copied_circuit.bias   = it.bias;
                             copied_circuit.noise  = it.noise;
+                            copied_circuit.drift = it.drift;
 
                             app_storage.selected_circuit_properties = Some(copied_circuit);
                         }
@@ -2865,7 +2874,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     prop_y_offset -= (PANEL_FONT + 2f32) as i32;
 
                     {//Select type of custom element
-                        //TODO 
                         use ui_tools::*;
 
                         let mut cl_x_offset = properties_rect[0];
@@ -2956,6 +2964,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                     if it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
                     || it.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
+                        use ui_tools::*;
                         {
                             let rstr_len = draw_string(&mut os_package.window_canvas, "Bias: ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
                             do_text_box_things( &mut c_textbox.bias_textbox, properties_rect[0] + rstr_len, prop_y_offset,
@@ -2963,7 +2972,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                                    &mut it.bias, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
                                                    );
 
-                            let _len = properties_rect[0]+rstr_len+c_textbox.bias_textbox.max_render_length;
                             prop_y_offset -= (PANEL_FONT + 2f32) as i32;
                             if it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter{
                                 it.resistance = VOLTMETER_RESISTANCE;
@@ -2976,9 +2984,36 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                                    &mut it.noise, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
                                                    );
 
-                            let _len = properties_rect[0]+rstr_len+c_textbox.noise_textbox.max_render_length;
                             prop_y_offset -= (PANEL_FONT + 2f32) as i32;
                         }
+
+
+                        {
+                            let rstr_len = draw_string(&mut os_package.window_canvas, "Drift: ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            do_text_box_things( &mut c_textbox.drift_textbox, properties_rect[0] + rstr_len, prop_y_offset,
+                                                   textinfo, mouseinfo, keyboardinfo,
+                                                   &mut it.drift, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
+                                                   );
+
+                            if it.drift > 1f32 {
+                                it.drift = 1f32;
+                            } else if it.drift < 0f32 {
+                                it.drift = 0f32;
+                            }
+                            prop_y_offset -= (PANEL_FONT + 2f32) as i32;
+                            draw_string(&mut os_package.window_canvas, "d := drift,  p_m := previous_measurement", properties_rect[0], prop_y_offset, C4_WHITE, 18f32);
+                            prop_y_offset -= (18f32 + 2f32) as i32;
+                            draw_string(&mut os_package.window_canvas, "m := current nominal measurement", properties_rect[0], prop_y_offset, C4_WHITE, 18f32);
+                            prop_y_offset -= (PANEL_FONT + 2f32) as i32;
+
+                            draw_string(&mut os_package.window_canvas, "measurement :=", properties_rect[0], prop_y_offset, C4_WHITE, 18f32);
+                            prop_y_offset -= (18f32 + 2f32) as i32;
+                            draw_string(&mut os_package.window_canvas, "d * p_m + (1-d) * (m +bias)  + sample_N(noise)", properties_rect[0], prop_y_offset, C4_WHITE, 18f32);
+                            prop_y_offset -= (18f32 + 2f32) as i32;
+                            draw_string(&mut os_package.window_canvas, "A good drift is 0.8.", properties_rect[0], prop_y_offset, C4_WHITE, 18f32);
+                            prop_y_offset -= (PANEL_FONT + 2f32) as i32;
+                        }
+
 
                     } else if it.circuit_element_type == SelectedCircuitElement::Custom{
 
@@ -3119,6 +3154,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                             jt.bias  = 0f32;
                             jt.noise = 0f32;
+                            jt.drift = 0f32;
                         }
                         if it.label == jt.label
                         && jt.circuit_element_type == SelectedCircuitElement::CustomVoltmeter{
@@ -3140,6 +3176,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                             jt.bias  = it.bias;
                             jt.noise = it.noise;
+                            jt.drift = it.drift;
                         }
                         if it.label == jt.label
                         && jt.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
@@ -3161,6 +3198,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                             jt.bias  = it.bias;
                             jt.noise = it.noise;
+                            jt.drift = it.drift;
                         }
                     }
                     ////////
@@ -3714,7 +3752,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         }
         {//TODO Draw simulate button
             let mut color = C4_DGREY;
-            let rect =  [40, 125, 150, 40];
+            let rect =  [40, 115, 150, 40];
             if in_rect(mouseinfo.x, mouseinfo.y, rect){
                 color = C4_GREY;
                 if mouseinfo.lclicked() {
@@ -3829,8 +3867,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 it.solved_voltage = None;
                 it.direction = None;
 
-                it.print_current = None;
-                it.print_voltage = None;
+                //it.print_current = None;
+                //it.print_voltage = None;
 
                 if it.charge.is_nan() { 
                     it.charge = 0f32;
@@ -3991,7 +4029,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
             let mut bad_solved_value = false;
             for (i, it) in pairs.iter().enumerate(){
-                //apply uncertainties
+
                 let minus_one = c_matrix.columns - 1;
                 let solved_current = *c_matrix.get_element(i, minus_one);
                 let solved_voltage = *c_matrix.get_element(i+pairs.len(), minus_one);
@@ -4057,15 +4095,19 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
 
                 if element.circuit_element_type == SelectedCircuitElement::CustomVoltmeter{
-                    print_voltage += element.bias + sample_normal(element.noise);
+
+                    let prev_voltage =  element.print_voltage.as_ref().unwrap_or(&0f32);
+                    print_voltage = element.drift*prev_voltage + (1f32 - element.drift) * (print_voltage + element.bias) + sample_normal(element.noise);
                 }
                 if element.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
-                    print_current += element.bias + sample_normal(element.noise);
+
+                    let prev_current =  element.print_current.as_ref().unwrap_or(&0f32);
+                    print_current = element.drift*prev_current + (1f32 - element.drift) * (print_current + element.bias) + sample_normal(element.noise);
                 }
 
 
-                app_storage.arr_circuit_elements[it.element_index].print_current = Some(print_current);
                 app_storage.arr_circuit_elements[it.element_index].print_voltage = Some(print_voltage);
+                app_storage.arr_circuit_elements[it.element_index].print_current = Some(print_current);
 
                 //Setting up current and graph storage
                 let a_node = app_storage.arr_circuit_elements[it.element_index].unique_a_node;
@@ -5912,6 +5954,19 @@ fn load_circuit_diagram(name: &str)->Vec<CircuitElement>{unsafe{
 //We will need Seek or Cursor.
     let mut sizeof_circuit_elements = [0u8; size_of::<u64>()];
     f.read(&mut sizeof_circuit_elements);
+    let sizeof_circuit_elements = transmute::< [u8; size_of::<u64>()], u64>(sizeof_circuit_elements);
+
+
+
+    //NOTE check the current size of to saved size of 
+    //if saved size of is larger we have a problem and 
+    //things will not work
+    if size_of::<CircuitElement>() < sizeof_circuit_elements as usize{
+        println!("It is highly likely that the load has failed.  Current CircitElement struct is smaller than saved struct");
+    }
+
+
+
 
     let mut number_circuit_elements = [0u8; size_of::<u64>()];
     f.read(&mut number_circuit_elements);
@@ -5919,10 +5974,19 @@ fn load_circuit_diagram(name: &str)->Vec<CircuitElement>{unsafe{
     let number_circuit_elements = transmute::< [u8; size_of::<u64>()], u64>(number_circuit_elements);
     let mut rt = Vec::with_capacity(number_circuit_elements as usize);
 
-    let mut _it = [0u8; size_of::<CircuitElement>()];
+
+
+    let mut _it = vec![0u8; sizeof_circuit_elements as usize];
+    //let mut _it = [0u8; size_of::<CircuitElement>()]; OLD Thoth Gunter 2/3/2021
     let mut max_id = 0;
     for i in 0..number_circuit_elements{
         f.read(&mut _it);
+
+        
+        let mut element  = CircuitElement::empty();
+        std::ptr::copy_nonoverlapping( _it.as_mut_ptr(), &mut element as *mut CircuitElement as *mut u8, sizeof_circuit_elements as usize);
+
+/* OLD Thoth Gunter 2/3/2021
         let it = transmute::<_, &CircuitElement>(&_it);
 
         let mut element  = CircuitElement::empty();
@@ -5962,8 +6026,12 @@ fn load_circuit_diagram(name: &str)->Vec<CircuitElement>{unsafe{
 
         element.label = it.label;
 
-        if it.unique_b_node > max_id {
-            max_id = it.unique_b_node;
+        element.bias = it.bias;
+        element.noise = it.noise;
+*/
+        //TODO How are we rending things... I am confused
+        if element.unique_b_node > max_id {
+            max_id = element.unique_b_node;
         }
         rt.push(element);
     }
@@ -6566,7 +6634,13 @@ impl AsRef<str> for TinyString{
         //TODO 
         //Some times this does not work wonder if it is a save fail?
         //should we breaking change things to char? I don't remeber why we didn't choose char in the first place.
-        std::str::from_utf8(std::slice::from_raw_parts(self.buffer.as_ptr() , self.cursor)).unwrap() 
+        match std::str::from_utf8(std::slice::from_raw_parts(self.buffer.as_ptr() , self.cursor)){
+            Ok(s)=> {s},
+            Err(s)=>{ 
+                println!("{:?}", s);
+                "?Error?"
+            }
+        }
     }}
 }
 impl core::fmt::Display for TinyString{
@@ -6587,8 +6661,16 @@ impl core::fmt::Debug for TinyString{
 
 
 
-
-fn sample_normal(std: f32)->f32{
-    let dst = Normal::new(0.0, std.powi(2)).unwrap();
+fn sample_normal(std: f32)->f32{unsafe{
+    let dst = Normal::new(0.0, std*2f32.powf(-0.5)).unwrap();
     return dst.sample(&mut thread_rng());
-}
+}}
+
+
+
+
+
+
+
+
+

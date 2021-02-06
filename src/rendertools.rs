@@ -982,9 +982,9 @@ pub fn draw_circle(canvas: &mut WindowCanvas, _x: i32, _y: i32, r: f32, color: [
             let i = _i as isize;
             index_i += 1;
 
-            if i > c_w || j > c_h{
+            if i >= c_w || j >= c_h || i < 0 || j < 0 {
                 continue;
-            }
+             }
 
             let dst_rgb = buffer.offset( (i + c_w*j) as isize);
 

@@ -86,7 +86,7 @@ pub fn basic_button( canvas: &mut WindowCanvas, text: &str, x: i32, y:i32, font_
     }
 
     draw_rect(canvas, rect, color_bg, true);
-    draw_string(canvas, text, rect[0], rect[1], BUTTON_TEXT_COLOR, font_size);
+    draw_string(canvas, text, rect[0]-2, rect[1], BUTTON_TEXT_COLOR, font_size);
 
     rt.rect = rect;
     return rt;
