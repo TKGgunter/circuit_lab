@@ -2810,7 +2810,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
             
             let mut index : i32 = 0;
             for it in app_storage.custom_circuit_elements.iter(){
-                let rect = [80*(index%2)+5, subcanvas_h - 70*((index+2)/2) - 5, 80, 70];
+                let rect = [80*(index%2)+5+4, subcanvas_h - 70*((index+2)/2) - 5, 80, 70];
                 let _rect = [rect[0]-15+x_offset, rect[1]-15 + y_offset, 80, 70];
 
 
@@ -2819,7 +2819,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 let mut temp_str = it.label.as_ref().to_string();
                 temp_str.truncate(8);
                 let mut string_length = get_advance_string(&temp_str, 23.0);
-                draw_string(&mut app_storage.circuit_element_canvas.canvas, &temp_str, rect[0]-8 + rect[2]/2 - string_length/2, rect[1]-8, C4_WHITE, 23.0);
+                draw_string(&mut app_storage.circuit_element_canvas.canvas, &temp_str, rect[0]-8 + rect[2]/2 - string_length/2, rect[1]-5, C4_WHITE, 23.0);
 
                 if in_rect(mouseinfo.x, mouseinfo.y, _rect){
                     draw_rect(&mut app_storage.circuit_element_canvas.canvas, rect, C4_YELLOW, false);
@@ -3318,7 +3318,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
             { //Wire
                 let wire_xy = [20, 237+alter_offset_y];
                 draw_rect(&mut app_storage.circuit_element_canvas.canvas, [wire_xy[0], wire_xy[1], 50, 2], C4_WHITE, true);
-                draw_string(&mut app_storage.circuit_element_canvas.canvas, "Wire", wire_xy[0]+5, wire_xy[1]-45, COLOR_TEXT, 23.0);
+                draw_string(&mut app_storage.circuit_element_canvas.canvas, "Wire", wire_xy[0]+5, wire_xy[1]-45+6, COLOR_TEXT, 23.0);
 
                 let _rect = [wire_xy[0]-15+x_offset, wire_xy[1]-35+y_offset, 80, 65];
                 if in_rect(mouseinfo.x, mouseinfo.y, _rect ){
@@ -3333,7 +3333,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 let ammeter_xy = [110, 212+alter_offset_y];
 
                 draw_bmp(&mut app_storage.circuit_element_canvas.canvas, &app_storage.ammeter_bmp, ammeter_xy[0], ammeter_xy[1], 0.98, Some(50), Some(50));
-                draw_string(&mut app_storage.circuit_element_canvas.canvas, "Ammeter", ammeter_xy[0]-15, ammeter_xy[1]-20, COLOR_TEXT, 23.0);
+                draw_string(&mut app_storage.circuit_element_canvas.canvas, "Ammeter", ammeter_xy[0]-15, ammeter_xy[1]-20+5, COLOR_TEXT, 23.0);
 
                 let _rect = [ammeter_xy[0]-15+x_offset, ammeter_xy[1]-10+y_offset, 80, 65];
                 if in_rect(mouseinfo.x, mouseinfo.y, _rect ){
