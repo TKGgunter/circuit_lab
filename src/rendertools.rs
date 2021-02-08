@@ -1145,6 +1145,8 @@ use crate::rendertools::{SubCanvas, draw_subcanvas};
 
     static mut TRANSFORMATION_PIPELINE : Option<Vec<PixelShader>> = None;
 
+    //TODO combine pixel shader and distance shader, I don't like operating like this 
+    //TODO enum for render data?
     type PixelShader = fn(f32, [f32; 2], &[f32])->[f32;4];
     static mut PIXEL_SHADER_FUNCTION_PIPELINE : Option<Vec<PixelShader>> = None;
     static mut PIXEL_SHADER_DATA_PIPELINE : Option<Vec<Vec<f32>>> = None;

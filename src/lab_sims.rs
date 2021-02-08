@@ -1335,6 +1335,12 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         _=>{}
     }
 
+    let mut is_element_selected = false;
+    if app_storage.selected_circuit_element != SelectedCircuitElement::None {
+        is_element_selected = true;
+    }
+
+
     {//Draw circuit
      //select circuit element
 
@@ -1412,6 +1418,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             c2_x = it.x + 4 + 38;
                             c2_y = it.y + it.length + 3 + 80;
                         }
+
 
                         if app_storage.selected_circuit_element == SelectedCircuitElement::None
                         && in_rect( mouseinfo.x, mouseinfo.y, _mouse_in_rect ) 
@@ -1494,6 +1501,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     SelectedCircuitElement::Voltmeter| SelectedCircuitElement::Ammeter | SelectedCircuitElement::Switch | SelectedCircuitElement::AC |
                     SelectedCircuitElement::Wire | SelectedCircuitElement::Custom | SelectedCircuitElement::CustomVoltmeter | SelectedCircuitElement::CustomAmmeter=>{
                         if it.selected {
+                            is_element_selected = true;
                             it.x += mouseinfo.delta_x;
                             it.y += mouseinfo.delta_y;
                         }
@@ -1522,6 +1530,29 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 SelectedCircuitElement::Resistor | SelectedCircuitElement::Battery | SelectedCircuitElement::Capacitor | SelectedCircuitElement::Inductor |
                 SelectedCircuitElement::Voltmeter| SelectedCircuitElement::Ammeter | SelectedCircuitElement::Switch | SelectedCircuitElement::AC | 
                 SelectedCircuitElement::Wire | SelectedCircuitElement::Custom | SelectedCircuitElement::CustomVoltmeter | SelectedCircuitElement::CustomAmmeter=>{
+
+
+                    if is_element_selected {
+
+                        let mut c1_x = it.x + 2 - it.length;
+                        let mut c1_y = it.y + 41;
+
+                        let mut c2_x = it.x + it.length + 82;
+                        let mut c2_y = it.y + 41;
+
+                        if it.orientation.sin().abs() == 1.0 {
+
+                            c1_x = it.x + 4 + 38;
+                            c1_y = it.y ;
+
+                            c2_x = it.x + 4 + 38;
+                            c2_y = it.y + it.length + 3 + 80;
+                        }
+
+                        draw_circle(&mut os_package.window_canvas, c1_x, c1_y, 4.0, C4_WHITE); 
+                        draw_circle(&mut os_package.window_canvas, c2_x, c2_y, 4.0, C4_WHITE); 
+                    }
+
                     //TODO implement battery 
                     let node_a = it.unique_a_node;
                     let node_b = it.unique_b_node;
@@ -1596,11 +1627,24 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         draw_bmp(&mut os_package.window_canvas, &_rbmp, it.x, it.y, 0.7, None, None);
 
                         if mouseinfo.lclicked(){
-                            let temp = theta.sin().abs().round();
-                            if temp <= 0.5{
-                                theta = 0f32;
-                            } else {
-                                theta = PI/2f32;
+                            //TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                            let _sin = theta.sin().round();
+                            let _cos = theta.cos().round();
+
+                            if _sin.abs() <= 0.5 {
+                                if _cos >= 0f32 {
+                                    theta = 0f32;
+                                }
+                                else {
+                                    theta = PI;
+                                }
+                            } else { 
+                                if _sin >= 0f32 {
+                                    theta = PI/2f32;
+                                }
+                                else { 
+                                    theta = 3f32*PI/2f32;
+                                }
                             }
                             it.orientation = theta;
                         }
@@ -2088,7 +2132,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             if it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
                             && app_storage.teacher_mode {
                                 offset_y += 20;
-                                draw_string(&mut os_package.window_canvas, &format!("Bias: {}  Noise: {}  Drift: {}", it.bias, it.noise, it.drift), 
+                                draw_string(&mut os_package.window_canvas, &format!("Bias: {:.3}  Noise: {:.3}  Drift: {:.3}", it.bias, it.noise, it.drift), 
                                     properties_x, properties_y+properties_h-offset_y, C4_LGREY, 20.0);
                                 offset_y += 20;
 
@@ -2386,8 +2430,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         if mouseinfo.lclicked()
                         && it.properties_z == get_global_properties_z() - 1{
                             it.orientation += PI/2.0;
-                            if (it.orientation/PI).abs().fract() < 0.001 { it.orientation = 0.0; }
-                            else if (it.orientation/(PI/2.0)).abs().fract() < 0.001 { it.orientation = PI/2.0; }
+
+                            //if (it.orientation/PI).abs().fract() < 0.001 { it.orientation = 0.0; }
+                            //else if (it.orientation/(PI/2.0)).abs().fract() < 0.001 { it.orientation = PI/2.0; }
                         }
                     }
                     draw_string(&mut os_package.window_canvas, "Rotate", button_x, button_y-3, C4_LGREY, 22.0);
@@ -3897,8 +3942,24 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                           SelectedCircuitElement::Custom    |
                                           SelectedCircuitElement::CustomVoltmeter  |
                                           SelectedCircuitElement::CustomAmmeter    |
-                                          SelectedCircuitElement::Capacitor => { (it.x+(40 as f32 * it.orientation.sin().abs()) as i32, 
-                                                                                it.y+(40 as f32 * it.orientation.cos().abs()) as i32) }, //TODO handle rotations
+                                          SelectedCircuitElement::Capacitor => { 
+                                                                                 ////////////////
+                                                                                 let _x = if it.orientation.sin().abs() < 0.001 {
+                                                                                    it.x + ((it.orientation / 2f32).sin().abs() * (GRID_SIZE * 4) as f32) as i32
+                                                                                 } else {
+                                                                                    it.x + (it.orientation.sin().abs() * (GRID_SIZE * 2) as f32) as i32
+                                                                                 };
+
+                                                                                 let _y = if it.orientation.sin().abs() < 0.001 {
+                                                                                    it.y + (it.orientation.cos().abs() * (GRID_SIZE * 2) as f32) as i32
+                                                                                 } else {
+                                                                                    it.y + (( (it.orientation - PI/ 2f32) / 2f32 ).sin().abs() * (GRID_SIZE * 4) as f32) as i32
+                                                                                 };
+                                                                                 (_x, _y)
+                                                                                 ////////////////
+                                                                                 //(it.x+(40 as f32 * it.orientation.sin().abs()) as i32, 
+                                                                                 // it.y+(40 as f32 * it.orientation.cos().abs()) as i32) 
+                                                                                },
                                           _=>{ panic!("ASDF"); } //TODO more informative panic
                                         };
                     let (jt_x1, jt_y1) = match jt.circuit_element_type { 
@@ -3913,17 +3974,65 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                           SelectedCircuitElement::Custom    |
                                           SelectedCircuitElement::CustomVoltmeter  |
                                           SelectedCircuitElement::CustomAmmeter    |
-                                          SelectedCircuitElement::Capacitor => { (jt.x+(40 as f32 * jt.orientation.sin().abs()) as i32, 
-                                                                                jt.y+(40 as f32 * jt.orientation.cos().abs()) as i32) }, //TODO handle rotations
+                                          SelectedCircuitElement::Capacitor => { 
+                                                                                 let _x = if jt.orientation.sin().abs() < 0.001 {
+                                                                                    jt.x + ((jt.orientation / 2f32).sin().abs() * (GRID_SIZE * 4) as f32) as i32
+                                                                                 } else {
+                                                                                    jt.x + (jt.orientation.sin().abs() * (GRID_SIZE * 2) as f32) as i32
+                                                                                 };
+
+                                                                                 let _y = if jt.orientation.sin().abs() < 0.001 {
+                                                                                    jt.y + (jt.orientation.cos().abs() * (GRID_SIZE * 2) as f32) as i32
+                                                                                 } else {
+                                                                                    jt.y + (( (jt.orientation - PI/ 2f32) / 2f32 ).sin().abs() * (GRID_SIZE * 4) as f32) as i32
+                                                                                 };
+                                                                                 (_x, _y)
+
+                                                                                 //(jt.x+(40 as f32 * jt.orientation.sin().abs()) as i32, 
+                                                                                 // jt.y+(40 as f32 * jt.orientation.cos().abs()) as i32) 
+                                                                               }, //TODO handle rotations
                                           _=>{ panic!("ASDF"); }  //TODO more informative panic
                                         };
 
 
-                    let it_x2 = (it.orientation.cos().abs()*(GRID_SIZE * 4) as f32 ) as i32 + it_x1;
-                    let it_y2 = (it.orientation.sin().abs()*(GRID_SIZE * 4) as f32 ) as i32 + it_y1;
 
-                    let jt_x2 = (jt.orientation.cos().abs()*(GRID_SIZE * 4) as f32 ) as i32 + jt_x1;
-                    let jt_y2 = (jt.orientation.sin().abs()*(GRID_SIZE * 4) as f32 ) as i32 + jt_y1;
+
+                    let it_x2 = if it.orientation.sin().abs() < 0.001 { 
+                                    it.x + ((it.orientation / 2f32).cos().abs() * (GRID_SIZE * 4) as f32) as i32 
+                                } else { 
+                                    it.x + (it.orientation.sin().abs() * (GRID_SIZE * 2) as f32) as i32
+                                };
+
+                    let it_y2 = if it.orientation.sin().abs() < 0.001 {
+                                    it.y + (it.orientation.cos().abs() * (GRID_SIZE * 2) as f32) as i32
+                                } else {
+                                    it.y + (( (it.orientation - PI/ 2f32) / 2f32 ).cos().abs() * (GRID_SIZE * 4) as f32) as i32
+                                };
+
+                    //Depricated 02/08/2021
+                    //let it_x2 = (it.orientation.cos().abs()*(GRID_SIZE * 4) as f32 ) as i32 + it_x1;
+                    //let it_y2 = (it.orientation.sin().abs()*(GRID_SIZE * 4) as f32 ) as i32 + it_y1;
+
+
+                    
+                    let jt_x2 = if jt.orientation.sin().abs() < 0.001 { 
+                                    jt.x + ((jt.orientation / 2f32).cos().abs() * (GRID_SIZE * 4) as f32) as i32 
+                                } else { 
+                                    jt.x + (jt.orientation.sin().abs() * (GRID_SIZE * 2) as f32) as i32
+                                };
+
+                    let jt_y2 = if jt.orientation.sin().abs() < 0.001 {
+                                    jt.y + (jt.orientation.cos().abs() * (GRID_SIZE * 2) as f32) as i32
+                                } else {
+                                    jt.y + (( (jt.orientation - PI/ 2f32) / 2f32 ).cos().abs() * (GRID_SIZE * 4) as f32) as i32
+                                };
+
+
+                    //Depricated 02/08/2021
+                    //let jt_x2 = (jt.orientation.cos().abs()*(GRID_SIZE * 4) as f32 ) as i32 + jt_x1;
+                    //let jt_y2 = (jt.orientation.sin().abs()*(GRID_SIZE * 4) as f32 ) as i32 + jt_y1;
+
+
 
                     //if jt.circuit_element_type == SelectedCircuitElement::Battery {
                     //    println!("{} {}", i, j);
