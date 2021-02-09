@@ -136,8 +136,11 @@ impl KeyboardInfo{
                 return true;
             }
         }
+
         return false;
     }
+
+
     pub fn is_key_pressed(&self, key: KeyboardEnum)->bool{
         for (i, it) in self.key.iter().enumerate(){
             if *it == key
@@ -152,6 +155,7 @@ impl KeyboardInfo{
     pub fn update_keyboardinfo_windows(&mut self, message: &MSG){
         //NOTE
         //Becareful with KeyboardEnum! There are many single character values in the enum
+
         use KeyboardEnum::*;
         use ButtonStatus::*;
         if message.message == WM_KEYDOWN || message.message == WM_KEYUP{
@@ -246,6 +250,7 @@ impl KeyboardInfo{
     pub fn update_keyboardinfo_macos(&mut self, message: KeyMessageMacOS){ //TODO should have a special struct for this so that it's easier to fix
         //NOTE
         //Becareful with KeyboardEnum! There are many single character values in the enum
+
         use KeyboardEnum::*;
         use ButtonStatus::*;
         if message.keydown == 1 || message.keydown == 2{
@@ -346,6 +351,7 @@ impl KeyboardInfo{
     pub fn update_keyboardinfo_linux(&mut self, message: KeySym, keystatus: bool){ //TODO should have a special struct for this so that it's easier to fix
         //NOTE
         //Becareful with KeyboardEnum! There are many single character values in the enum
+
         use KeyboardEnum::*;
         use ButtonStatus::*;
                             

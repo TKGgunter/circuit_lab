@@ -396,6 +396,8 @@ struct CircuitElement{
     bias: f32,
     noise: f32,
     drift: f32,
+
+    initial_altered_rotation: f32,
 }
 
 impl CircuitElement{
@@ -466,6 +468,8 @@ impl CircuitElement{
             bias: 0f32,
             noise: 0f32,
             drift: 0f32,
+
+            initial_altered_rotation: 0f32,
         }
 
     }
@@ -540,6 +544,8 @@ impl CircuitElement{
             bias: 0f32,
             noise: 0f32,
             drift: 0f32,
+
+            initial_altered_rotation: 0f32,
         }
     }
 }
@@ -631,6 +637,7 @@ pub struct LS_AppStorage{
     custom_circuit_elements: Vec<CircuitElement>,
     circuit_menu_type: CircuitMenuType,
     create_custom_circuit: bool,
+    panel_custom_circuit: bool,
     custom_circuit_cursor: usize,
     custom_circuit_textbox: CircuitElementTextBox,
 
@@ -708,6 +715,7 @@ impl LS_AppStorage{
             custom_circuit_elements: Vec::new(),
             circuit_menu_type: CircuitMenuType::Default,
             create_custom_circuit: false,
+            panel_custom_circuit: false,
             custom_circuit_cursor: 0,
             custom_circuit_textbox: CircuitElementTextBox::new_guess_length(),
 
@@ -1058,16 +1066,23 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
 
     //TODO teacher mode turn on
-    if keyboardinfo.is_key_pressed(KeyboardEnum::Tab)
-    && std::path::Path::new(TA_FILE_NAME).is_file(){
+    let mut just_switched_modes = false;
+    if keyboardinfo.is_key_released(KeyboardEnum::Tab)
+    && std::path::Path::new(TA_FILE_NAME).is_file()
+    && app_storage.teacher_mode == false {
         app_storage.teacher_mode = true;
+        just_switched_modes = true;
+
     }
 
     if app_storage.teacher_mode {
-        if keyboardinfo.is_key_pressed(KeyboardEnum::Space){
+        if keyboardinfo.is_key_released(KeyboardEnum::Tab)
+        && !just_switched_modes {
             app_storage.teacher_mode = false;
             app_storage.selected_circuit_element = SelectedCircuitElement::None;
             app_storage.create_custom_circuit = false;
+            app_storage.panel_custom_circuit = false;
+
         }
 
         let circuit_panel_path = std::path::Path::new("circuit_panels.txt");
@@ -1441,7 +1456,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             }
                         }
                         
-                        if it.orientation.sin().abs() == 0f32{//Horizontal orientation
+                        if it.orientation.sin().abs() < 0.001f32{//Horizontal orientation
                             let right_rect = [c2_x-5, c2_y-5, 10, 10];
                             if in_rect(mouseinfo.x, mouseinfo.y, right_rect)
                             && !mouse_in_properties_rect(mouseinfo, &z_vec){
@@ -1491,6 +1506,24 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                     it.selected_rotation = true;
                                 }
                             }
+                        }
+                        if it.selected_rotation {
+                            it.initial_altered_rotation = {
+                                let d_x = (mouseinfo.x - (it.x + 40)) as f32;//NOTE 40 is half of the bitmap width
+                                let d_y = (mouseinfo.y - (it.y + 40)) as f32;//NOTE 40 is half the bitmap height
+
+                                let mut theta  = (d_x/(d_y.powi(2) + d_x.powi(2)).sqrt()).acos();
+                                if d_y < 0f32 {
+                                    theta *=  -1f32;
+                                } 
+                                if theta.abs() < 0.1 {
+                                    theta += it.orientation;
+                                } else {
+                                    theta -= it.orientation;
+                                }
+
+                                theta
+                            };
                         }
                     },
                     _=>{}
@@ -1620,9 +1653,17 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
 
                     if it.selected_rotation{
-                        let d_x = (mouseinfo.x - (it.x + 41)) as f32;//NOTE 41 is half of the bitmap width
-                        let d_y = (mouseinfo.y - (it.y + 40)) as f32;//NOTE 30 is half the bitmap height
-                        let mut theta  = (d_y/d_x).atan();
+                        let d_x = (mouseinfo.x - (it.x + 40)) as f32;//NOTE 40 is half of the bitmap width
+                        let d_y = (mouseinfo.y - (it.y + 40)) as f32;//NOTE 40 is half the bitmap height
+
+                        let mut theta  = (d_x/(d_y.powi(2) + d_x.powi(2)).sqrt()).acos() - it.initial_altered_rotation;
+                        {
+                            if d_y < 0f32 {
+                                theta *=  -1f32;
+                            } 
+                        }
+
+
                         let _rbmp = rotate_bmp(&mut _bmp, theta, false).unwrap(); 
                         draw_bmp(&mut os_package.window_canvas, &_rbmp, it.x, it.y, 0.7, None, None);
 
@@ -2827,12 +2868,16 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         app_storage.create_custom_circuit = true;
                         app_storage.custom_circuit_cursor = index as usize;
                     }
+                    if mouseinfo.rclicked() 
+                    && app_storage.teacher_mode {
+                        app_storage.panel_custom_circuit = true;
+                        app_storage.custom_circuit_cursor = index as usize;
+                    }
                 }
                 index += 1;
             }
 
-            if app_storage.teacher_mode == false
-            && app_storage.custom_circuit_cursor < app_storage.custom_circuit_elements.len()
+            if app_storage.custom_circuit_cursor < app_storage.custom_circuit_elements.len()
             && app_storage.create_custom_circuit {
                 app_storage.selected_circuit_element = SelectedCircuitElement::Custom;
                 app_storage.create_custom_circuit = false;
@@ -2861,7 +2906,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
 
                 let mut remove_element = false;
-                if app_storage.create_custom_circuit 
+                if app_storage.panel_custom_circuit
                 && app_storage.custom_circuit_cursor < app_storage.custom_circuit_elements.len(){
                     let properties_rect = [subcanvas_w+20+x_offset, y_offset, PROPERTIES_W, subcanvas_h];
                     let mut prop_y_offset = subcanvas_h + y_offset - 30;
@@ -2880,7 +2925,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         if in_rect(mouseinfo.x, mouseinfo.y, [button_x, button_y, char_x_len+5, 26]){
                             color = C4_RED;
                             if mouseinfo.lclicked(){
-                                app_storage.create_custom_circuit = false;
+                                app_storage.panel_custom_circuit = false;
                             }
                         }
                         draw_char(&mut os_package.window_canvas, 'x', button_x, button_y, color, 26.0);

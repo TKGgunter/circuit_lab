@@ -127,7 +127,7 @@ pub fn make_window(){unsafe{
 
             let mut mouseinfo = MouseInfo::new();
             let mut textinfo = TextInfo{character: Vec::with_capacity(10), timing:Vec::new()};
-            let mut keyboardinfo = KeyboardInfo{key: Vec::new(), status:Vec::new()};
+            let mut keyboardinfo = KeyboardInfo{key: Vec::new(), status:Vec::new(), };
             let mut old_window_info = GLOBAL_WINDOWINFO;
 
             let mut frame_counter = 0;
@@ -137,6 +137,8 @@ pub fn make_window(){unsafe{
 
                 keyboardinfo.key.clear();
                 keyboardinfo.status.clear();
+
+
                 textinfo.character.clear();
 
                 mouseinfo.wheel_delta = 0;
