@@ -1214,6 +1214,20 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
             let rotated_bmp = rotate_bmp(&mut resize_bmp, app_storage.selected_circuit_element_orientation, false).unwrap();
             draw_bmp(&mut os_package.window_canvas, &rotated_bmp, x, y, 0.98, None, None);
+            if app_storage.selected_circuit_element == SelectedCircuitElement::Custom
+            || app_storage.selected_circuit_element == SelectedCircuitElement::CustomVoltmeter
+            || app_storage.selected_circuit_element == SelectedCircuitElement::CustomAmmeter{
+
+                let orientation =  app_storage.selected_circuit_element_orientation.sin().abs().round();
+                if orientation == 0.0 {
+                    let c_it = &app_storage.custom_circuit_elements[app_storage.custom_circuit_cursor];
+
+                    change_font(FONT_NOTOSANS_BOLD);
+                    let _adv = get_advance_string(c_it.label.as_ref(), 20f32);
+                    draw_string(&mut os_package.window_canvas, c_it.label.as_ref(), x+rotated_bmp.width/2-_adv/2-6, y + 3, C4_WHITE, 20f32);
+                    change_font(FONT_NOTOSANS);
+                }
+            }
 
             if mouseinfo.lbutton == ButtonStatus::Up && mouseinfo.old_lbutton == ButtonStatus::Down
             && in_rect(mouseinfo.x, mouseinfo.y, [circuit_element_canvas_x_offset, circuit_element_canvas_y_offset, 
