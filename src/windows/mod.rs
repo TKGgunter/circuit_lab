@@ -167,7 +167,10 @@ pub fn make_window(){unsafe{
                         
 
                         //TODO not working .... why?
-                        if message.message == winapi::um::winuser::WM_LBUTTONDBLCLK{ mouseinfo.double_lbutton = true; }
+                        if message.message == winapi::um::winuser::WM_LBUTTONDBLCLK{ 
+                            mouseinfo.double_lbutton = true; 
+                            mouseinfo.lbutton = ButtonStatus::Down; 
+                        }
                         else { mouseinfo.double_lbutton = false; }
                         /////////////////////
 
