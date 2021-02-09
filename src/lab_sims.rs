@@ -832,6 +832,18 @@ Thanks for using the lab circuit software.
 
 #Section
 #Text
+Update(02/09/2021)
++ Fixed sign conventions for voltmeter and ammeter.
++ Changed voltmeter and ammeter icons to include led indicators.
++ Future proof backward save files.
++ Gaussian sampling is now fixed.
++ Implemented fixes for icon and element rotation.
++ Exiting TA mode now requires Tab.
++ Other bug fixes and ui updates.
+
+
+#Section
+#Text
 Update(01/26/2021)
 + Changed from uniform to Gaussian uncertainties
 + Implemented screen shot.
