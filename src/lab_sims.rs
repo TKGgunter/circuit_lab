@@ -3934,6 +3934,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
             app_storage.sim_time += TIME_STEP;
             for it in app_storage.arr_circuit_elements.iter_mut(){
                 if it.circuit_element_type == SelectedCircuitElement::Custom{
+                    //TODO this is redundant with the standard case. We should only be doing this thing once.
                     if it.capacitance.abs() > 0.00001f32
                     && it.solved_current.is_some(){
                         let current = if *it.direction.as_ref().unwrap() == CircuitElementDirection::AtoB{
@@ -3942,7 +3943,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             it.solved_current.as_ref().unwrap().abs() * -1f32
                         };
 
-                        println!("{} {} ", it.charge, current * TIME_STEP);
                         it.charge += current * TIME_STEP;
                     }
                     if it.inductance.abs() > 0.00001f32 
@@ -3952,6 +3952,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 }
                 if it.circuit_element_type == SelectedCircuitElement::Capacitor 
                 && it.solved_current.is_some(){
+                    //TODO this is redundant with the custom case. We should only be doing this thing once.
 
                     let current = if *it.direction.as_ref().unwrap() == CircuitElementDirection::AtoB{
                         it.solved_current.as_ref().unwrap().abs()
@@ -3978,8 +3979,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         it.temp_step_voltage +=  it.d_voltage_over_dt * TIME_STEP;
                         it.temp_step_voltage  =  it.temp_step_voltage.max(-1.0/PI).min(1.0/PI);
                         it.voltage =  it.temp_step_voltage * max_voltage;
-                        //it.voltage *=  PI/2f32;
-                        println!("{} {} {}", it.temp_step_voltage, it.voltage, max_voltage);
                     } else if it.ac_source_type == ACSourceType::Step{
                         let d_voltage2_over_dt2 = -1.0*( 2f32*PI*it.frequency ).powi(2)*it.temp_step_voltage/it.max_voltage;
 
