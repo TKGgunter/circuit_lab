@@ -64,6 +64,8 @@ static mut GLOBAL_PROPERTIES_Z: usize = 0;
 const DEFAULT_MESSAGE_ONSCREEN_DURATION : Duration = Duration::from_millis(5100);
 const ERROR_MESSAGE_ONSCREEN_DURATION   : Duration = Duration::from_millis(7500);
 
+
+
 fn get_and_update_global_properties_z()->usize{unsafe{
     let rt = GLOBAL_PROPERTIES_Z;
     GLOBAL_PROPERTIES_Z += 1;
@@ -144,14 +146,6 @@ const DEFAULT_CUSTOM_ELEMENTS : [CircuitElement ; 4] = {
     [resistor_4, resistor_1, resistor_2, resistor_3, ] 
 };
 
-
-//NOTE
-//There is a time offset what can be seen when checking the csv for voltage or current.
-//The initial time will be 0.006 this is the initial offset.
-
-
-//TODO
-//+ allow user to make setup bigger ... change window size without fucking things up
 
 
 
@@ -587,23 +581,23 @@ pub struct LS_AppStorage{
     selected_circuit_element_orientation: f32,
     selected_circuit_properties : Option<CircuitElement>,
 
-    resistor_bmp: TGBitmap,
-    battery_bmp: TGBitmap,
-    capacitor_bmp: TGBitmap,
-    inductor_bmp : TGBitmap,
-    voltmeter_bmp: TGBitmap,
-    ammeter_bmp: TGBitmap,
-    switch_open_bmp: TGBitmap,
+    resistor_bmp     : TGBitmap,
+    battery_bmp      : TGBitmap,
+    capacitor_bmp    : TGBitmap,
+    inductor_bmp     : TGBitmap,
+    voltmeter_bmp    : TGBitmap,
+    ammeter_bmp      : TGBitmap,
+    switch_open_bmp  : TGBitmap,
     switch_closed_bmp: TGBitmap,
-    ac_bmp: TGBitmap,
-    wire_bmp: TGBitmap,
-    custom_bmp: TGBitmap,
+    ac_bmp           : TGBitmap,
+    wire_bmp         : TGBitmap,
+    custom_bmp       : TGBitmap,
 
 
-    arrow_bmp: TGBitmap,
+    arrow_bmp              : TGBitmap,
     pub screenshot_icon_bmp: TGBitmap,
 
-    save_icon_bmp: TGBitmap,
+    save_icon_bmp    : TGBitmap,
     save_icon_bmp_alt: TGBitmap,
 
     save_toggle: bool,
