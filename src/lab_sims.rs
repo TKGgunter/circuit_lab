@@ -3467,8 +3467,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
             }
             {//AC
                 let ac_xy = [20, 5+alter_offset_y];
-                draw_bmp(&mut app_storage.circuit_element_canvas.canvas, &app_storage.ac_bmp, ac_xy[0], ac_xy[1], 0.98, Some(50), Some(50));
-                draw_string(&mut app_storage.circuit_element_canvas.canvas, "AC", ac_xy[0]+10, ac_xy[1]-10, COLOR_TEXT, 23.0);
+                draw_bmp(&mut app_storage.circuit_element_canvas.canvas, &app_storage.ac_bmp, ac_xy[0], ac_xy[1]+5, 0.98, Some(50), Some(50));
+                draw_string(&mut app_storage.circuit_element_canvas.canvas, "AC", ac_xy[0]+10, ac_xy[1]-13, COLOR_TEXT, 23.0);
 
                 let _rect = [ac_xy[0]-15+x_offset, ac_xy[1]-15+y_offset, 80, 65];
                 if in_rect(mouseinfo.x, mouseinfo.y, _rect ){
@@ -3928,9 +3928,16 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
             app_storage.sim_time += TIME_STEP;
             for it in app_storage.arr_circuit_elements.iter_mut(){
                 if it.circuit_element_type == SelectedCircuitElement::Custom{
+                    //TODO this is redundant with the standard case. We should only be doing this thing once.
                     if it.capacitance.abs() > 0.00001f32
                     && it.solved_current.is_some(){
-                        it.charge += *it.solved_current.as_ref().unwrap() * TIME_STEP;
+                        let current = if *it.direction.as_ref().unwrap() == CircuitElementDirection::AtoB{
+                            it.solved_current.as_ref().unwrap().abs()
+                        } else {
+                            it.solved_current.as_ref().unwrap().abs() * -1f32
+                        };
+
+                        it.charge += current * TIME_STEP;
                     }
                     if it.inductance.abs() > 0.00001f32 
                     && it.solved_voltage.is_some(){
@@ -3939,7 +3946,14 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 }
                 if it.circuit_element_type == SelectedCircuitElement::Capacitor 
                 && it.solved_current.is_some(){
-                    it.charge += *it.solved_current.as_ref().unwrap() * TIME_STEP;
+                    //TODO this is redundant with the custom case. We should only be doing this thing once.
+
+                    let current = if *it.direction.as_ref().unwrap() == CircuitElementDirection::AtoB{
+                        it.solved_current.as_ref().unwrap().abs()
+                    } else {
+                        it.solved_current.as_ref().unwrap().abs() * -1f32
+                    };
+                    it.charge += current * TIME_STEP;
                 }
                 if it.circuit_element_type == SelectedCircuitElement::Inductor 
                 && it.solved_voltage.is_some(){
@@ -3948,15 +3962,17 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 if it.circuit_element_type == SelectedCircuitElement::AC
                 && it.solved_current.is_some(){//TODO does not work when you change max voltage or frequency
                     if it.ac_source_type == ACSourceType::Sin{
-                        let d_voltage2_over_dt2 = -1.0* ( 2f32*PI*it.frequency ).powi(2)*it.temp_step_voltage/it.max_voltage;
+                        let max_voltage = it.max_voltage * PI;
+                        let d_voltage2_over_dt2 = -1.0* ( 2f32*PI*it.frequency ).powi(2)*it.temp_step_voltage;
 
                         it.d_voltage_over_dt += d_voltage2_over_dt2 * TIME_STEP;
                         it.d_voltage_over_dt = it.d_voltage_over_dt.max(-1.0).min(1.0);
                         let d_voltage_over_dt = it.d_voltage_over_dt;
 
-                        it.voltage +=  it.d_voltage_over_dt * TIME_STEP * it.max_voltage;
-                        it.voltage =  it.voltage.max(-1.0*it.max_voltage).min(it.max_voltage);
-                        it.temp_step_voltage =  it.voltage;
+
+                        it.temp_step_voltage +=  it.d_voltage_over_dt * TIME_STEP;
+                        it.temp_step_voltage  =  it.temp_step_voltage.max(-1.0/PI).min(1.0/PI);
+                        it.voltage =  it.temp_step_voltage * max_voltage;
                     } else if it.ac_source_type == ACSourceType::Step{
                         let d_voltage2_over_dt2 = -1.0*( 2f32*PI*it.frequency ).powi(2)*it.temp_step_voltage/it.max_voltage;
 
@@ -4554,22 +4570,25 @@ pub fn generate_wrapped_strings(string: &str, font: f32, max_width: i32)->Vec<St
 //TODO
 //this is hella slow
 //move to render tools
+//we have artifacts we should correct for
 fn rotate_bmp(src_bmp: &mut TGBitmap, angle: f32, inplace: bool)->Option<TGBitmap>{unsafe{
-    fn calc_xy(x: isize, y: isize, angle: f32)->(isize, isize){
+
+    fn calc_xy(x: f32, y: f32, angle: f32)->(f32, f32){
         let cos = angle.cos();
         let sin = angle.sin();
-        let rt = ( (x as f32 * cos - y as f32 * sin).round() as isize,
-                   (x as f32 * sin + y as f32 * cos).round() as isize
+        let rt = ( (x as f32 * cos + y as f32 * sin).round(),
+                   (-x as f32 * sin + y as f32 * cos).round()
                  );
         return rt;
     }
 
+
     if inplace {
         panic!("TODO: Rotate bmp inplace is on the todo list.");
     } else {
-        let dst_w = (src_bmp.width as f32 * angle.cos().abs() + src_bmp.height as f32 * angle.sin().abs()).round() as i32;
-        let dst_h = (src_bmp.width as f32 * angle.sin().abs() + src_bmp.height as f32 * angle.cos().abs()).round() as i32;
-        let mut dst_bmp = TGBitmap::new(dst_w, dst_h);//TODO
+        let dst_w = (src_bmp.width as f32 * angle.cos().abs() + src_bmp.height as f32 * angle.sin().abs()).round() as isize;
+        let dst_h = (src_bmp.width as f32 * angle.sin().abs() + src_bmp.height as f32 * angle.cos().abs()).round() as isize;
+        let mut dst_bmp = TGBitmap::new(dst_w as i32, dst_h as i32);//TODO
 
 
         let src_buffer = src_bmp.rgba.as_ptr();
@@ -4578,23 +4597,29 @@ fn rotate_bmp(src_bmp: &mut TGBitmap, angle: f32, inplace: bool)->Option<TGBitma
         let w = src_bmp.width as isize;
         let h = src_bmp.height as isize;
 
-        for j in 0..h{
-            for i in 0..w{
-                let src_offset = 4*(i + j*w);
+        for j in 0..dst_h{
+            for i in 0..dst_w{
+                let dst_offset = 4*(i + j*dst_w) as isize;
+                let __x = i as f32 - w as f32/2f32;
+                let __y = j as f32 - h as f32/2f32;
 
-                let (mut x, mut y) = calc_xy( i - w/2, j - h/2, angle);
+                let (mut x, mut y) = calc_xy( __x, __y, angle);
+                x += w as f32 / 2f32;
+                y += h as f32 / 2f32;
 
-                x += w/2;
-                y += h/2;
+                let x = x.round() as isize;
+                let y = y.round() as isize;
 
-                if x > dst_w as isize || x < 0 { 
+
+                if x > w as isize || x < 0 { 
                     continue; }
-                if y > dst_h as isize || y < 0 { 
+                if y > h as isize || y < 0 { 
                     continue; }
+                if x+y*w >= h*w {
+                    continue;
+                }
 
-                let dst_offset=4*(x+y*dst_w as isize);
-                if dst_offset >= (dst_w*dst_h*4) as isize{ continue; }
-
+                let src_offset=4*(x+y*w as isize);
 
                 let a = *src_buffer.offset(src_offset + 3);
                 let r = *src_buffer.offset(src_offset + 2);
@@ -5760,10 +5785,12 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
 
             let _i = t.rows-1;
 
-            *t.get_element(_i, 0) = graph[it.element_index].charge;
+            *t.get_element(_i, 0) = if it.in_node == graph[it.element_index].a_node { graph[it.element_index].charge } 
+                               else { -1f32 * graph[it.element_index].charge };
             *b.get_element(i, _i) = -1.0;
             *f.get_element(_i, _i) = 1.0;
         }
+
         if graph[it.element_index].circuit_element_type == SelectedCircuitElement::Inductor{
             b.grow(0,1);
             f.grow(1,1);
@@ -5784,7 +5811,8 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
 
             let _i = t.rows-1;
 
-            *t.get_element(_i, 0) = graph[it.element_index].charge + graph[it.element_index].unc_charge;
+            *t.get_element(_i, 0) = if it.in_node == graph[it.element_index].a_node { graph[it.element_index].charge + graph[it.element_index].unc_charge } 
+                               else { -1f32 * graph[it.element_index].charge + graph[it.element_index].unc_charge};
             *b.get_element(i, _i) = -1.0;
             *f.get_element(_i, _i) = 1.0;
         }
@@ -6344,13 +6372,16 @@ impl TextBox{
 
             //NOTE character with u8 of 8 is the backspace code on windows
             let u8_char = *character as u8;
-            if (u8_char == 8 )  && (self.text_buffer.len() > 0){
+            if (u8_char == 8 ) 
+            && (self.text_buffer.len() > 0)
+            && _cursor > 0 {
                 self.text_buffer.remove(_cursor-1);
                 self.text_cursor -= 1;
             } else if u8_char  >= 239 || u8_char == 127{
             //mac is 127 for delete
             } else {
-                if self.text_buffer.len() < self.max_char as usize {
+                if self.text_buffer.len() < self.max_char as usize 
+                && u8_char != 8 {
                     self.text_buffer.insert(_cursor, *character);
                     self.text_cursor += 1;
                 }
