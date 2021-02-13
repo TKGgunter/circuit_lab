@@ -3473,8 +3473,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
             }
             {//AC
                 let ac_xy = [20, 5+alter_offset_y];
-                draw_bmp(&mut app_storage.circuit_element_canvas.canvas, &app_storage.ac_bmp, ac_xy[0], ac_xy[1], 0.98, Some(50), Some(50));
-                draw_string(&mut app_storage.circuit_element_canvas.canvas, "AC", ac_xy[0]+10, ac_xy[1]-10, COLOR_TEXT, 23.0);
+                draw_bmp(&mut app_storage.circuit_element_canvas.canvas, &app_storage.ac_bmp, ac_xy[0], ac_xy[1]+5, 0.98, Some(50), Some(50));
+                draw_string(&mut app_storage.circuit_element_canvas.canvas, "AC", ac_xy[0]+10, ac_xy[1]-13, COLOR_TEXT, 23.0);
 
                 let _rect = [ac_xy[0]-15+x_offset, ac_xy[1]-15+y_offset, 80, 65];
                 if in_rect(mouseinfo.x, mouseinfo.y, _rect ){
@@ -3936,7 +3936,14 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 if it.circuit_element_type == SelectedCircuitElement::Custom{
                     if it.capacitance.abs() > 0.00001f32
                     && it.solved_current.is_some(){
-                        it.charge += *it.solved_current.as_ref().unwrap() * TIME_STEP * -1f32 ;
+                        let current = if *it.direction.as_ref().unwrap() == CircuitElementDirection::AtoB{
+                            it.solved_current.as_ref().unwrap().abs()
+                        } else {
+                            it.solved_current.as_ref().unwrap().abs() * -1f32
+                        };
+
+                        println!("{} {} ", it.charge, current * TIME_STEP);
+                        it.charge += current * TIME_STEP;
                     }
                     if it.inductance.abs() > 0.00001f32 
                     && it.solved_voltage.is_some(){
@@ -3945,7 +3952,13 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 }
                 if it.circuit_element_type == SelectedCircuitElement::Capacitor 
                 && it.solved_current.is_some(){
-                    it.charge += *it.solved_current.as_ref().unwrap() * TIME_STEP * -1f32;
+
+                    let current = if *it.direction.as_ref().unwrap() == CircuitElementDirection::AtoB{
+                        it.solved_current.as_ref().unwrap().abs()
+                    } else {
+                        it.solved_current.as_ref().unwrap().abs() * -1f32
+                    };
+                    it.charge += current * TIME_STEP;
                 }
                 if it.circuit_element_type == SelectedCircuitElement::Inductor 
                 && it.solved_voltage.is_some(){
@@ -3954,15 +3967,19 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 if it.circuit_element_type == SelectedCircuitElement::AC
                 && it.solved_current.is_some(){//TODO does not work when you change max voltage or frequency
                     if it.ac_source_type == ACSourceType::Sin{
-                        let d_voltage2_over_dt2 = -1.0* ( 2f32*PI*it.frequency ).powi(2)*it.temp_step_voltage/it.max_voltage;
+                        let max_voltage = it.max_voltage * PI;
+                        let d_voltage2_over_dt2 = -1.0* ( 2f32*PI*it.frequency ).powi(2)*it.temp_step_voltage;
 
                         it.d_voltage_over_dt += d_voltage2_over_dt2 * TIME_STEP;
                         it.d_voltage_over_dt = it.d_voltage_over_dt.max(-1.0).min(1.0);
                         let d_voltage_over_dt = it.d_voltage_over_dt;
 
-                        it.voltage +=  it.d_voltage_over_dt * TIME_STEP * it.max_voltage;
-                        it.voltage =  it.voltage.max(-1.0*it.max_voltage).min(it.max_voltage);
-                        it.temp_step_voltage =  it.voltage;
+
+                        it.temp_step_voltage +=  it.d_voltage_over_dt * TIME_STEP;
+                        it.temp_step_voltage  =  it.temp_step_voltage.max(-1.0/PI).min(1.0/PI);
+                        it.voltage =  it.temp_step_voltage * max_voltage;
+                        //it.voltage *=  PI/2f32;
+                        println!("{} {} {}", it.temp_step_voltage, it.voltage, max_voltage);
                     } else if it.ac_source_type == ACSourceType::Step{
                         let d_voltage2_over_dt2 = -1.0*( 2f32*PI*it.frequency ).powi(2)*it.temp_step_voltage/it.max_voltage;
 
@@ -5780,6 +5797,7 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
             *b.get_element(i, _i) = -1.0;
             *f.get_element(_i, _i) = 1.0;
         }
+
         if graph[it.element_index].circuit_element_type == SelectedCircuitElement::Inductor{
             b.grow(0,1);
             f.grow(1,1);
