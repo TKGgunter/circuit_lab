@@ -2,7 +2,6 @@
 #![allow(warnings, unused)]
 
 use crate::lab_sims::*;
-use crate::cloud_game::*;
 
 use crate::cocoa;
 use crate::objc;
@@ -230,8 +229,11 @@ pub fn make_window() {unsafe{
 
 
     let mut ls_app_storage = LS_AppStorage::new();
-    let mut cg_app_storage = CG_AppStorage::new(); 
 
+//TODO check for frame work
+
+    let mut orig_exe_path = std::env::current_exe().expect("could not find the exe path").to_str().unwrap().to_string();
+    let mut _exe_path = std::env::current_exe().expect("could not find the exe path").to_str().unwrap().to_string();
     let mut exe_path = std::env::current_exe().expect("could not find the exe path");
     exe_path.pop();
     if !exe_path.to_string_lossy().contains("target/release"){
@@ -240,7 +242,9 @@ pub fn make_window() {unsafe{
             exe_path.pop();
             exe_path.pop();
             println!("{:?}", exe_path);
+            _exe_path.clear();
             std::env::set_current_dir(exe_path).expect("could not do the thing");
+             _exe_path = std::env::current_dir().expect("could not find the exe path").to_str().unwrap().to_string();
         } else {
             std::env::set_current_dir( exe_path );
         }
@@ -448,6 +452,8 @@ pub fn make_window() {unsafe{
         //if cloud_game(&mut OsPackage{window_canvas: &mut GLOBAL_BACKBUFFER, window_info: &mut GLOBAL_WINDOWINFO},
         //            &mut cg_app_storage, &keyboardinfo, &textinfo, &mouseinfo) != 0 { break; }
 
+        draw_string(&mut GLOBAL_BACKBUFFER, &orig_exe_path, 150, 150, C4_WHITE, 30f32);
+        draw_string(&mut GLOBAL_BACKBUFFER, &_exe_path, 150, 150-30, C4_WHITE, 30f32);
         elapsed = now.elapsed();
 
 
