@@ -2,6 +2,7 @@
 #![allow(warnings, unused)]
 
 use crate::lab_sims::*;
+use crate::dynamic_lib_loading;
 
 use crate::cocoa;
 use crate::objc;
@@ -16,12 +17,19 @@ use cocoa::appkit::{NSApp, NSApplication, NSApplicationActivationPolicyRegular, 
                     NSBackingStoreBuffered, NSMenu, NSMenuItem, NSWindowStyleMask, NSColor, NSView, NSEvent,
                     NSRunningApplication, NSApplicationActivateIgnoringOtherApps, NSImage, NSEventType};
 
+use crate::core_foundation;
+use crate::core_foundation::string::*;
+use crate::core_foundation::error::*;
+use crate::core_foundation::url::*;
+use crate::core_foundation::string::CFString;
+use crate::core_foundation::bundle::{CFBundleGetMainBundle, CFBundleCopyBundleURL};
+
 
 use std::{thread, time};
 use std::ptr::{null, null_mut};
 use std::fs::File;
 use std::io::prelude::*;
-
+use std::process::Command;
 
 use crate::rendertools::*;
 use crate::{WindowCanvas, WindowInfo,
@@ -37,6 +45,8 @@ use crate::misc::*;
 //  + handle resize
 //  + handle textinput
 //  + handle keyboard input
+
+
 
 
 struct MacBackbuffer{
@@ -135,7 +145,7 @@ extern fn did_resize(this: &Object, _cmd: Sel,  _notification: id) {unsafe{
 
 
 static mut RUNNING : bool = true;
-pub fn make_window() {unsafe{
+pub fn make_window<'a>() {unsafe{
 
     let app = NSApp();
     app.setActivationPolicy_(NSApplicationActivationPolicyRegular);
@@ -230,21 +240,102 @@ pub fn make_window() {unsafe{
 
     let mut ls_app_storage = LS_AppStorage::new();
 
-//TODO check for frame work
+    let security_lib = dynamic_lib_loading::open_lib("/System/Library/Frameworks/Security.framework/Security", dynamic_lib_loading::RTLD_LAZY).expect("Security framework not present.");
+
+//    let mut exe_path = std::env::current_exe().expect("could not find the exe path");
+//let cfurl_path = CFURL::from_path(exe_path, false).expect("was it a dir?");
+//let url_path = cfurl_path.get_string();
+//let u : CFStringRef = std::mem::transmute(url_path);
+//let length = CFStringGetLength( u )+1;
+//let mut str_vec = vec![0u8; length as usize];
+//let __rt = CFStringGetCString(u, str_vec.as_mut_ptr() as *mut i8, length, kCFStringEncodingUTF8);
+//let str_str = std::str::from_utf8(&str_vec).unwrap();
+//println!("{} length: {} {} ASDFASDF", __rt, length, str_str);
+
+    let mut test_string1 = String::new();
+    let mut test_string2 = String::new();
+    let mut test_string3 = String::new();
 
     let mut orig_exe_path = std::env::current_exe().expect("could not find the exe path").to_str().unwrap().to_string();
-    let mut _exe_path = std::env::current_exe().expect("could not find the exe path").to_str().unwrap().to_string();
+    let mut current_path = std::env::current_exe().expect("could not find the exe path").to_str().unwrap().to_string();
     let mut exe_path = std::env::current_exe().expect("could not find the exe path");
     exe_path.pop();
     if !exe_path.to_string_lossy().contains("target/release"){
         if exe_path.to_string_lossy().contains("Contents/MacOS"){
-            exe_path.pop();
-            exe_path.pop();
-            exe_path.pop();
+
+            let os_10_12_and_above_fn = dynamic_lib_loading::get_fn( &security_lib, "SecTranslocateCreateOriginalPathForURL");
+            match os_10_12_and_above_fn {
+                Ok(_get_original_path)=>{
+                    //TODO
+
+                    let is_translocated : fn ( CFURLRef, *mut bool, *mut CFErrorRef)->bool = std::mem::transmute(dynamic_lib_loading::get_fn( &security_lib, "SecTranslocateIsTranslocatedURL").expect("Could not find SecTranslocateIsTranslocatedURL function.").as_mut());
+                    let get_original_path : fn (CFURLRef, *mut CFErrorRef)-> CFURLRef = std::mem::transmute(_get_original_path.as_mut());
+
+                    let mut bundle = CFBundleGetMainBundle();
+                    let url = CFBundleCopyBundleURL(bundle);
+                    let mut bool_is_translocated = false;
+
+                    //NOTE check is we are translocated
+                    if is_translocated( url, &mut bool_is_translocated as *mut _, null_mut()){
+                    } else {
+                        bool_is_translocated = false;
+                        print!("Could not determine is path has been translocated");
+                    }
+                    if bool_is_translocated{
+                        let org_url = get_original_path(url, null_mut());
+                        if org_url == null(){
+                            println!("Could not find original path.");
+                        } else {
+                            
+
+                            let _org_path : CFURL = std::mem::transmute(org_url); //NOTE transmute from url_ref to url
+                            let mut org_path_str  =  _org_path.get_string();
+                            let mut org_path : CFStringRef = std::mem::transmute( org_path_str ); //NOTE transmute from string to string ref
+                     test_string1 += &format!("We got the path?");
+
+                            let length = CFStringGetLength(org_path) + 1;
+                            let mut str_vec = vec![0u8; length as usize];
+                            CFStringGetCString(org_path, str_vec.as_mut_ptr() as *mut i8, length, kCFStringEncodingUTF8);
+
+                            let _str_str = std::string::String::from_utf8(str_vec).unwrap();
+                            let str_str = _str_str.trim_matches('\0');
+
+
+/*
+                            let xattr_status = Command::new("xattr").arg("-cr").arg(str_str).status();
+                            //TODO do something with status.
+                     test_string2 += &format!("xattr {:?}", xattr_status);
+                            let open_status = Command::new("open").arg("-n").arg("-a").arg(str_str).status();
+                            //TODO do something with status.
+                     test_string3 += &format!("OS: {:?}", open_status);
+*/
+
+                            exe_path =  std::path::Path::new(&str_str).to_path_buf();
+                            exe_path.pop();
+                            //return;
+
+                        }
+                    } else {
+                        exe_path.pop();
+                        exe_path.pop();
+                        exe_path.pop();
+                    }
+
+                    //TODO alter original app
+                    //TODO run original exe in original location
+                },
+                _=>{
+                    exe_path.pop();
+                    exe_path.pop();
+                    exe_path.pop();
+                }
+            }
             println!("{:?}", exe_path);
-            _exe_path.clear();
             std::env::set_current_dir(exe_path).expect("could not do the thing");
-             _exe_path = std::env::current_dir().expect("could not find the exe path").to_str().unwrap().to_string();
+
+
+            current_path.clear();
+            current_path = std::env::current_dir().expect("could not find the exe path").to_str().unwrap().to_string();
         } else {
             std::env::set_current_dir( exe_path );
         }
@@ -452,8 +543,15 @@ pub fn make_window() {unsafe{
         //if cloud_game(&mut OsPackage{window_canvas: &mut GLOBAL_BACKBUFFER, window_info: &mut GLOBAL_WINDOWINFO},
         //            &mut cg_app_storage, &keyboardinfo, &textinfo, &mouseinfo) != 0 { break; }
 
-        draw_string(&mut GLOBAL_BACKBUFFER, &orig_exe_path, 150, 150, C4_WHITE, 30f32);
-        draw_string(&mut GLOBAL_BACKBUFFER, &_exe_path, 150, 150-30, C4_WHITE, 30f32);
+
+        draw_rect(&mut GLOBAL_BACKBUFFER, [0, 0, 1500, 600], C4_BLACK, true);
+        draw_string(&mut GLOBAL_BACKBUFFER, "DEBUG TEST Final ASDF", 150, 550, C4_WHITE, 40f32);
+        draw_string(&mut GLOBAL_BACKBUFFER, &orig_exe_path, 150, 500, C4_WHITE, 30f32);
+        draw_string(&mut GLOBAL_BACKBUFFER, &current_path, 150, 500-30, C4_WHITE, 30f32);
+        draw_string(&mut GLOBAL_BACKBUFFER, &test_string1, 150, 500-60, C4_WHITE, 30f32);
+        draw_string(&mut GLOBAL_BACKBUFFER, &test_string2, 150, 500-90, C4_WHITE, 30f32);
+        draw_string(&mut GLOBAL_BACKBUFFER, &test_string3, 150, 500-120, C4_WHITE, 30f32);
+//        */
         elapsed = now.elapsed();
 
 
