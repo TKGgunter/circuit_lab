@@ -66,6 +66,9 @@ const ERROR_MESSAGE_ONSCREEN_DURATION   : Duration = Duration::from_millis(7500)
 
 
 
+fn set_global_properties_z(x: usize){unsafe{
+    GLOBAL_PROPERTIES_Z = x;
+}}
 fn get_and_update_global_properties_z()->usize{unsafe{
     let rt = GLOBAL_PROPERTIES_Z;
     GLOBAL_PROPERTIES_Z += 1;
@@ -392,6 +395,7 @@ struct CircuitElement{
     drift: f32,
 
     initial_altered_rotation: f32,
+    time: f32,
 }
 
 impl CircuitElement{
@@ -464,6 +468,7 @@ impl CircuitElement{
             drift: 0f32,
 
             initial_altered_rotation: 0f32,
+            time: 0f32,
         }
 
     }
@@ -540,6 +545,7 @@ impl CircuitElement{
             drift: 0f32,
 
             initial_altered_rotation: 0f32,
+            time: 0f32,
         }
     }
 }
@@ -2415,6 +2421,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                         && it.properties_z == get_global_properties_z() - 1{
                                             y_x[0].clear();
                                             y_x[1].clear();
+                                            it.time = 0f32;
                                         }
                                     }
                                     draw_rect(&mut os_package.window_canvas, clear_rect, clear_rect_color, true);
@@ -2459,6 +2466,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                         && it.properties_z == get_global_properties_z() - 1{
                                             y_x[0].clear();
                                             y_x[1].clear();
+                                            it.time = 0f32;
                                         }
                                     }
                                     draw_rect(&mut os_package.window_canvas, clear_rect, clear_rect_color, true);
@@ -3927,6 +3935,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
             //NOTE Updating the charge of capacitors and inductors
             app_storage.sim_time += TIME_STEP;
             for it in app_storage.arr_circuit_elements.iter_mut(){
+                it.time += TIME_STEP;
                 if it.circuit_element_type == SelectedCircuitElement::Custom{
                     //TODO this is redundant with the standard case. We should only be doing this thing once.
                     if it.capacitance.abs() > 0.00001f32
@@ -3972,7 +3981,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                         it.temp_step_voltage +=  it.d_voltage_over_dt * TIME_STEP;
                         it.temp_step_voltage  =  it.temp_step_voltage.max(-1.0/PI).min(1.0/PI);
-                        it.voltage =  it.temp_step_voltage * max_voltage;
+                        //it.voltage =  it.temp_step_voltage * max_voltage;
+                        it.voltage =  it.max_voltage * (2f32 * PI * it.frequency * it.time).sin();
+
                     } else if it.ac_source_type == ACSourceType::Step{
                         let d_voltage2_over_dt2 = -1.0*( 2f32*PI*it.frequency ).powi(2)*it.temp_step_voltage/it.max_voltage;
 
@@ -3981,6 +3992,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         let d_voltage_over_dt = it.d_voltage_over_dt;
 
                         it.temp_step_voltage +=  it.d_voltage_over_dt * TIME_STEP * it.max_voltage;
+                        it.temp_step_voltage =  (2f32 * PI * it.frequency * it.time).sin();
 
                         it.voltage = if it.temp_step_voltage > 0f32 {  it.max_voltage } else { -1.0*it.max_voltage};
                     }
@@ -4298,6 +4310,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                 app_storage.arr_circuit_elements[it.element_index].print_voltage = Some(print_voltage);
                 app_storage.arr_circuit_elements[it.element_index].print_current = Some(print_current);
+                let ce_time = app_storage.arr_circuit_elements[it.element_index].time;
 
                 //Setting up current and graph storage
                 let a_node = app_storage.arr_circuit_elements[it.element_index].unique_a_node;
@@ -4310,7 +4323,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         }
 
                         currents_times[0].push(print_current);
-                        currents_times[1].push(app_storage.sim_time);
+                        currents_times[1].push(ce_time);
+                        //currents_times[1].push(app_storage.sim_time);
 
                     },
                     None=>{}
@@ -4324,7 +4338,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                         let element = app_storage.arr_circuit_elements[it.element_index];
                         volts_times[0].push(print_voltage);
-                        volts_times[1].push(app_storage.sim_time);
+                        volts_times[1].push(ce_time);
+                        //volts_times[1].push(app_storage.sim_time);
 
                     },
                     None=>{}
@@ -6234,6 +6249,9 @@ fn load_circuit_diagram(name: &str)->Vec<CircuitElement>{unsafe{
         //TODO How are we rending things... I am confused
         if element.unique_b_node > max_id {
             max_id = element.unique_b_node;
+        }
+        if element.properties_selected {
+            element.properties_z = get_and_update_global_properties_z();
         }
         rt.push(element);
     }

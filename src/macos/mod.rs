@@ -252,13 +252,11 @@ pub fn make_window<'a>() {unsafe{
 //let str_str = std::str::from_utf8(&str_vec).unwrap();
 //println!("{} length: {} {} ASDFASDF", __rt, length, str_str);
 
-    let mut test_string1 = String::new();
-    let mut test_string2 = String::new();
-    let mut test_string3 = String::new();
 
-    let mut orig_exe_path = std::env::current_exe().expect("could not find the exe path").to_str().unwrap().to_string();
     let mut current_path = std::env::current_exe().expect("could not find the exe path").to_str().unwrap().to_string();
     let mut exe_path = std::env::current_exe().expect("could not find the exe path");
+    let mut has_been_translocated = false;
+
     exe_path.pop();
     if !exe_path.to_string_lossy().contains("target/release"){
         if exe_path.to_string_lossy().contains("Contents/MacOS"){
@@ -287,11 +285,12 @@ pub fn make_window<'a>() {unsafe{
                             println!("Could not find original path.");
                         } else {
                             
+                            has_been_translocated = true;
 
+/*
                             let _org_path : CFURL = std::mem::transmute(org_url); //NOTE transmute from url_ref to url
                             let mut org_path_str  =  _org_path.get_string();
                             let mut org_path : CFStringRef = std::mem::transmute( org_path_str ); //NOTE transmute from string to string ref
-                     test_string1 += &format!("We got the path?");
 
                             let length = CFStringGetLength(org_path) + 1;
                             let mut str_vec = vec![0u8; length as usize];
@@ -301,19 +300,10 @@ pub fn make_window<'a>() {unsafe{
                             let str_str = _str_str.trim_matches('\0');
 
 
-/*
-                            let xattr_status = Command::new("xattr").arg("-cr").arg(str_str).status();
-                            //TODO do something with status.
-                     test_string2 += &format!("xattr {:?}", xattr_status);
-                            let open_status = Command::new("open").arg("-n").arg("-a").arg(str_str).status();
-                            //TODO do something with status.
-                     test_string3 += &format!("OS: {:?}", open_status);
-*/
-
                             exe_path =  std::path::Path::new(&str_str).to_path_buf();
                             exe_path.pop();
                             //return;
-
+*/
                         }
                     } else {
                         exe_path.pop();
@@ -544,14 +534,15 @@ pub fn make_window<'a>() {unsafe{
         //            &mut cg_app_storage, &keyboardinfo, &textinfo, &mouseinfo) != 0 { break; }
 
 
-        draw_rect(&mut GLOBAL_BACKBUFFER, [0, 0, 1500, 600], C4_BLACK, true);
-        draw_string(&mut GLOBAL_BACKBUFFER, "DEBUG TEST Final ASDF", 150, 550, C4_WHITE, 40f32);
-        draw_string(&mut GLOBAL_BACKBUFFER, &orig_exe_path, 150, 500, C4_WHITE, 30f32);
-        draw_string(&mut GLOBAL_BACKBUFFER, &current_path, 150, 500-30, C4_WHITE, 30f32);
-        draw_string(&mut GLOBAL_BACKBUFFER, &test_string1, 150, 500-60, C4_WHITE, 30f32);
-        draw_string(&mut GLOBAL_BACKBUFFER, &test_string2, 150, 500-90, C4_WHITE, 30f32);
-        draw_string(&mut GLOBAL_BACKBUFFER, &test_string3, 150, 500-120, C4_WHITE, 30f32);
-//        */
+        if has_been_translocated {
+            let window_height = GLOBAL_WINDOWINFO.h;
+            draw_rect(&mut GLOBAL_BACKBUFFER, [0, window_height - 160, 400, 160], C4_BLACK, true);
+            draw_string(&mut GLOBAL_BACKBUFFER, "NOTE:", 150, window_height-40, C4_RED, 40f32);
+            draw_string(&mut GLOBAL_BACKBUFFER, "This application has been translocated.", 0, window_height-70, C4_WHITE, 30f32);
+            draw_string(&mut GLOBAL_BACKBUFFER, "Move the application from, then back to", 2, window_height-100, C4_WHITE, 24f32);
+            draw_string(&mut GLOBAL_BACKBUFFER, "its current directory to remove this status.", 2, window_height-124, C4_WHITE, 24f32);
+        }
+
         elapsed = now.elapsed();
 
 
