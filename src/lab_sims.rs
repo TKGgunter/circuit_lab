@@ -6310,14 +6310,17 @@ impl TextBox{
                 //IF mouse is between old position and new position then we place cursor
                 //behind the current character
                 let adv = get_advance(it, _self.text_size);
-                if i < _self.text_buffer.len() - 1{
-                    if mouseinfo.x >= position + _self.x+_self.offset_x+2 && mouseinfo.x < position + adv + _self.x + _self.offset_x + 2 {
+                if i < _self.text_buffer.len() - 1 {
+                    if mouseinfo.x >= position + _self.x + _self.offset_x + 4 && mouseinfo.x < position + adv + _self.x + _self.offset_x + 4 {
                         _self.text_cursor = i;
                         break;
                     }
-                } else{
-                    if mouseinfo.x >= position + _self.x + _self.offset_x + 2 {
+                } else {
+                    if mouseinfo.x >= position + adv + _self.x + _self.offset_x + 4 {
                         _self.text_cursor = i + 1;
+                        break;
+                    } else if mouseinfo.x < position + adv + _self.x + _self.offset_x + 4{
+                        _self.text_cursor = i;
                         break;
                     }
                 }
@@ -6390,13 +6393,20 @@ impl TextBox{
 
             //NOTE character with u8 of 8 is the backspace code on windows
             let u8_char = *character as u8;
-            if (u8_char == 8 ) 
-            && (self.text_buffer.len() > 0)
-            && _cursor > 0 {
-                self.text_buffer.remove(_cursor-1);
-                self.text_cursor -= 1;
-            } else if u8_char  >= 239 || u8_char == 127{
-            //mac is 127 for delete
+            let mut is_backspace = u8_char == 8;
+            if cfg!(target_os = "macos") {
+                is_backspace = u8_char == 127;
+            }
+            
+            if is_backspace {
+            //if (u8_char == 8 || u8_char == 127) 
+                if (self.text_buffer.len() > 0)
+                && _cursor > 0 {
+                    self.text_buffer.remove(_cursor-1);
+                    self.text_cursor -= 1;
+                } 
+            } else if u8_char  >= 239 { //This is a delete on keyboard macos
+                
             } else {
                 if self.text_buffer.len() < self.max_char as usize 
                 && u8_char != 8 {

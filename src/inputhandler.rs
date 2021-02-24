@@ -90,6 +90,7 @@ pub enum KeyboardEnum{
     Downarrow,
     Enter,
     Delete,
+    Backspace,
     Default
 }
 
@@ -266,6 +267,7 @@ impl KeyboardInfo{
             update_down!(is_down, message_wparam, 0x31 , Space, self);
             update_down!(is_down, message_wparam, 0x24 , Enter, self);
             update_down!(is_down, message_wparam, 117 , Delete, self);
+            update_down!(is_down, message_wparam, 51 , Backspace, self);
 
             update_down!(is_down, message_wparam, 0x38 , Shift, self);
             //update_down!(is_down, message_wparam, VK_LSHIFT as usize , Lshift, self);
