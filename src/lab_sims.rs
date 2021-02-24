@@ -6367,6 +6367,7 @@ impl TextBox{
             }
         }
 
+        let mut delete_activated = false;
         for i in 0..keyboardinfo.key.len(){
             if keyboardinfo.status[i] == ButtonStatus::Down{
                 if keyboardinfo.key[i] == KeyboardEnum::Leftarrow{
@@ -6381,6 +6382,7 @@ impl TextBox{
                 }
                 if keyboardinfo.key[i] == KeyboardEnum::Delete{
                     let _cursor = self.text_cursor;
+                    delete_activated = true;
                     if self.text_buffer.len() > _cursor {
                         self.text_buffer.remove(_cursor);
                     }
@@ -6398,14 +6400,13 @@ impl TextBox{
                 is_backspace = u8_char == 127;
             }
             
-            if is_backspace {
-            //if (u8_char == 8 || u8_char == 127) 
+            if is_backspace && !delete_activated {
                 if (self.text_buffer.len() > 0)
                 && _cursor > 0 {
                     self.text_buffer.remove(_cursor-1);
                     self.text_cursor -= 1;
                 } 
-            } else if u8_char  >= 239 { //This is a delete on keyboard macos
+            } else if u8_char  >= 239 || delete_activated { //This is a delete on keyboard macos
                 
             } else {
                 if self.text_buffer.len() < self.max_char as usize 
