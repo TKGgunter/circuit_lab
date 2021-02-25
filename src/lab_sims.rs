@@ -158,6 +158,12 @@ pub const COLOR_MENU_BKG   : [f32; 4] = [97.0/255.0, 163.0/255.0, 1.0, 1.0];
 pub const COLOR_GRID       : [f32; 4] = [101.0/255.0, 53.0/255.0, 1.0, 1.0];
 pub const COLOR_TEXT       : [f32; 4] = C4_WHITE;
 pub const COLOR_TEXT_SOLV  : [f32; 4] = C4_YELLOW;
+
+pub const COLOR_PROPERTY_BKG1  : [f32; 4] = C4_BLACK;
+pub const COLOR_PROPERTY_BKG2  : [f32; 4] = [0.12, 0.12, 0.12, 1.0f32];
+pub const COLOR_PROPERTY_MOVE1  : [f32; 4] = [0.23, 0.05, 0.23, 1.0f32];
+pub const COLOR_PROPERTY_MOVE2  : [f32; 4] = [0.3, 0.12, 0.3, 1.0f32];
+//
 //pub const COLOR_BUTTON  : [f32; 4] = C4_WHITE;
 //pub const COLOR_BUTTON_TEXT  : [f32; 4] = C4_WHITE;
 
@@ -1863,7 +1869,19 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     }
                 }
 
-                draw_rect(&mut os_package.window_canvas, [properties_x, properties_y, properties_w, properties_h], C4_BLACK, true);
+                if it.properties_z == get_global_properties_z() - 1{
+                    draw_rect(&mut os_package.window_canvas, [properties_x, properties_y, properties_w, properties_h], COLOR_PROPERTY_BKG1, true);
+                    
+                    //NOTE indication that panel can be moved.
+                    if in_rect(mouseinfo.x, mouseinfo.y, [properties_x, properties_y+properties_h-30, properties_w, 30]){
+                        draw_rect(&mut os_package.window_canvas, [properties_x, properties_y+properties_h-30, properties_w, 30], COLOR_PROPERTY_MOVE2, true);
+                    } else {
+                        draw_rect(&mut os_package.window_canvas, [properties_x, properties_y+properties_h-30, properties_w, 30], COLOR_PROPERTY_MOVE1, true);
+                    }
+                } else {
+                    draw_rect(&mut os_package.window_canvas, [properties_x, properties_y, properties_w, properties_h], COLOR_PROPERTY_BKG2, true);
+                }
+
 
                 draw_string(&mut os_package.window_canvas, &label, properties_x+2, properties_y+properties_h-30, COLOR_TEXT, 26.0);
 
@@ -1886,7 +1904,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
 
                 //Delineation bar between header and info
-                draw_rect(&mut os_package.window_canvas, [properties_x+1, properties_y+properties_h-30, properties_w-2, 1], C4_DGREY, true);
+                draw_rect(&mut os_package.window_canvas, [properties_x+1, properties_y+properties_h-30, properties_w-2, 1], [0.3, 0.3, 0.3, 1.0], true);
 
 
                 {//move parameter panels
@@ -2306,8 +2324,11 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 if mouseinfo.lclicked()
                                 && it.properties_z == get_global_properties_z() - 1{
                                     it.d_voltage_over_dt = it.d_voltage_over_dt / ( 2f32 * PI * it.frequency );
+
                                     it.frequency += 0.25;
+
                                     it.d_voltage_over_dt = it.d_voltage_over_dt * it.frequency * 2f32 * PI;
+
                                 }
                             }
                             offset_x += draw_char(&mut os_package.window_canvas, '+', properties_x+2+offset_x, properties_y+properties_h-offset_y, C4_WHITE, panel_font);
@@ -2319,6 +2340,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 if mouseinfo.lclicked()
                                 && it.properties_z == get_global_properties_z() - 1{
                                     it.d_voltage_over_dt = it.d_voltage_over_dt / ( 2f32 * PI * it.frequency );
+
+                                    let _angle = it.d_voltage_over_dt.acos() / it.frequency;
+
                                     it.frequency -= 0.25;
                                     if it.frequency < 0f32 {
                                         it.frequency = 0.00001;
@@ -3976,12 +4000,11 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                         it.d_voltage_over_dt += d_voltage2_over_dt2 * TIME_STEP;
                         it.d_voltage_over_dt = it.d_voltage_over_dt.max(-1.0).min(1.0);
-                        let d_voltage_over_dt = it.d_voltage_over_dt;
 
 
                         it.temp_step_voltage +=  it.d_voltage_over_dt * TIME_STEP;
                         it.temp_step_voltage  =  it.temp_step_voltage.max(-1.0/PI).min(1.0/PI);
-                        //it.voltage =  it.temp_step_voltage * max_voltage;
+                        it.voltage =  it.temp_step_voltage * max_voltage;
                         it.voltage =  it.max_voltage * (2f32 * PI * it.frequency * it.time).sin();
 
                     } else if it.ac_source_type == ACSourceType::Step{
