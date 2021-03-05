@@ -297,7 +297,7 @@ pub fn make_window() {unsafe{
             }
             if mouseinfo.lbutton == ButtonStatus::Down
             && mouseinfo.old_lbutton == ButtonStatus::Up
-            && stopwatch_lbutton.lap_time().as_millis() <= 500 {
+            && stopwatch_lbutton.lap_time().as_millis() <= 450 {
                 mouseinfo.double_lbutton = true;
             }
 

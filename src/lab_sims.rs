@@ -1485,6 +1485,13 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             || mouseinfo.double_lbutton{
                                 it.properties_selected = true;
                                 it.properties_z = get_and_update_global_properties_z();
+                                if it.properties_offset_x.is_some() {
+
+                                    let mut properties_x = it.x+it.length+95; 
+                                    let mut properties_y = it.y-PROPERTIES_H/2;
+                                    it.properties_offset_x = Some(properties_x);
+                                    it.properties_offset_y = Some(properties_y);
+                                }
                             }
                         }
                         
