@@ -26,7 +26,8 @@ use crate::eq_potential::*;
 use parser::*;
 
 
-
+const WINDOW_WIDTH  : i32 = 1250;
+const WINDOW_HEIGHT : i32 = 750;
 
 const IMG_RESISTOR       : &[u8] = std::include_bytes!("../assets/resistor.bmp");
 const IMG_BATTERY        : &[u8] = std::include_bytes!("../assets/battery.bmp");
@@ -999,13 +1000,25 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         app_storage.init = true;
 
         //NOTE we are setting the window size for next frame
-        os_package.window_info.w = 1250;
-        os_package.window_info.h = 750;
+        
+        if WINDOW_WIDTH >= os_package.window_canvas.display_width {
+            os_package.window_info.w = os_package.window_canvas.display_width - 10;
+        } else {
+            os_package.window_info.w = WINDOW_WIDTH;
+        }
+
+        if WINDOW_HEIGHT >= os_package.window_canvas.display_height {
+            os_package.window_info.h = os_package.window_canvas.display_height - 10;
+        } else {
+            os_package.window_info.h = WINDOW_HEIGHT;
+        }
+
 
         //#["windows"]
         //os_package.window_info.h = 750-70;
 
         app_storage.menu_canvas = SubCanvas::new( 492, window_h);
+
         app_storage.circuit_element_canvas = SubCanvas::new(180,350);
 
         app_storage.save_textbox.text_buffer += "MyCircuit.cd";
@@ -1045,15 +1058,15 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         app_storage.ammeter_bmp   = TGBitmap::from_buffer(IMG_AMMETER);
 
         app_storage.switch_open_bmp   = TGBitmap::from_buffer(IMG_SWITCH_OPEN);
-        app_storage.switch_closed_bmp   = TGBitmap::from_buffer(IMG_SWITCH_CLOSED);
-        app_storage.ac_bmp   = TGBitmap::from_buffer(IMG_AC);
+        app_storage.switch_closed_bmp = TGBitmap::from_buffer(IMG_SWITCH_CLOSED);
+        app_storage.ac_bmp     = TGBitmap::from_buffer(IMG_AC);
         app_storage.wire_bmp   = TGBitmap::from_buffer(IMG_WIRE);
-        app_storage.custom_bmp   = TGBitmap::from_buffer(IMG_CUSTOM);
+        app_storage.custom_bmp = TGBitmap::from_buffer(IMG_CUSTOM);
 
-        app_storage.arrow_bmp     = TGBitmap::from_buffer(IMG_ARROW);
-        app_storage.screenshot_icon_bmp     = TGBitmap::from_buffer(IMG_SCREENSHOT);
-        app_storage.save_icon_bmp     = TGBitmap::from_buffer(IMG_SAVE);
-        app_storage.save_icon_bmp_alt     = TGBitmap::from_buffer(IMG_SAVE_ALT);
+        app_storage.arrow_bmp           = TGBitmap::from_buffer(IMG_ARROW);
+        app_storage.screenshot_icon_bmp = TGBitmap::from_buffer(IMG_SCREENSHOT);
+        app_storage.save_icon_bmp       = TGBitmap::from_buffer(IMG_SAVE);
+        app_storage.save_icon_bmp_alt   = TGBitmap::from_buffer(IMG_SAVE_ALT);
 
         //TODO
         let icon = TGBitmap::from_buffer(IMG_ICON);
@@ -1062,8 +1075,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         change_font(FONT_NOTOSANS);
     }
 
-    //let global_time_delta = app_storage.global_time.get_time();
-    {//TODO should move this to os level
+    //NOTE Frame rate cap of 60 frames per sec.
+    {
         match Duration::from_millis(16).checked_sub(app_storage.global_time.get_time()){
             Some(d)=>{
                 std::thread::sleep(d);

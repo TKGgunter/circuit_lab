@@ -1,3 +1,37 @@
+
+//! This module contains a base of software rendering tools.
+//! Text rendering, simple shape, and bitmap rendering is provided.
+//!
+//! This module draws directly to the provided canvas.
+//! All draw calls are done directly on the cpu.  If you wish to use the gpu for rendering
+//! you will need to set it up yourself then paint it to the canvas.
+//! The interface is pixel based, with the origin at bottom left corner of the canvas.
+//!
+//! 
+//!
+//! The example below shows how to draw a rectangle to WindowCanvas provided outside of this snips
+//! context. `C4_BLACK` is a const provided by the module for convenience. 
+//! This example will draw a black rectangle, who's bottom left corner will inhabit canvas coordinate of
+//! (10, 10). The rectangle will be 50 pixels by 50 pixels.
+//! # Examples
+//! ```
+//! pub fn example_program(os_package: &mut OsPackage, keyboardinfo: &KeyboardInfo, 
+//!                                                    textinfo:     &TextInfo, 
+//!                                                    mouseinfo:    &MouseInfo){
+//!     let canvas = &mut os_package.window_canvas;
+//!     let rect = [10, 10, 50, 50];
+//!     draw_rect(canvas, rect, C4_BLACK, true);
+//! }
+//! ```
+//! 
+//! Images can be drawn in a similar fashion.  `draw_bmp`, or `draw_stbi_image` are given for this
+//! purpose.  `draw_bmp` is used when working with TGBitmap structs.  TGBitmaps are this frame
+//! works bitmap structure.  It must be noted that not all bitmap type are supported in with this
+//! format. `draw_stbi_image` should be used when working with most files as most files are
+//! supported through the stbi_image library. 
+//!  
+//!
+
 #![allow(unused)]
 
 #[macro_use]
@@ -55,20 +89,38 @@ pub const C3_DGREEN :[f32;3] = [0.0, 0.39, 0.0];
 pub const C3_MGREEN :[f32;3] = [0.0, 0.6, 0.0];
 
 
+pub const DPMM_SCALE : f32 = 3.8;
+pub const DPMM_TOLERANCE : f32 = 0.2;
 
 
 use std::collections::HashMap;
-static mut GLOBAL_FONTINFO : stbtt_fontinfo = new_stbtt_fontinfo();
-static mut FONT_BUFFER : Option<Vec<u8>> = Some(Vec::new());
+static mut GLOBAL_FONTINFO    : stbtt_fontinfo  = new_stbtt_fontinfo();
+static mut FONT_BUFFER        : Option<Vec<u8>> = Some(Vec::new());
 static mut FONT_GLYPH_HASHMAP : Option<HashMap<usize, HashMap<(char, u32), Vec<u8>>>> = None;
-static mut CURRENT_KEY: usize = 0;
+static mut CURRENT_KEY        : usize = 0;
 
+
+///Returns an array of length 4 that is the composite of the input array and alpha.
+///
+/// # Example
+/// '''
+/// let v = [1f32, 0.5f32, 0.1f32];
+/// let a = 0.5f32;
+///
+/// let v_a = [1f32, 0.5f32, 0.1f32, 0.5f32];
+/// assert_eq!(c3_to_c4(v, a), v_a);
 #[inline]
 pub fn c3_to_c4(c3: [f32; 3], alpha: f32)->[f32; 4]{
     [c3[0], c3[1], c3[2], alpha]
 }
 
-pub fn change_font(buffer: &[u8]){unsafe{
+
+/// Updates the static font buffer using the buffer provided.
+/// Returns a result indicating if the function succeeded. 
+/// Note: This is not thread safe. Additionally if user is 
+/// constantly un(re)loading the same font files the user will
+/// incur performance penalties. 
+pub fn change_font(buffer: &[u8])->Result<(), &str>{unsafe{
 
     let font_glypth_hashmap = match FONT_GLYPH_HASHMAP.as_mut(){
         Some(fgh)=>{
@@ -87,11 +139,7 @@ pub fn change_font(buffer: &[u8]){unsafe{
         font_glypth_hashmap.insert( key, HashMap::with_capacity(100) ); 
     }
     //NOTE TKG. We are using the original buffer pointer to hash. If the user continuously reloads from
-    //disk this will will become a problem. If this doesn't workout may use
-    //STBTT_DEF const char *stbtt_GetFontNameString(const stbtt_fontinfo *font, int *length, int platformID, int encodingID, int languageID, int nameID);
-    //in the future.
-    //NOTE TKG. 256 is a guess as to how many unique characters the user might use. For mixed language
-    //programs with will most likely not be enough.
+    //disk this will will become a problem.
 
 
 
@@ -109,12 +157,15 @@ pub fn change_font(buffer: &[u8]){unsafe{
     font_buffer_ref.extend_from_slice(buffer);
 
     if stbtt_InitFont(&mut GLOBAL_FONTINFO as *mut stbtt_fontinfo, font_buffer_ref.as_ptr(), 0) == 0{
-        panic!("font was not able to load.");
+        println!("font was not able to load.");
+        return Err("Font was not able to be loaded.");
     }
+    return Ok(());
 }}
 
 
 
+/// Returns the pixel width of the character.
 pub fn get_advance(character: char, size: f32)->i32{unsafe{
     if GLOBAL_FONTINFO.data == null_mut() {
         println!("Global font has not been set.");
@@ -129,6 +180,10 @@ pub fn get_advance(character: char, size: f32)->i32{unsafe{
     return (adv as f32 * scale) as i32;
 }}
 
+
+
+
+/// Returns the pixel width of the string.
 pub fn get_advance_string( string: &str, size: f32 )->i32{
     let mut offset = 0;
     for it in string.chars(){
@@ -137,17 +192,35 @@ pub fn get_advance_string( string: &str, size: f32 )->i32{
     return offset;
 }
 
-pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y: i32,
-             color: [f32; 4], size: f32 )->i32{unsafe{
 
-    //Check that globalfontinfo has been set
+
+
+/// Draws character to the provided canvas. size is rounded to the nearest integer. 
+/// Returns character width in pixels.
+pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y: i32,
+             color: [f32; 4], mut size: f32 )->i32{unsafe{
+
+    //NOTE Check that globalfontinfo has been set
     if GLOBAL_FONTINFO.data == null_mut() {
-        //TODO we need to log this out
         println!("Global font has not been set.");
         return -1;
     }
 
-    //construct a char buffer
+    let canvas_dpmm = if canvas.dpmm == 0f32 { DPMM_SCALE } else { canvas.dpmm };
+
+    let mut dpmm_ratio = canvas_dpmm / DPMM_SCALE;
+    if (1f32 - dpmm_ratio).abs() < DPMM_TOLERANCE { 
+        dpmm_ratio = 1f32;
+    }
+
+    size = size.round();
+    let dpmm_size = (dpmm_ratio * size).round();
+
+    x = (dpmm_ratio * x as f32).round() as _;
+    y = (dpmm_ratio * y as f32).round() as _;
+
+
+    //Construct a char buffer
     let mut char_buffer;
     let cwidth;
     let cheight;
@@ -163,11 +236,12 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
         stbtt_GetFontVMetrics(&mut GLOBAL_FONTINFO as *mut stbtt_fontinfo,
                               &mut ascent as *mut i32,
                               &mut descent as *mut i32, null_mut());
-        scale = stbtt_ScaleForPixelHeight(&GLOBAL_FONTINFO as *const stbtt_fontinfo, size);
+        scale = stbtt_ScaleForPixelHeight(&GLOBAL_FONTINFO as *const stbtt_fontinfo, dpmm_size);
         let baseline = (ascent as f32 * scale ) as i32;
 
-        cwidth = (scale * (ascent - descent) as f32 ) as usize + 4;
-        cheight = (scale * (ascent - descent) as f32 ) as usize + 4;
+        cwidth = (scale * (ascent - descent) as f32 ) as usize + 4; //NOTE buffer term should be reduced.
+        cheight = (scale * (ascent - descent) as f32 ) as usize + 4;//NOTE buffer term should be reduced.
+
 
         let glyph_index = stbtt_FindGlyphIndex(&GLOBAL_FONTINFO as *const stbtt_fontinfo, character as i32);
         
@@ -178,9 +252,14 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
                         match font.get(&(character, size as u32)){
                             Some(gi)=>
                             {
+                            //NOTE
+                            //Sets the previously rendered monotone character bmp.
                                 gi
                             },
                             None=>{
+                            //NOTE
+                            //Generates a monotone character bmp and stores it in the hashmap.
+                            //The results of the render are returned.
                                 let mut _char_buffer = vec![0u8; cwidth * cheight];
                                 stbtt_GetGlyphBitmapBoxSubpixel(&GLOBAL_FONTINFO as *const stbtt_fontinfo, glyph_index, scale, scale, 0.0,0.0,
                                                                         &mut x0 as *mut i32,
@@ -207,7 +286,7 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
     }
 
     //NOTE
-    //If the character is invisible then don't render
+    //The character will not render if invisible.
     
     if character as u8 > 0x20{   //render char_buffer to main_buffer
         let buffer = canvas.buffer as *mut u32;
@@ -222,9 +301,15 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
         let orig_r = (color[0] * a);
         let orig_g = (color[1] * a);
         let orig_b = (color[2] * a);
+
+
+        //NOTE simd feature.
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-        if false {if is_x86_feature_detected!("sse2") {unsafe{
+        //if false { if is_x86_feature_detected!("sse2") {unsafe{
+        if true { if is_x86_feature_detected!("sse2") {unsafe{
 //panic!("TODO {}  {}", buffer as usize , buffer as usize & 15);
+
+//timeit!{{
 
             #[cfg(target_arch = "x86_64")]
             use std::arch::x86_64::*;
@@ -251,18 +336,49 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
             let mut simd_tmp_g = _mm_set1_ps(0f32);
             let mut simd_tmp_b = _mm_set1_ps(0f32);
 
+            let mut simd_dst = _mm_set1_epi32(0);
+
+
+            let simd_mask_rule_char_length = _mm_set1_epi32(char_buffer.len() as i32);
+            let simd_mask_rule_width       = _mm_set1_epi32(gwidth as i32);
+
             let mut text_alpha = [0f32;4];
+
             for i in 0..cheight as isize{
                 if i + y as isize  > gheight {continue;}
                 if i + y as isize  <= 0 {continue;}
 
                 for j in (0..cwidth as isize).step_by(4){
-                    //if j + 4 + x as isize  > gwidth {continue;}
-                    //if j + x as isize  <= 0 {continue;}
-                    //if (j + 4 + i*gwidth + offset) > gwidth * gheight {continue;}
+
+                    
+                    let mut mask = _mm_set1_epi32(0);
+                    let simd_buffer = buffer.offset( (j as isize + i*gwidth + offset) as isize ) as *mut _;
+                    simd_dst = _mm_loadu_si128(simd_buffer);
+
+
+                    //NOTE
+                    //simd mask implementation is WAY slower than looped equivilent and I'm not
+                    //sure why. There are three compare operations and two ands. Compared to the 12
+                    //compares and 4 sets done in a loop one would think simd would be faster. More
+                    //exploration is required. 
+                    
+                    //let j_plus_x = j as i32 + x;
+                    //let simd_mask_rule_gindex = _mm_set_epi32(j_plus_x + 3,
+                    //                                          j_plus_x + 2,
+                    //                                          j_plus_x + 1,
+                    //                                          j_plus_x + 0);
+
+                    //let char_index_i32 = j as i32 + cwidth as i32 * (cheight as i32 - 1 - i as i32);
+                    //let simd_mask_rule_cindex = _mm_set_epi32(char_index_i32 + 3, 
+                    //                                          char_index_i32 + 2,
+                    //                                          char_index_i32 + 1,
+                    //                                          char_index_i32 + 0);
+
+                    //mask = _mm_cmplt_epi32(simd_mask_rule_gindex, simd_mask_rule_width);
+                    //mask = _mm_and_si128( mask, _mm_cmpgt_epi32(simd_mask_rule_gindex, _mm_setzero_si128()) );
+                    //mask = _mm_and_si128( mask, _mm_cmplt_epi32(simd_mask_rule_cindex, simd_mask_rule_char_length) );
 
                     for _j in 0..4{
-                        if (j + _j + i*gwidth + offset) > gwidth * gheight {continue;}
 
                         if j + _j + x as isize  > gwidth {continue;}
                         if j + _j + x as isize  <= 0 {continue;}
@@ -278,8 +394,9 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
                         dst_g[_j] = *(dst_rgb as *const u8).offset(1) as f32;
                         dst_b[_j] = *(dst_rgb as *const u8).offset(0) as f32;
 
+
                         let _j = _j as usize;
-                        if (j as usize +_j) as usize + cwidth * (cheight - 1 - i as usize) >= char_buffer.len() { continue; }
+                        if (j as usize + _j) + cwidth * (cheight - 1 - i as usize) >= char_buffer.len() { continue; }
 
                         text_alpha[_j] = char_buffer[(j as usize +_j) as usize + cwidth * (cheight - 1 - i as usize)] as f32;
                         let r : &mut [f32; 4] = std::mem::transmute(&mut simd_r);
@@ -288,7 +405,12 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
                         r[_j] = text_alpha[_j];
                         g[_j] = text_alpha[_j];
                         b[_j] = text_alpha[_j];
+
+                        let _mask: &mut [u32; 4] = std::mem::transmute(&mut mask);
+                        _mask[_j] = 0xFF_FF_FF_FF;
+
                     }
+                    
 
                     simd_tmp_r = _mm_mul_ps(simd_r, simd_invert_255);
                     simd_tmp_g = _mm_mul_ps(simd_g, simd_invert_255);
@@ -314,7 +436,7 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
                     simd_dst_g = _mm_add_ps(simd_g, simd_dst_g);
                     simd_dst_b = _mm_add_ps(simd_b, simd_dst_b);
 
-                    //TODO double check this
+                    //NOTE converting from float to int for color channels
                     let mut simd_dst_r_u32 = _mm_cvtps_epi32(simd_dst_r);
                     simd_dst_r_u32 = _mm_slli_epi32(simd_dst_r_u32, 16);
 
@@ -324,33 +446,20 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
                     let mut simd_dst_b_u32 = _mm_cvtps_epi32(simd_dst_b);
 
 
-                    let simd_rgba = _mm_or_si128(_mm_or_si128(simd_dst_r_u32, simd_dst_g_u32), simd_dst_b_u32);
-                    
-                    ////TODO for some reason this crashes idk why :(
-                    //let _buffer = buffer.offset( (j as isize + i*gwidth + offset) as isize ) as *mut u64;
-                    //let simd_buffer = buffer.offset( (j as isize + i*gwidth + offset) as isize ) as *mut _;
+                    //NOTE combining color channels
+                    let mut simd_rgba = _mm_or_si128(_mm_or_si128(simd_dst_r_u32, simd_dst_g_u32), simd_dst_b_u32);
 
-                    //let _rgba = std::mem::transmute::<&__m128i, &[u64; 2]>(&simd_rgba);
-                    //*_buffer = _rgba[0];
-                    //*_buffer.offset(1) = _rgba[1];
-                    ////_mm_store_si128(simd_buffer, simd_rgba);
-                    ////_mm_store_si128(std::mem::transmute(buffer.offset( (j as isize + i*gwidth + offset) as isize )), simd_rgba);
 
-                    
-                    for _j in 0..4{
-                        if j + _j + x as isize  > gwidth {continue;}
-                        if j + _j + x as isize  <= 0 {continue;}
+                    //NOTE applying pixel mask.
+                    simd_rgba = _mm_or_si128( _mm_and_si128(mask, simd_rgba), _mm_andnot_si128(mask, simd_dst));
 
-                        let _j = _j as usize;
+                    _mm_storeu_si128(simd_buffer, simd_rgba);
 
-                        let rgba : &[u32; 4] = std::mem::transmute(&simd_rgba);
-
-                        *buffer.offset( (j+_j as isize + i*gwidth + offset) as isize) = 0x00000000 + rgba[_j];
-                    }
                 }
             }
+//}}//DEBUG REMOVE ME 
 
-            //TODO reduntant with return at the end of function.
+            //TODO redundant with return at the end of function.
             //we should call the same code to avoid issues.
             let mut adv : i32 = 0;
             let mut lft_br : i32 = 0; // NOTE: Maybe remove this
@@ -358,16 +467,19 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
             return (adv as f32 * scale) as i32;
         }}}
 
+
+        let y_is = y as isize;
+        let x_is = x as isize;
         for i in 0..cheight as isize{
-            if i + y as isize  > gheight {continue;}
-            if i + y as isize  <= 0 {continue;}
+            if i + y_is > gheight {continue;}
+            if i + y_is <= 0 {continue;}
 
             for j in 0..cwidth as isize{
 
                 if (j + i*gwidth + offset) > gwidth * gheight {continue;}
 
-                if j + x as isize  > gwidth {continue;}
-                if j + x as isize  <= 0 {continue;}
+                if j + x_is  > gwidth {continue;}
+                if j + x_is  <= 0 {continue;}
 
                 let mut text_alpha = char_buffer[j as usize + cwidth * (cheight - 1 - i as usize)] as f32;
                 let r = (orig_r * text_alpha) as u32;
@@ -395,6 +507,10 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
 }}
 
 
+/// Draws string to the canvas provided. Returns string width in pixels.
+/// Position values x and y are indicate where the string will begin.
+/// NOTE there is about a 4 pixel buffer between x and the first pixel the function is able to draw
+/// to.
 pub fn draw_string( canvas: &mut WindowCanvas, string: &str, x: i32, y: i32,
              color: [f32; 4], size: f32 )->i32{
     let mut offset = 0;
@@ -406,6 +522,8 @@ pub fn draw_string( canvas: &mut WindowCanvas, string: &str, x: i32, y: i32,
 
 
 
+/// Draws rectangle to the canvas provided. The dimensions of the rectangle should be given as follows
+/// [x, y, width, height]. x, and y are associated with the bottom left corner of the rectangle.
 pub fn draw_rect( canvas: &mut WindowCanvas, rect: [i32; 4], color: [f32; 4], filled: bool ){unsafe{
     //TODO
     //- Set alpha on dst canvas use both dst and src to determine alpha
@@ -415,14 +533,24 @@ pub fn draw_rect( canvas: &mut WindowCanvas, rect: [i32; 4], color: [f32; 4], fi
     let c_w = canvas.w as isize;
     let c_h = canvas.h as isize;
 
-    let x = rect[0] as isize + 1; //NOTE 1 is here to remove wrapping TODO
-    let y = rect[1] as isize;
+
+    let canvas_dpmm = if canvas.dpmm == 0f32 { DPMM_SCALE } else { canvas.dpmm };
+
+    let mut dpmm_ratio = canvas_dpmm / DPMM_SCALE;
+    if (1f32 - dpmm_ratio).abs() < DPMM_TOLERANCE { 
+        dpmm_ratio = 1f32;
+    }
+
+
+    let x = ( dpmm_ratio * rect[0] as f32 ).round() as isize + 1; //NOTE 1 is here to remove wrapping TODO
+    let y = ( dpmm_ratio * rect[1] as f32 ).round() as isize;
+
     let _x = if x < 0 { 0 } else { x };
     let _y = if y < 0 { 0 } else { y };
 
 
-    let w = rect[2] as isize;
-    let h = rect[3] as isize;
+    let w = (dpmm_ratio * rect[2] as f32) as isize;
+    let h = (dpmm_ratio * rect[3] as f32) as isize;
     let _w = if x + w > c_w { c_w - x } else if x < 0 { x + w } else {w};
     let _h = if y + h > c_h { c_h - y } else if y < 0 { y + h } else {h};
 
@@ -531,6 +659,8 @@ pub struct TGBitmap{
    pub height : i32,
 }
 impl TGBitmap{
+
+    ///Generates a new bitmap of the given width and height.
     pub fn new(w: i32, h: i32)->TGBitmap{
         TGBitmap{
             file_header: TGBitmapFileHeader{
@@ -559,6 +689,10 @@ impl TGBitmap{
         }
     }
 
+    ///Generates a new bitmap from a bitmap stored directly in memory.
+    ///This functions copies data. 
+    ///NOTE: this is not the most efficient system. We are double the amount of memory we use
+    ///and that may not be necessary.
     pub fn from_buffer(img_buffer: &[u8])->TGBitmap{unsafe{//TODO this is not the way we should switch to STB
         let mut rt = TGBitmap::new(0,0);
 
@@ -591,42 +725,19 @@ impl TGBitmap{
         return rt;
     }}
 
-//TODO remove redundancy with from_buffer
+    ///Generates a bmp from a file found in the given path.
+    ///The function panics if file is not found.
     pub fn load_bmp(filename: &str)->TGBitmap{unsafe{
         let mut rt = TGBitmap::new(0,0);
         let mut f = File::open(filename).expect("BMP file could not be opened.");
         let mut img_buffer = Vec::new();
         f.read_to_end(&mut img_buffer).expect("Buffer could not be read.");
 
-        let it =  img_buffer.as_ptr() as *const u8;
-        rt.file_header.type_ =  *(it.offset(0) as *const u16);// == 0x42;
-        rt.file_header.size_ = *(it.offset(2) as *const u32);
-        rt.file_header.reserved_1 = *(it.offset(6) as *const u16);
-        rt.file_header.reserved_2 = *(it.offset(8) as *const u16);
-        rt.file_header.off_bits =  *(it.offset(10) as *const u32);
-
-
-        rt.info_header.header_size = *(it.offset(14) as *const u32);
-        rt.info_header.width       = *(it.offset(18) as *const i32);
-        rt.info_header.height      =  *(it.offset(22) as *const i32);
-        rt.info_header.planes      =  *(it.offset(26) as *const u16);
-        rt.info_header.bit_per_pixel = *(it.offset(28) as *const u16);
-        rt.info_header.compression = *(it.offset(30) as *const u32);
-        rt.info_header.image_size  = *(it.offset(34) as *const u32);
-        rt.info_header.x_px_per_meter = *(it.offset(38) as *const i32);
-        rt.info_header.y_px_per_meter = *(it.offset(42) as *const i32);
-        rt.info_header.colors_used  = *(it.offset(46) as *const u32);
-        rt.info_header.colors_important = *(it.offset(50) as *const u32);
-
-
-        let buffer = img_buffer[rt.file_header.off_bits as usize ..].to_vec();
-        rt.rgba = buffer;
-        rt.width =  rt.info_header.width; 
-        rt.height =  rt.info_header.height; 
-
+        rt = TGBitmap::from_buffer(&img_buffer);
         return rt;
     }}
 
+    ///Write bmp to disk at given path.
     pub fn save_bmp(&self, filename: &str){unsafe{//TODO
 
         use std::mem::transmute;
@@ -664,6 +775,7 @@ impl TGBitmap{
         
     }}
 
+    ///Generates a TGBitmap from StbiImage format.
     pub fn from_stbi( image: StbiImage )->TGBitmap{
         let mut buffer = vec![0u8; (4*image.width*image.height) as usize];
         for i in (0..image.height as usize).rev(){
@@ -705,75 +817,19 @@ impl TGBitmap{
 
 }
 
-//TODO
-//time me
+///Returns a new bmp that is the resized version of the old bmp.
+///The function resizes to the width and height specified.
+///This function currently uses the sampling reduction algorithm.
 pub fn resize_bmp(source_bmp: &TGBitmap, w: i32, h: i32)->TGBitmap{unsafe{
-    let mut bmp = TGBitmap::new(w, h);
-    if source_bmp.info_header.width < w{
-        println!("Trash", );
-    }
-    if source_bmp.info_header.height < h{
-        println!("Trash");
-    }
-    let scale_w = w as f32 / source_bmp.info_header.width as f32;
-    let scale_h = h as f32 / source_bmp.info_header.height as f32;
-
-
-
-    let source_buffer = source_bmp.rgba.as_ptr();
-    let dst_buffer = bmp.rgba.as_mut_ptr() as *mut u32;
-
-    let bytes_per_pix = (source_bmp.info_header.bit_per_pixel / 8) as isize;
-
-    for j in 0..source_bmp.info_header.height{
-        for i in 0..source_bmp.info_header.width{
-            let mut _i;
-            let mut _j;
-            _i = (i as f32 * scale_w) as i32;
-            _j = (j as f32 * scale_h) as i32;
-
-
-            if _i >= w { _i = w-1; }
-            if _j >= h { _j = h-1; }
-
-
-            let src_rgb = source_buffer.offset(  bytes_per_pix * (i + source_bmp.info_header.width * j) as isize);
-            let src_r =  *(src_rgb as *const u8).offset(2);
-            let src_g =  *(src_rgb as *const u8).offset(1);
-            let src_b =  *(src_rgb as *const u8).offset(0);
-
-            let mut _scale_w = scale_w;
-            let mut _scale_h = scale_h;
-            fn get_correct_scale_for_pixel(original_index: i32, scale: f32)->f32{
-                let mut post_index  = scale * (original_index as f32);
-                let mut _it = post_index;
-                if ((post_index - post_index.trunc()) / scale).trunc() >= 1.0{
-                    _it -= 1.0 * ((post_index - post_index.trunc()) / scale).trunc() * scale;
-                }
-                return  1.0/ (  (((1.0+_it).trunc() - _it ) / scale).trunc() + 1.0) ;
-            }
-            _scale_h = get_correct_scale_for_pixel(j, scale_h);
-            _scale_w = get_correct_scale_for_pixel(i, scale_w);
-            ///////////////////////////////
-
-            let r = (src_r as f32 * _scale_w * _scale_h) as u32;
-            let g = (src_g as f32 * _scale_w * _scale_h) as u32;
-            let b = (src_b as f32 * _scale_w * _scale_h) as u32;
-
-            *dst_buffer.offset( (_i + w * _j) as isize ) += 0x00000000 + (r << 16) + (g << 8) + b;
-        }
-    }
-    return bmp;
+    return sampling_reduction_bmp(source_bmp, w, h);
 }}
 
+///Returns a new bmp that is the resized version of the old bmp.
+///The algorithm replaces each pixel with new pixel(s) of the same color. 
+///This technique may result is jaggedness.
 pub fn sampling_reduction_bmp(source_bmp: &TGBitmap, w: i32, h: i32)->TGBitmap{unsafe{
     let mut bmp = TGBitmap::new(w, h);
-    if source_bmp.info_header.width < w{
-        println!("Trash", );
-    }
-    if source_bmp.info_header.height < h{
-        println!("Trash");
-    }
+
     let scale_w = source_bmp.info_header.width as f32 / w as f32;
     let scale_h = source_bmp.info_header.height as f32 / h as f32;
 
@@ -795,8 +851,10 @@ pub fn sampling_reduction_bmp(source_bmp: &TGBitmap, w: i32, h: i32)->TGBitmap{u
 }}
 
 
-pub fn draw_stbi_image( canvas: &mut WindowCanvas, bmp: &StbiImage, x: i32, y: i32, alpha: f32,
-            _w: Option<i32>, _h: Option<i32>){unsafe{
+///Draws stbi_image to the canvas provided. x, and y dictate where the image is draws to the canvas.
+///This point is associated with the bottom left corner of the image.
+pub fn draw_stbi_image( canvas: &mut WindowCanvas, bmp: &StbiImage, mut x: i32, mut y: i32, alpha: f32,
+            mut _w: Option<i32>, mut _h: Option<i32>){unsafe{
 
     if alpha < 0.0 {
         println!("A negative alpha as passed to drawBMP");
@@ -805,15 +863,35 @@ pub fn draw_stbi_image( canvas: &mut WindowCanvas, bmp: &StbiImage, x: i32, y: i
     let w;
     let h;
 
+
+    let canvas_dpmm = if canvas.dpmm == 0f32 { DPMM_SCALE } else { canvas.dpmm };
+
+    let mut dpmm_ratio = canvas_dpmm / DPMM_SCALE;
+    if (1f32 - dpmm_ratio).abs() < DPMM_TOLERANCE { 
+        dpmm_ratio = 1f32;
+    }
+    x = (dpmm_ratio * x as f32).round() as _;
+    y = (dpmm_ratio * y as f32).round() as _;
+
+    if dpmm_ratio != 1f32 {
+        if _w.is_none() {
+            _w  = Some( bmp.width );
+        } 
+        if _h.is_none() {
+            _h  = Some( bmp.height );
+        }
+    }
+
     match _w {
-        Some(int) => w = int,
+        Some(int) => w = (dpmm_ratio * int as f32).round() as _ ,
         None => w = bmp.width,
     }
     match _h {
-        Some(int) => h = int,
+        Some(int) => h = (dpmm_ratio * int as f32).round() as _,
         None => h = bmp.height,
     }
 
+    //TODO
     //let bmp = if w == source_bmp.width &&
     //             h == source_bmp.height{
     //                 (*source_bmp).clone()
@@ -873,8 +951,10 @@ pub fn draw_stbi_image( canvas: &mut WindowCanvas, bmp: &StbiImage, x: i32, y: i
 }}
 
 
-pub fn draw_bmp( canvas: &mut WindowCanvas, source_bmp: &TGBitmap, x: i32, y: i32, alpha: f32,
-            _w: Option<i32>, _h: Option<i32>){unsafe{
+///Draws TGBitmap to the canvas provided. x, and y dictate where the image is draws to the canvas.
+///This point is associated with the bottom left corner of the image.
+pub fn draw_bmp( canvas: &mut WindowCanvas, source_bmp: &TGBitmap, mut x: i32, mut y: i32, alpha: f32,
+            mut _w: Option<i32>, mut _h: Option<i32>){unsafe{
 
     if alpha < 0.0 {
         println!("A negative alpha as passed to drawBMP");
@@ -883,12 +963,31 @@ pub fn draw_bmp( canvas: &mut WindowCanvas, source_bmp: &TGBitmap, x: i32, y: i3
     let w;
     let h;
 
+
+    let canvas_dpmm = if canvas.dpmm == 0f32 { DPMM_SCALE } else { canvas.dpmm };
+
+    let mut dpmm_ratio = canvas_dpmm / DPMM_SCALE;
+    if (1f32 - dpmm_ratio).abs() < DPMM_TOLERANCE { 
+        dpmm_ratio = 1f32;
+    }
+    x = (dpmm_ratio * x as f32).round() as _;
+    y = (dpmm_ratio * y as f32).round() as _;
+
+    if dpmm_ratio != 1f32 {
+        if _w.is_none() {
+            _w  = Some( source_bmp.width );
+        } 
+        if _h.is_none() {
+            _h  = Some( source_bmp.height );
+        }
+    }
+
     match _w {
-        Some(int) => w = int,
+        Some(int) => w = (dpmm_ratio * int as f32).round() as _,
         None => w = source_bmp.info_header.width,
     }
     match _h {
-        Some(int) => h = int,
+        Some(int) => h = (dpmm_ratio * int as f32).round() as _,
         None => h = source_bmp.info_header.height,
     }
 
@@ -919,7 +1018,7 @@ pub fn draw_bmp( canvas: &mut WindowCanvas, source_bmp: &TGBitmap, x: i32, y: i3
         } else {
             for i in (0..bmp.info_header.height).rev(){
                 //TODO
-                //when alpha is one copy the bmp bits instead of iterating through the array
+                //simd
                 for j in 0..bmp.info_header.width{
 
                     if (j + i*gwidth + offset) < 0 {continue;}
@@ -954,13 +1053,26 @@ pub fn draw_bmp( canvas: &mut WindowCanvas, source_bmp: &TGBitmap, x: i32, y: i3
 
 
 
+///Draws a circle to the canvas provided. x, and y dictate where the image is draws to the canvas.
+///This point(x,y) is the center of the circle.
+pub fn draw_circle(canvas: &mut WindowCanvas, mut _x: i32, mut _y: i32, r: f32, color: [f32; 4]){unsafe{
 //TODO time test is needed. It is very likely this function is slow.
-//move to rendertools
-pub fn draw_circle(canvas: &mut WindowCanvas, _x: i32, _y: i32, r: f32, color: [f32; 4]){unsafe{
+
     let buffer = canvas.buffer as *mut u32;
 
     let c_w = canvas.w as isize;
     let c_h = canvas.h as isize;
+
+    let canvas_dpmm = if canvas.dpmm == 0f32 { DPMM_SCALE } else { canvas.dpmm };
+
+    let mut dpmm_ratio = canvas_dpmm / DPMM_SCALE;
+    if (1f32 - dpmm_ratio).abs() < DPMM_TOLERANCE { 
+        dpmm_ratio = 1f32;
+    }
+
+
+    _x = (dpmm_ratio * _x as f32).round() as _;
+    _y = (dpmm_ratio * _y as f32).round() as _;
 
     let x = (_x - r as i32) as isize;
     let y = (_y - r as i32)as isize;
@@ -968,7 +1080,7 @@ pub fn draw_circle(canvas: &mut WindowCanvas, _x: i32, _y: i32, r: f32, color: [
     let h = (2.0*r) as isize;
 
 
-    let a = color[3];
+    let a = color[3].max(0f32).min(1f32);
 
     let mut index_i = 0;
     let mut index_j = 0;
@@ -1013,21 +1125,34 @@ pub fn draw_circle(canvas: &mut WindowCanvas, _x: i32, _y: i32, r: f32, color: [
 
 
 
-//TODO if alpha is 1
-// program crashes and memcopy bleeds.
-pub fn draw_subcanvas(canvas: &mut WindowCanvas, subcanvas: &SubCanvas, x: i32, y: i32, alpha: f32 ){unsafe{
+///Draws a subcanvas to the canvas provided. x, and y dictate where the image is draws to the canvas.
+///This point(x,y) is the center of the circle.
+pub fn draw_subcanvas(canvas: &mut WindowCanvas, subcanvas: &SubCanvas, mut x: i32, mut y: i32, alpha: f32 ){unsafe{
 
+
+    //TODO we need to scale with dpi
     let buffer = canvas.buffer as *mut u32;
     let subbuffer = subcanvas.canvas.buffer as *mut u32;
 
     let c_w = canvas.w as isize;
     let c_h = canvas.h as isize;
 
+    let canvas_dpmm = if canvas.dpmm == 0f32 { DPMM_SCALE } else { canvas.dpmm };
+
+    let mut dpmm_ratio = canvas_dpmm / DPMM_SCALE;
+    if (1f32 - dpmm_ratio).abs() < DPMM_TOLERANCE { 
+        dpmm_ratio = 1f32;
+    }
+
+    x = (dpmm_ratio * x as f32).round() as _;
+    y = (dpmm_ratio * y as f32).round() as _;
+
+
     let x = x as isize;
     let y = y as isize;
     let w = subcanvas.canvas.w as isize;
     let h = subcanvas.canvas.h as isize - 1;//-1 is here to remove junk. We should look more closely at this TODO
-    let a = alpha;
+    let a = alpha.max(0f32);
 
 
     if alpha < 0.99f32 {
@@ -1074,7 +1199,6 @@ pub fn draw_subcanvas(canvas: &mut WindowCanvas, subcanvas: &SubCanvas, x: i32, 
             if _w < 0 { break; }
             if j > c_h { break; }
             if j_ > c_h { break; }
-            //println!("{} {} {}", j, j_, c_h);
 
             std::ptr::copy::<u32>(src_rgb as *const u32, dst_rgb as *mut u32, _w as usize);
         }
@@ -1107,6 +1231,14 @@ impl SubCanvas{
             buffer: null_mut(),
             w: w,
             h: h,
+
+            display_width    : 0,
+            display_width_mm : 0,
+
+            display_height   : 0,
+            display_height_mm: 0,
+
+            dpmm: DPMM_SCALE,
         };
 
         let buffer = vec![0u8; (w*h*4) as _];
@@ -1145,15 +1277,12 @@ use crate::rendertools::{SubCanvas, draw_subcanvas};
 
     static mut TRANSFORMATION_PIPELINE : Option<Vec<PixelShader>> = None;
 
-    //TODO combine pixel shader and distance shader, I don't like operating like this 
-    //TODO enum for render data?
-    type PixelShader = fn(f32, [f32; 2], &[f32])->[f32;4];
+    //TODO combine pixel and distance shaders
+    //TODO enum for shader data?
+    type PixelShader = fn([f32; 2], &[Vec<f32>])->[f32;4];
     static mut PIXEL_SHADER_FUNCTION_PIPELINE : Option<Vec<PixelShader>> = None;
-    static mut PIXEL_SHADER_DATA_PIPELINE : Option<Vec<Vec<f32>>> = None;
+    static mut PIXEL_SHADER_DATA_PIPELINE : Option<Vec<Vec<Vec<f32>>>> = None;
 
-    type DistanceShader = fn([f32; 2], &[f32])->f32;
-    static mut DISTANCE_SHADER_FUNCTION_PIPELINE : Option<Vec<DistanceShader>> = None;
-    static mut DISTANCE_SHADER_DATA_PIPELINE : Option<Vec<Vec<f32>>> = None;
 
 /*TODO
 pub type TransformationMaxtrix = [f32; 9];
@@ -1173,6 +1302,7 @@ pub type TransformationMaxtrix = [f32; 9];
         }
         println!("Number of threads: {}", THREAD_POOL.as_ref().unwrap().len());
         println!("Thread status: {:?}", THREAD_STATUS);
+
         let bounding_rects = THREAD_BOUNDING_RECT.as_ref().unwrap();
         for i in 0..bounding_rects.len() {
             println!("Thread {}: rect {:?}", i, bounding_rects[i]);
@@ -1182,15 +1312,15 @@ pub type TransformationMaxtrix = [f32; 9];
             println!("Pixel shader pipeline has not been set.");
             return;
         }
-        let pixel_shaders = PIXEL_SHADER_FUNCTION_PIPELINE.as_ref().unwrap();
-        println!("Number of Pixel Shaders: {}", pixel_shaders.len());
 
-        if DISTANCE_SHADER_FUNCTION_PIPELINE.is_none(){
-            println!("Distance shader pipeline has not been set.");
-            return;
-        }
-        let distance_shaders = DISTANCE_SHADER_FUNCTION_PIPELINE.as_ref().unwrap();
-        println!("Number of Distance Shaders: {}", distance_shaders.len());
+
+        let pixel_shaders = PIXEL_SHADER_FUNCTION_PIPELINE.as_ref().unwrap();
+        let pixel_function_inputs = PIXEL_SHADER_DATA_PIPELINE.as_ref().unwrap();
+
+
+        println!("Number of Pixel Shaders: {}", pixel_shaders.len());
+        println!("Number of Pixel Inputs: {}",  pixel_function_inputs.len());
+
     }}
 
 
@@ -1214,14 +1344,10 @@ pub type TransformationMaxtrix = [f32; 9];
                     let rect = unsafe{ THREAD_BOUNDING_RECT.as_ref().unwrap()[thread_id] };
                     let canvas = unsafe{ &mut THREAD_WINDOW.as_mut().unwrap().canvas }; 
 
-                    let distance_functions = unsafe{ DISTANCE_SHADER_FUNCTION_PIPELINE.as_ref().unwrap() };
-                    let distance_data = unsafe{ DISTANCE_SHADER_DATA_PIPELINE.as_ref().unwrap() };
                     let pixel_functions = unsafe{ PIXEL_SHADER_FUNCTION_PIPELINE.as_ref().unwrap() };
                     let pixel_data = unsafe{ PIXEL_SHADER_DATA_PIPELINE.as_ref().unwrap() };
 
                     shaders(canvas, rect, //transformation_matrix: &[TransformationMaxtrix], 
-                                                           distance_functions,
-                                                           distance_data,
                                                            pixel_functions,
                                                            pixel_data);
 
@@ -1259,7 +1385,7 @@ pub type TransformationMaxtrix = [f32; 9];
         for i in 0..n_threads{
             let mut h = _h;
             if i == n_threads - 1 {
-                h = window_height - _h*(i-1) as i32;
+                h = window_height - _h*i as i32;
             }
 
 
@@ -1275,8 +1401,6 @@ pub type TransformationMaxtrix = [f32; 9];
         PIXEL_SHADER_DATA_PIPELINE     = Some(vec![]); 
 
 
-        DISTANCE_SHADER_FUNCTION_PIPELINE = Some(vec![]);
-        DISTANCE_SHADER_DATA_PIPELINE     = Some(vec![]);
 
 
         return Ok(());
@@ -1318,8 +1442,6 @@ pub type TransformationMaxtrix = [f32; 9];
         PIXEL_SHADER_FUNCTION_PIPELINE.as_mut().unwrap().clear();
         PIXEL_SHADER_DATA_PIPELINE.as_mut().unwrap().clear();
 
-        DISTANCE_SHADER_FUNCTION_PIPELINE.as_mut().unwrap().clear();
-        DISTANCE_SHADER_DATA_PIPELINE.as_mut().unwrap().clear();
 
         return Ok(());
     }}
@@ -1340,16 +1462,20 @@ pub type TransformationMaxtrix = [f32; 9];
 
 
 
-    pub fn mt_shader(distance_function: DistanceShader, d_data: &[f32], pixel_function: PixelShader, p_data: &[f32])->Result<(), MTError>{unsafe{
+    pub fn mt_shader(pixel_function: PixelShader, p_data: &[&[f32]])->Result<(), MTError>{unsafe{
         if THREAD_STATUS.is_none(){
             return Err(MTError::Err);
         }
         
         PIXEL_SHADER_FUNCTION_PIPELINE.as_mut().unwrap().push(pixel_function);
-        PIXEL_SHADER_DATA_PIPELINE.as_mut().unwrap().push(p_data.to_vec());
 
-        DISTANCE_SHADER_FUNCTION_PIPELINE.as_mut().unwrap().push(distance_function);
-        DISTANCE_SHADER_DATA_PIPELINE.as_mut().unwrap().push(d_data.to_vec());
+        let _pipe = PIXEL_SHADER_DATA_PIPELINE.as_mut().unwrap();
+        _pipe.push(vec![]);
+        let pipe_index = _pipe.len() - 1;
+
+        for i in 0..p_data.len(){
+            _pipe[pipe_index].push(p_data[i].to_vec());
+        }
         
         return Ok(());
     }}
@@ -1399,14 +1525,19 @@ pub type TransformationMaxtrix = [f32; 9];
             let d_1_m = d[1].max(0f32);
             return (d_0_m.powi(2) + d_1_m.powi(2)).sqrt();
         }
-        fn fill_color(d:f32,  p: [f32; 2], inputs: &[f32])->[f32; 4]{
-            if inputs.len() < 4 {
+
+        fn fill_color(p: [f32; 2], inputs: &[Vec<f32>])->[f32; 4]{
+            if inputs.len() < 2 {
                 panic!("fill_color did not get proper number of inputs");
             }
-            let r = inputs[0];
-            let g = inputs[1];
-            let b = inputs[2];
-            let a = inputs[3];
+
+
+            let d = d_rect(p, &inputs[0]);
+
+            let r = inputs[1][0];
+            let g = inputs[1][1];
+            let b = inputs[1][2];
+            let a = inputs[1][3];
 
             if d.is_finite(){
                 return [r,g,b,a*((-d*10f32).exp()).max(0.0).min(1.0)];
@@ -1416,7 +1547,7 @@ pub type TransformationMaxtrix = [f32; 9];
         }
 
         
-        mt_shader(d_rect, &f_rect, fill_color, &color);
+        mt_shader(fill_color, &[&color]);
 
         return Ok(());
     }}
@@ -1424,13 +1555,9 @@ pub type TransformationMaxtrix = [f32; 9];
 
 
     fn shaders(canvas : &mut WindowCanvas, rect: [i32; 4], //transformation_matrix: &[TransformationMaxtrix], 
-                                                           distance_function : &[DistanceShader],
-                                                           distance_function_inputs: &[Vec<f32>], 
                                                           pixel_func : &[PixelShader],
-                                                          pixel_function_inputs: &[Vec<f32>] ){unsafe{
-        if distance_function.len() != distance_function_inputs.len()
-        || distance_function.len() != pixel_func.len()
-        || distance_function.len() != pixel_function_inputs.len(){
+                                                          pixel_function_inputs: &Vec<Vec<Vec<f32>>> ){unsafe{
+        if pixel_func.len() != pixel_function_inputs.len(){
             panic!("shaders lengths are not the same.");
         }
 
@@ -1475,11 +1602,10 @@ pub type TransformationMaxtrix = [f32; 9];
 
                 let [mut r, mut g, mut b] = [0u32; 3];
 
-                for ii in 0..distance_function.len(){
+                for ii in 0..pixel_func.len(){
                     let _p = p;//transformation_matrix[ii].apply_tm(p);
-                    let d = distance_function[ii](_p, &distance_function_inputs[ii]);
 
-                    let [_r, _g, _b, a] = pixel_func[ii](d, p, &pixel_function_inputs[ii]);
+                    let [_r, _g, _b, a] = pixel_func[ii](p, &pixel_function_inputs[ii]);
                     if a < 0.01 { continue; }
 
 
@@ -1495,6 +1621,7 @@ pub type TransformationMaxtrix = [f32; 9];
                 }
             }
         }
+
     }}
 
 

@@ -110,6 +110,10 @@ pub fn make_window() {unsafe{
     let black  = XBlackPixel(dis, screen);
     let white  = XWhitePixel(dis, screen);
 
+    //NOTE what am I going to do with this???
+    println!("w: {}, w_mm: {}, {}", XDisplayWidth(dis, 0), XDisplayWidthMM(dis, 0), XDisplayWidthMM(dis, 0) as f32 / XDisplayWidth(dis, 0) as f32);
+    println!("h: {}, h_mm: {}, {}", XDisplayHeight(dis, 0), XDisplayHeightMM(dis, 0), XDisplayHeightMM(dis, 0) as f32 / XDisplayHeight(dis, 0) as f32);
+
     let win = XCreateSimpleWindow(dis, XDefaultRootWindow(dis), 0, 0,
                                   window_width, window_height, 5, black,
                                   black);
@@ -155,6 +159,26 @@ pub fn make_window() {unsafe{
 
         GLOBAL_WINDOWINFO.w = GLOBAL_BACKBUFFER.w;
         GLOBAL_WINDOWINFO.h = GLOBAL_BACKBUFFER.h;
+
+        GLOBAL_BACKBUFFER.display_width    =  XDisplayWidth(dis, 0); 
+        GLOBAL_BACKBUFFER.display_width_mm = XDisplayWidthMM(dis, 0);
+
+        GLOBAL_BACKBUFFER.display_height = XDisplayHeight(dis, 0); 
+        GLOBAL_BACKBUFFER.display_height_mm = XDisplayHeightMM(dis, 0);
+
+        {
+            let x_mm = GLOBAL_BACKBUFFER.display_width_mm as f32;
+            let x = GLOBAL_BACKBUFFER.display_width as f32;
+
+            let y_mm = GLOBAL_BACKBUFFER.display_height_mm as f32;
+            let y = GLOBAL_BACKBUFFER.display_height as f32;
+
+            if x >= 1f32 && y >= 1f32 { 
+                GLOBAL_BACKBUFFER.dpmm = (x.powi(2) + y.powi(2)).sqrt() / (x_mm.powi(2) + y_mm.powi(2)).sqrt();
+            } else {
+                GLOBAL_BACKBUFFER.dpmm = DPMM_SCALE; 
+            }
+        }
     }
 
 

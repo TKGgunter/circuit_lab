@@ -81,6 +81,15 @@ pub struct WindowCanvas{
     pub info : TGBitmapHeaderInfo,
     pub w: i32,
     pub h: i32,
+    
+    pub display_width: i32,
+    pub display_height: i32,
+
+    pub display_width_mm: i32,
+    pub display_height_mm: i32,
+
+    pub dpmm: f32,
+
     pub buffer: *mut std::ffi::c_void
 }
 
@@ -101,6 +110,14 @@ static mut GLOBAL_BACKBUFFER : WindowCanvas = WindowCanvas{
       },
     w : 0,
     h : 0,
+
+    display_width : 0i32,
+    display_height: 0i32,
+
+    display_width_mm : 0i32,
+    display_height_mm: 0i32,
+    dpmm: 0f32,
+
     buffer : null_mut(),
 };
 
