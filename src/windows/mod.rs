@@ -118,8 +118,6 @@ pub fn make_window(){unsafe{
 
 
 
-        //let iDpi = user32::GetDpiForSystem(); TODO doesn't work
-
 
 
         if window_handle == null_mut(){ panic!("Error Window_handle did not alloc!"); }
@@ -129,6 +127,48 @@ pub fn make_window(){unsafe{
             let mut textinfo = TextInfo{character: Vec::with_capacity(10), timing:Vec::new()};
             let mut keyboardinfo = KeyboardInfo{key: Vec::new(), status:Vec::new(), };
             let mut old_window_info = GLOBAL_WINDOWINFO;
+
+
+            {
+                let monitor = user32::MonitorFromWindow(window_handle, user32::MONITOR_DEFAULTTOPRIMARY);
+                let mut monitor_info = user32::MONITORINFO::default();
+                monitor_info.cbSize = mem::size_of::<user32::MONITORINFO>() as _;
+
+                let device_context = user32::GetDC(window_handle);
+                let width_mm = gdi32::GetDeviceCaps(device_context, gdi32::HORZSIZE);
+                let height_mm = gdi32::GetDeviceCaps(device_context, gdi32::VERTSIZE);
+
+
+                if user32::GetMonitorInfoA(monitor, &mut monitor_info as *mut _)  == 0 {
+                    println!("welp that didn't work. {:?}", monitor);
+                } else {
+                    let width_pixel = monitor_info.rcMonitor.right - monitor_info.rcMonitor.left;
+                    let height_pixel = monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top;
+
+                    GLOBAL_BACKBUFFER.display_width  = width_pixel;
+                    GLOBAL_BACKBUFFER.display_height = height_pixel;
+
+                    GLOBAL_BACKBUFFER.display_width_mm  = width_mm;
+                    GLOBAL_BACKBUFFER.display_height_mm = height_mm;
+
+                    {
+                        let x_mm = GLOBAL_BACKBUFFER.display_width_mm as f32;
+                        let x = GLOBAL_BACKBUFFER.display_width as f32;
+
+                        let y_mm = GLOBAL_BACKBUFFER.display_height_mm as f32;
+                        let y = GLOBAL_BACKBUFFER.display_height as f32;
+
+                        if x >= 1f32 && y >= 1f32 { 
+                            GLOBAL_BACKBUFFER.dpmm = (x.powi(2) + y.powi(2)).sqrt() / (x_mm.powi(2) + y_mm.powi(2)).sqrt();
+                        } else {
+                            GLOBAL_BACKBUFFER.dpmm = DPMM_SCALE; 
+                        }
+                    }
+
+                }
+            }
+
+
 
             let mut frame_counter = 0;
             'a : loop {

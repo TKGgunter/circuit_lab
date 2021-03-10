@@ -249,6 +249,7 @@ pub fn make_window<'a>() {unsafe{
 
         GLOBAL_BACKBUFFER.display_width_mm  = screen_size.width.round() as _;
         GLOBAL_BACKBUFFER.display_height_mm = screen_size.height.round() as _;
+        //TODO set dpi
     }
 
 
