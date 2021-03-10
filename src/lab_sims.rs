@@ -1001,15 +1001,21 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
         //NOTE we are setting the window size for next frame
         
-        if WINDOW_WIDTH >= os_package.window_canvas.display_width {
-            os_package.window_info.w = os_package.window_canvas.display_width - 10;
+        if os_package.window_canvas.display_width  != 0 
+        && os_package.window_canvas.display_height != 0 {
+            if WINDOW_WIDTH >= os_package.window_canvas.display_width {
+                os_package.window_info.w = os_package.window_canvas.display_width - 10;
+            } else {
+                os_package.window_info.w = WINDOW_WIDTH;
+            }
+
+            if WINDOW_HEIGHT >= os_package.window_canvas.display_height {
+                os_package.window_info.h = os_package.window_canvas.display_height - 10;
+            } else {
+                os_package.window_info.h = WINDOW_HEIGHT;
+            }
         } else {
             os_package.window_info.w = WINDOW_WIDTH;
-        }
-
-        if WINDOW_HEIGHT >= os_package.window_canvas.display_height {
-            os_package.window_info.h = os_package.window_canvas.display_height - 10;
-        } else {
             os_package.window_info.h = WINDOW_HEIGHT;
         }
 

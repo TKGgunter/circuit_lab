@@ -6,16 +6,17 @@ use crate::dynamic_lib_loading;
 
 use crate::cocoa;
 use crate::objc;
+use crate::core_graphics;
  
 use objc::runtime::{Object, Sel};
 
 use cocoa::base::{selector, nil, NO, YES, id};
 use cocoa::quartzcore::CALayer;
 use cocoa::foundation::{NSRect, NSPoint, NSSize, NSAutoreleasePool, NSProcessInfo,
-                        NSString, NSDefaultRunLoopMode, NSData};
+                        NSString, NSDefaultRunLoopMode, NSData, NSDictionary};
 use cocoa::appkit::{NSApp, NSApplication, NSApplicationActivationPolicyRegular, NSWindow, NSEventMask,
                     NSBackingStoreBuffered, NSMenu, NSMenuItem, NSWindowStyleMask, NSColor, NSView, NSEvent,
-                    NSRunningApplication, NSApplicationActivateIgnoringOtherApps, NSImage, NSEventType};
+                    NSRunningApplication, NSApplicationActivateIgnoringOtherApps, NSImage, NSEventType, NSScreen};
 
 use crate::core_foundation;
 use crate::core_foundation::string::*;
@@ -105,6 +106,7 @@ fn update_window<T: NSWindow + std::marker::Copy>(bitmap: &mut WindowCanvas, win
                                                              bytesPerRow: pitch
                                                              bitsPerPixel: bytesPerPixel * 8usize
                                                              ];
+
 
 
     let image_size = NSSize::new(bitmapWidth as f64, bitmapHeight as f64);
@@ -227,6 +229,27 @@ pub fn make_window<'a>() {unsafe{
     GLOBAL_BACKBUFFER.buffer = BUFFER.as_mut_ptr() as *mut _; 
 
 
+    {
+        let screen : id = msg_send![class!(NSScreen), mainScreen];//NSScreen::mainScreen();
+        let device_description  = screen.deviceDescription(); //: id = msg_send![screen, deviceDescription];
+        let display_device_size : id = device_description.objectForKey_(NSString::alloc(nil).init_str("NSDeviceSize"));
+
+
+        let _screen_number : id = msg_send![device_description, objectForKey:NSString::alloc(nil).init_str("NSScreenNumber")];
+        let __screen_number : u32 = msg_send![_screen_number, unsignedIntValue];
+        let screen_size : core_graphics::display::CGSize = core_graphics::display::CGDisplayScreenSize(__screen_number);
+        
+
+        let display_pixel_dim : NSSize = msg_send![display_device_size, sizeValue];
+        println!("{:?} {:?}", display_pixel_dim.width, display_pixel_dim.height);
+        println!("{:?} {:?}", screen_size.width, screen_size.height);
+
+        GLOBAL_BACKBUFFER.display_width = display_pixel_dim.width.round() as _;
+        GLOBAL_BACKBUFFER.display_height = display_pixel_dim.height.round() as _;
+
+        GLOBAL_BACKBUFFER.display_width_mm  = screen_size.width.round() as _;
+        GLOBAL_BACKBUFFER.display_height_mm = screen_size.height.round() as _;
+    }
 
 
     let now = time::Instant::now();
@@ -530,8 +553,6 @@ pub fn make_window<'a>() {unsafe{
         
         if circuit_sim(&mut OsPackage{window_canvas: &mut GLOBAL_BACKBUFFER, window_info: &mut GLOBAL_WINDOWINFO},
                     &mut ls_app_storage, &keyboardinfo, &textinfo, &mouseinfo) != 0 { break; }
-        //if cloud_game(&mut OsPackage{window_canvas: &mut GLOBAL_BACKBUFFER, window_info: &mut GLOBAL_WINDOWINFO},
-        //            &mut cg_app_storage, &keyboardinfo, &textinfo, &mouseinfo) != 0 { break; }
 
 
         if has_been_translocated {
@@ -543,6 +564,7 @@ pub fn make_window<'a>() {unsafe{
             draw_string(&mut GLOBAL_BACKBUFFER, "its current directory to remove this status.", 2, window_height-124, C4_WHITE, 24f32);
         }
 
+        //draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:#.3?}", now.elapsed() - elapsed), 0, GLOBAL_BACKBUFFER.h-30, C4_WHITE, 26.0);
         elapsed = now.elapsed();
 
 

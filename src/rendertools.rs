@@ -310,7 +310,6 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
 //panic!("TODO {}  {}", buffer as usize , buffer as usize & 15);
 
 //timeit!{{
-
             #[cfg(target_arch = "x86_64")]
             use std::arch::x86_64::*;
             #[cfg(target_arch = "x86")]

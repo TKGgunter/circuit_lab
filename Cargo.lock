@@ -39,10 +39,20 @@ dependencies = [
  "bitflags",
  "block",
  "core-foundation 0.6.4",
- "core-graphics",
+ "core-graphics 0.17.3",
  "foreign-types",
  "libc",
  "objc",
+]
+
+[[package]]
+name = "core-foundation"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "286e0b41c3a20da26536c6000a280585d519fd07b3956b43aed8a79e9edce980"
+dependencies = [
+ "core-foundation-sys 0.5.1",
+ "libc",
 ]
 
 [[package]]
@@ -67,6 +77,15 @@ dependencies = [
 
 [[package]]
 name = "core-foundation-sys"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "716c271e8613ace48344f723b60b900a93150271e5be206212d052bbc0883efa"
+dependencies = [
+ "libc",
+]
+
+[[package]]
+name = "core-foundation-sys"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7ca8a5221364ef15ce201e8ed2f609fc312682a8f4e0e3d4aa5879764e0fa3b"
@@ -76,6 +95,18 @@ name = "core-foundation-sys"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ea221b5284a47e40033bf9b66f35f984ec0ea2931eb03505246cd27a963f981b"
+
+[[package]]
+name = "core-graphics"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb0ed45fdc32f9ab426238fba9407dfead7bacd7900c9b4dd3f396f46eafdae3"
+dependencies = [
+ "bitflags",
+ "core-foundation 0.5.1",
+ "foreign-types",
+ "libc",
+]
 
 [[package]]
 name = "core-graphics"
@@ -282,6 +313,7 @@ version = "0.1.0"
 dependencies = [
  "cocoa",
  "core-foundation 0.9.1",
+ "core-graphics 0.13.0",
  "miniz",
  "objc",
  "rand",
