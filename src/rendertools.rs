@@ -208,7 +208,7 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
 
     let canvas_dpmm = if canvas.dpmm == 0f32 { DPMM_SCALE } else { canvas.dpmm };
 
-    let mut dpmm_ratio = canvas_dpmm / DPMM_SCALE;
+    let mut dpmm_ratio = 1f32;//canvas_dpmm / DPMM_SCALE;
     if (1f32 - dpmm_ratio).abs() < DPMM_TOLERANCE { 
         dpmm_ratio = 1f32;
     }
@@ -535,7 +535,7 @@ pub fn draw_rect( canvas: &mut WindowCanvas, rect: [i32; 4], color: [f32; 4], fi
 
     let canvas_dpmm = if canvas.dpmm == 0f32 { DPMM_SCALE } else { canvas.dpmm };
 
-    let mut dpmm_ratio = canvas_dpmm / DPMM_SCALE;
+    let mut dpmm_ratio = 1f32; //canvas_dpmm / DPMM_SCALE;
     if (1f32 - dpmm_ratio).abs() < DPMM_TOLERANCE { 
         dpmm_ratio = 1f32;
     }
@@ -865,7 +865,7 @@ pub fn draw_stbi_image( canvas: &mut WindowCanvas, bmp: &StbiImage, mut x: i32, 
 
     let canvas_dpmm = if canvas.dpmm == 0f32 { DPMM_SCALE } else { canvas.dpmm };
 
-    let mut dpmm_ratio = canvas_dpmm / DPMM_SCALE;
+    let mut dpmm_ratio = 1f32;//canvas_dpmm / DPMM_SCALE;
     if (1f32 - dpmm_ratio).abs() < DPMM_TOLERANCE { 
         dpmm_ratio = 1f32;
     }
@@ -965,7 +965,7 @@ pub fn draw_bmp( canvas: &mut WindowCanvas, source_bmp: &TGBitmap, mut x: i32, m
 
     let canvas_dpmm = if canvas.dpmm == 0f32 { DPMM_SCALE } else { canvas.dpmm };
 
-    let mut dpmm_ratio = canvas_dpmm / DPMM_SCALE;
+    let mut dpmm_ratio = 1f32;//canvas_dpmm / DPMM_SCALE;
     if (1f32 - dpmm_ratio).abs() < DPMM_TOLERANCE { 
         dpmm_ratio = 1f32;
     }
@@ -1064,7 +1064,7 @@ pub fn draw_circle(canvas: &mut WindowCanvas, mut _x: i32, mut _y: i32, r: f32, 
 
     let canvas_dpmm = if canvas.dpmm == 0f32 { DPMM_SCALE } else { canvas.dpmm };
 
-    let mut dpmm_ratio = canvas_dpmm / DPMM_SCALE;
+    let mut dpmm_ratio = 1f32;//canvas_dpmm / DPMM_SCALE;
     if (1f32 - dpmm_ratio).abs() < DPMM_TOLERANCE { 
         dpmm_ratio = 1f32;
     }
@@ -1138,7 +1138,7 @@ pub fn draw_subcanvas(canvas: &mut WindowCanvas, subcanvas: &SubCanvas, mut x: i
 
     let canvas_dpmm = if canvas.dpmm == 0f32 { DPMM_SCALE } else { canvas.dpmm };
 
-    let mut dpmm_ratio = canvas_dpmm / DPMM_SCALE;
+    let mut dpmm_ratio = 1f32;//canvas_dpmm / DPMM_SCALE;
     if (1f32 - dpmm_ratio).abs() < DPMM_TOLERANCE { 
         dpmm_ratio = 1f32;
     }

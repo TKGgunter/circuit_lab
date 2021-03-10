@@ -249,7 +249,19 @@ pub fn make_window<'a>() {unsafe{
 
         GLOBAL_BACKBUFFER.display_width_mm  = screen_size.width.round() as _;
         GLOBAL_BACKBUFFER.display_height_mm = screen_size.height.round() as _;
-        //TODO set dpi
+        {
+            let x_mm = GLOBAL_BACKBUFFER.display_width_mm as f32;
+            let x = GLOBAL_BACKBUFFER.display_width as f32;
+
+            let y_mm = GLOBAL_BACKBUFFER.display_height_mm as f32;
+            let y = GLOBAL_BACKBUFFER.display_height as f32;
+
+            if x >= 1f32 && y >= 1f32 { 
+                GLOBAL_BACKBUFFER.dpmm = (x.powi(2) + y.powi(2)).sqrt() / (x_mm.powi(2) + y_mm.powi(2)).sqrt();
+            } else {
+                GLOBAL_BACKBUFFER.dpmm = DPMM_SCALE; 
+            }
+        }
     }
 
 
