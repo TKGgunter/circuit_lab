@@ -78,6 +78,8 @@ fn update_window<T: NSWindow + std::marker::Copy>(bitmap: &mut WindowCanvas, win
     let device_color_space = NSString::alloc(nil).init_str("NSDeviceRGBColorSpace");
 
 
+//NOTE this is really slow we should just copy the new bitmap data using 
+//  https://developer.apple.com/documentation/appkit/nsbitmapimagerep/1395421-bitmapdata?language=occ 
     if BACKBUFFER.backbuffer != null_mut() {
         let _ : id = msg_send![BACKBUFFER.image, removeRepresentation: BACKBUFFER.backbuffer];
         let _ : id = msg_send![BACKBUFFER.backbuffer, dealloc]; 
@@ -153,26 +155,32 @@ pub fn make_window<'a>() {unsafe{
     app.setActivationPolicy_(NSApplicationActivationPolicyRegular);
     app.activateIgnoringOtherApps_(YES); 
 
-    // create Menu Bar
-    //let menubar = NSMenu::new(nil).autorelease();
-    //let app_menu_item = NSMenuItem::new(nil).autorelease();
-    //menubar.addItem_(app_menu_item);
-    //app.setMainMenu_(menubar);
+    //NOTE
+    // This should create a Menu Bar, but currently it does nothing.
+    // Inorder to get menus working on mac app.run() might been to be 
+    // over written with a custom variant.
+    //{
+    //    let mut menubar = NSMenu::new(nil).autorelease();
+    //    menubar.initWithTitle_(NSString::alloc(nil).init_str("testing"));
+    //    let app_menu_item = NSMenuItem::new(nil).autorelease();
+    //    menubar.addItem_(app_menu_item);
+    //    app.setMainMenu_(menubar);
 
-    //// create Application menu
-    //let app_menu = NSMenu::new(nil).autorelease();
-    //let quit_prefix = NSString::alloc(nil).init_str("Quit ");
-    //let quit_title =
-    //    quit_prefix.stringByAppendingString_(NSProcessInfo::processInfo(nil).processName());
-    //let quit_action = selector("terminate:");
-    //let quit_key = NSString::alloc(nil).init_str("q");
-    //let quit_item = NSMenuItem::alloc(nil)
-    //    .initWithTitle_action_keyEquivalent_(quit_title, quit_action, quit_key)
-    //    .autorelease();
-    //app_menu.addItem_(quit_item);
-    //app_menu_item.setSubmenu_(app_menu);
+    //    //// create Application menu
+    //    let app_menu = NSMenu::new(nil).autorelease();
+    //    let quit_prefix = NSString::alloc(nil).init_str("Quit ???");
+    //    let quit_title =
+    //        quit_prefix.stringByAppendingString_(NSProcessInfo::processInfo(nil).processName());
+    //    let quit_action = selector("terminate:");
+    //    let quit_key = NSString::alloc(nil).init_str("q");
+    //    let quit_item = NSMenuItem::alloc(nil)
+    //        .initWithTitle_action_keyEquivalent_(quit_title, quit_action, quit_key)
+    //        .autorelease();
+    //    app_menu.addItem_(quit_item);
+    //    app_menu_item.setSubmenu_(app_menu);
 
-
+    //}
+  
 
     let init_frame =  NSRect::new(NSPoint::new(0., 0.), NSSize::new(1000., 550.));
     GLOBAL_WINDOWINFO.x = 0;
@@ -195,7 +203,6 @@ pub fn make_window<'a>() {unsafe{
     window.setBackgroundColor_(NSColor::colorWithRed_green_blue_alpha_(bkg_color, 0.01, 0.01, 0.01, 1.0)  );
     window.makeKeyAndOrderFront_(nil);
     window.contentView().setWantsLayer(YES);
-
 
 ///////////////////
 //TODO
@@ -278,15 +285,6 @@ pub fn make_window<'a>() {unsafe{
 
     let security_lib = dynamic_lib_loading::open_lib("/System/Library/Frameworks/Security.framework/Security", dynamic_lib_loading::RTLD_LAZY).expect("Security framework not present.");
 
-//    let mut exe_path = std::env::current_exe().expect("could not find the exe path");
-//let cfurl_path = CFURL::from_path(exe_path, false).expect("was it a dir?");
-//let url_path = cfurl_path.get_string();
-//let u : CFStringRef = std::mem::transmute(url_path);
-//let length = CFStringGetLength( u )+1;
-//let mut str_vec = vec![0u8; length as usize];
-//let __rt = CFStringGetCString(u, str_vec.as_mut_ptr() as *mut i8, length, kCFStringEncodingUTF8);
-//let str_str = std::str::from_utf8(&str_vec).unwrap();
-//println!("{} length: {} {} ASDFASDF", __rt, length, str_str);
 
 
     let mut current_path = std::env::current_exe().expect("could not find the exe path").to_str().unwrap().to_string();
@@ -323,23 +321,6 @@ pub fn make_window<'a>() {unsafe{
                             
                             has_been_translocated = true;
 
-/*
-                            let _org_path : CFURL = std::mem::transmute(org_url); //NOTE transmute from url_ref to url
-                            let mut org_path_str  =  _org_path.get_string();
-                            let mut org_path : CFStringRef = std::mem::transmute( org_path_str ); //NOTE transmute from string to string ref
-
-                            let length = CFStringGetLength(org_path) + 1;
-                            let mut str_vec = vec![0u8; length as usize];
-                            CFStringGetCString(org_path, str_vec.as_mut_ptr() as *mut i8, length, kCFStringEncodingUTF8);
-
-                            let _str_str = std::string::String::from_utf8(str_vec).unwrap();
-                            let str_str = _str_str.trim_matches('\0');
-
-
-                            exe_path =  std::path::Path::new(&str_str).to_path_buf();
-                            exe_path.pop();
-                            //return;
-*/
                         }
                     } else {
                         exe_path.pop();
