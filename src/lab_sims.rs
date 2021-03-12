@@ -1,3 +1,44 @@
+//! This module contains the main source code for the circuit simulation.
+//! The menu, circuit solver, side panel parser are handled here.
+//! The following is a breif overview of code flow.
+//!
+//! `circuit_sim` is the most important function in this module.
+//! Everything happens here. `circuit_sim` requires keyboard, text and mouse information
+//! structs. These structs contain all interactive data the application needs to run.
+//! You may find the definitions of these structs in the `inputhandler` module, though it 
+//! should be noted these structs are filled out on an operating system by operating 
+//! system bases. You may need to look into `macos`, `windows` or `unix` modules for 
+//! certain interface details.
+//!
+//! In addition, `app_storage` and `os_package` are required by `circuit_sim`. 
+//! `app_storage` contains all information required by this program that need to be carried
+//! between frames. This includes circuit specifics, among other things. `os_package`
+//! contains information regarding the drawing window, most importantly the window 
+//! backbuffer. The window backbuffer, window canvas, is an array of pixels shared
+//! between this program and the operating system. a
+//!
+//! `circuit_sim` begins with an initialization block, `app_storage.init`. 
+//! In this block window size is set, assets are initialized and configuration files are 
+//! loaded. If you wish to incorporate more assets they should be initialized here.
+//!
+//! TA mode is handled shortly after. 
+//! TA mode give the user the ability to author content. The retractable size panel 
+//! and the Custom Element panel can be edited using TA mode.
+//! TA mode is activated when a file with the name
+//! given by `TA_FILE_NAME` is in the program's directory and the tab button is pressed. 
+//! 
+//! Next is the rendering and logic associated with the circuit element panel found on
+//! the left hand side of the screen. The render and logic for this panel
+//! is done in this block.  
+//! 
+//! The following set of blocks handle the logic and rendering associated with 
+//! user created circuits.
+//!
+//!
+//!
+
+
+
 use crate::rendertools::*;
 use crate::inputhandler::*;
 use crate::{WindowCanvas, OsPackage, SETICON, set_icon};
@@ -1165,6 +1206,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         }
     }
 
+    //TODO remove me
     if false {
         eq_potential_sim(os_package, app_storage, keyboardinfo, textinfo, mouseinfo);
         return 0;

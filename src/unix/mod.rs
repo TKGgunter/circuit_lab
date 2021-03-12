@@ -111,7 +111,7 @@ pub fn make_window() {unsafe{
     let white  = XWhitePixel(dis, screen);
 
     //NOTE what am I going to do with this???
-    println!("w: {}, w_mm: {}, {}", XDisplayWidth(dis, 0), XDisplayWidthMM(dis, 0), XDisplayWidthMM(dis, 0) as f32 / XDisplayWidth(dis, 0) as f32);
+    println!("w: {}, w_mm: {}, {}", XDisplayWidth(dis, XDefaultScreen(dis)), XDisplayWidthMM(dis, XDefaultScreen(dis)), XDisplayWidthMM(dis, 0) as f32 / XDisplayWidth(dis, 0) as f32);
     println!("h: {}, h_mm: {}, {}", XDisplayHeight(dis, 0), XDisplayHeightMM(dis, 0), XDisplayHeightMM(dis, 0) as f32 / XDisplayHeight(dis, 0) as f32);
 
     let win = XCreateSimpleWindow(dis, XDefaultRootWindow(dis), 0, 0,
