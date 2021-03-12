@@ -1,3 +1,14 @@
+//! This module contains the main event loop for the windows operating system.
+//! 
+//! This application uses user32 and gdi32 for window management on windows.  Is includes basic
+//! input event gathering, keyboard and mouse events.  The primary functions of 
+//! interest are `make_window` and `update_window`. 
+//! `make_window` contains the event loop and `update_window` updates the windows buffer
+//! with the contents of our backbuffer.
+//!
+
+
+
 #![cfg(target_os = "windows")]
 
 

@@ -1,3 +1,13 @@
+//! This module contains the main event loop for the linux operating system.
+//!
+//! This application uses x11 for window management on linux.  Is includes basic
+//! input event gathering, keyboard and mouse events.  The primary functions of 
+//! interest are `make_window` and `update_screen`. 
+//! `make_window` contains the event loop and `update_screen` updates the x11 buffer
+//! with the contents of our backbuffer.
+//!
+
+
 #![cfg(target_os = "linux")]
 #![allow(warnings, unused)]
 
@@ -52,7 +62,6 @@ fn update_screen(buffer: &mut [u8], dis: *mut xlib::Display, visual: *mut xlib::
     XDestroyImage(image);
 }}
 
-static mut test_bmp : Option<Vec<i32>> = None;
 fn _set_icon( dis: *mut x11::xlib::_XDisplay, win: x11::xlib::Window, bmp: &TGBitmap ){unsafe{
     use std::ffi::CString;
 
@@ -93,7 +102,6 @@ fn _set_icon( dis: *mut x11::xlib::_XDisplay, win: x11::xlib::Window, bmp: &TGBi
     let length = 2 + width * height;
 
     let _cp = x11::xlib::XChangeProperty(dis, win, net_wm_icon, cardinal, 32,  x11::xlib::PropModeReplace, _buffer.as_ptr() as *mut u8, length);
-    test_bmp = Some(_buffer);
     let _mw = x11::xlib::XMapWindow(dis, win);
 }}
 
