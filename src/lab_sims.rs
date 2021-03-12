@@ -1,21 +1,24 @@
 //! This module contains the main source code for the circuit simulation.
-//! The menu, circuit solver, side panel parser are handled here.
+//! The code for the menu, circuit solver, side panel parser are here.
 //! The following is a breif overview of code flow.
 //!
 //! `circuit_sim` is the most important function in this module.
 //! Everything happens here. `circuit_sim` requires keyboard, text and mouse information
-//! structs. These structs contain all interactive data the application needs to run.
+//! structs as input. These structs contain all interactive data the application needs to run.
 //! You may find the definitions of these structs in the `inputhandler` module, though it 
-//! should be noted these structs are filled out on an operating system by operating 
-//! system bases. You may need to look into `macos`, `windows` or `unix` modules for 
-//! certain interface details.
+//! should be noted that these structs are filled out on an operating system by operating 
+//! system bases. You may need to look into the `macos`, `windows` or `unix` modules for 
+//! interface details.
 //!
-//! In addition, `app_storage` and `os_package` are required by `circuit_sim`. 
-//! `app_storage` contains all information required by this program that need to be carried
-//! between frames. This includes circuit specifics, among other things. `os_package`
-//! contains information regarding the drawing window, most importantly the window 
+//! The struct `app_storage` and `os_package` are also required by `circuit_sim`. 
+//! `app_storage` contains information specific to the simulation program that is required
+//! to persist between frames. This includes circuit specifics, among other things. 
+//! `os_package` contains information regarding the drawing window, most importantly the window 
 //! backbuffer. The window backbuffer, window canvas, is an array of pixels shared
-//! between this program and the operating system. a
+//! between this program and the operating system. Draw calls are done on the window canvas.
+//! The `rendertools` contains these functions.
+//!
+//! ## Program structure
 //!
 //! `circuit_sim` begins with an initialization block, `app_storage.init`. 
 //! In this block window size is set, assets are initialized and configuration files are 
@@ -27,12 +30,20 @@
 //! TA mode is activated when a file with the name
 //! given by `TA_FILE_NAME` is in the program's directory and the tab button is pressed. 
 //! 
-//! Next is the rendering and logic associated with the circuit element panel found on
-//! the left hand side of the screen. The render and logic for this panel
-//! is done in this block.  
+//! User created circuits, and associated circuit elements, are render next. 
+//! Logic relating to circuit element property panels are handled in this block as well.
+//! The block has three distinct parts. 
+//!  - Circuit element rendering, movement logic,
+//!  - property panel z-coordinate organization,
+//!  - property panel rendering and logic.
+//! Z-coordinate organization refers to the order property panels are rendered and 
+//! which panels has inputs recognized if multiple panels overlap.
 //! 
-//! The following set of blocks handle the logic and rendering associated with 
-//! user created circuits.
+//!
+//! The final block handles circuit simulation. `compute_circuit` is these most 
+//! important function in this section. The circuit simulation is done using the
+//! sparse tableau network analysis approach, using Gaussian elimination to solve the 
+//! resulting matrix. You can find the text [here](http://web.engr.oregonstate.edu/~karti/ece521/sta.pdf).
 //!
 //!
 //!
@@ -4750,8 +4761,61 @@ fn rotate_bmp(src_bmp: &mut TGBitmap, angle: f32, inplace: bool)->Option<TGBitma
 
 
 
-//TODO this is going to need alot of work
 mod parser{
+//! This module contains simple parser for uses by the circuit simulation.
+//! 
+//! The parser handles a simple custom markdown format. 
+//! The `parser` function parses a given string. 
+//! The parsing occurs in a single loop, where the program iterates through the characters
+//! of the string while peeking forward to determine keywords. 
+//! The parser returns an array of sections, and possible errors.
+//! A section is a single panel unit. Rendering of a section occurs does not occur in this
+//! module.
+//! 
+//! 
+//! Below are the current key words needed when working working in TA mode 
+//! (all keywords are indifferent to case):
+//! - `#Section`    This creates a new empty page
+//! - `#Text`       Renders text that follows the command. Text can begin on the same line. If this command 
+//!            is not invoked no text will be displayed.
+//! - `#Image`      Renders image in panel. Give local path (path from the directory of executable). 
+//!            If path is incorrect the program will render nothing.
+//! - `#Question`   Renders following text and primes program to receive `#AnswerCorrect`, and `#AnswerWrong`. If followed by command that is not `#AnswerCorrect` or `#AnswerWrong`, nothing will render.
+//! - `#AnswerCorrect`  Renders the text that follows. This will not render if `#Question` is not the `#AnswerWrong`    proceeding command. Only 7 answers are allowed. If there is no correct answer neither the question or answers are rendered.
+//! - `\\`          Comments can be written using double back slashes.
+//!
+//!
+//! ## Example
+//! ```
+//! //comments should be ignored
+//! #Section 
+//! #Header Beginning
+//! #Text
+//! This is the beginning of the lab.
+//! The lab is about a great many things that you will never understand.
+//! Sorry.
+//! 
+//! #Section 
+//! #Header Initial Questions
+//! #Text
+//! Lets begin with some questions.
+//! Please do you best answers will be graded harshly.
+//! 
+//! #Question
+//! How large is the farm?
+//! 
+//! #AnswerWrong   Pint sized.
+//! #AnswerCorrect Byte sized.
+//! #AnswerWrong   bit sized.
+//! #AnswerWrong   bite sized.
+//! 
+//! #Section
+//! #Text
+//! I hope you got that anwser right.
+//! LOL
+//! #image screenshot.bmp
+//!
+//! ```
 
 use crate::lab_sims::MessageType;
 
@@ -4812,13 +4876,14 @@ LOL
     pub struct Section{
         pub contents: Vec<Content>,
     }
+
     #[derive(Debug)]
     pub enum Content{
-      Question(String),
-      Header(String),
-      Text(String),
-      Answer(String, bool),
-      Image(String),
+        Question(String),
+        Header(String),
+        Text(String),
+        Answer(String, bool),
+        Image(String),
     }
 
 
@@ -5110,6 +5175,12 @@ pub fn draw_grid(canvas: &mut WindowCanvas, grid_size: i32){
 
 
 mod matrixmath{
+//! This module is a simple linear algebra library 
+//! made to satisfy the requirements of this application.
+//! The library does not contain all linear algebra operations, nor does it attempt to.
+//! The purpose is again to provide functionality necessary to solve electrical circuits.
+
+
     pub struct Matrix{
         pub arr : Vec<f32>,
         pub rows : usize,
