@@ -55,6 +55,8 @@ fn new_rgbquad()->RGBQUAD{
      }
 }
 
+
+
 pub fn make_window(){unsafe{
     //NOTE
     //This entire function was developed with the help of handmade hero eps 1-3

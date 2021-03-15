@@ -36,21 +36,12 @@ use inputhandler::*;
 use crate::misc::*;
 
 
-//NOTE
-//When I copy the bmp buffer to the presentation buffer something strange happens.
-//Such that when I exit the program compains that a pointer is not present. 
-//This this some branch predictor issue?
 
 
-//TODO 
-//a blog about how x11 might not be so bad.
+/// This function creates a new x11 image and draws that image in the given display window.
+/// The resulting x11 image is then destroyed.
 fn update_screen(buffer: &mut [u8], dis: *mut xlib::Display, visual: *mut xlib::Visual, win: u64, depth: u32, gc: xlib::GC, window_width: u32, window_height: u32){unsafe{
-    //TODO
-    //use real screen sizes
 
-    //TODO
-    //let mut width = 0u32;
-    //let mut height = 0u32;
 
     let image = XCreateImage(dis, visual, depth, ZPixmap, 0, buffer.as_mut_ptr() as *mut _, window_width, window_height, 32, 0); 
     let mut _image = (image as *mut XImage).as_mut().unwrap();
@@ -62,6 +53,8 @@ fn update_screen(buffer: &mut [u8], dis: *mut xlib::Display, visual: *mut xlib::
     XDestroyImage(image);
 }}
 
+/// This function is supposed to set the icon for the application. It currently does not work.
+///
 fn _set_icon( dis: *mut x11::xlib::_XDisplay, win: x11::xlib::Window, bmp: &TGBitmap ){unsafe{
     use std::ffi::CString;
 
@@ -108,8 +101,12 @@ fn _set_icon( dis: *mut x11::xlib::_XDisplay, win: x11::xlib::Window, bmp: &TGBi
 
 
 
+/// This is the primary function for the application. The event/render loop occurs here.
+///
 pub fn make_window() {unsafe{
 
+    //NOTE
+    //Standard x11 window initialization occurs here.
     let window_width  = 1000;
     let window_height = 550;
 
@@ -117,10 +114,6 @@ pub fn make_window() {unsafe{
     let screen = XDefaultScreen(dis);
     let black  = XBlackPixel(dis, screen);
     let white  = XWhitePixel(dis, screen);
-
-    //NOTE what am I going to do with this???
-    println!("w: {}, w_mm: {}, {}", XDisplayWidth(dis, XDefaultScreen(dis)), XDisplayWidthMM(dis, XDefaultScreen(dis)), XDisplayWidthMM(dis, 0) as f32 / XDisplayWidth(dis, 0) as f32);
-    println!("h: {}, h_mm: {}, {}", XDisplayHeight(dis, 0), XDisplayHeightMM(dis, 0), XDisplayHeightMM(dis, 0) as f32 / XDisplayHeight(dis, 0) as f32);
 
     let win = XCreateSimpleWindow(dis, XDefaultRootWindow(dis), 0, 0,
                                   window_width, window_height, 5, black,
@@ -146,6 +139,7 @@ pub fn make_window() {unsafe{
     XSetWMProtocols(dis, win, &mut wm_delete_window as *mut _, 1);
 
 
+
     let mut presentation_buffer = vec![0u8; (4*window_width*window_height) as usize];
     let mut bmp_buffer = vec![0u8; (4*window_width*window_height) as usize];
 
@@ -157,6 +151,9 @@ pub fn make_window() {unsafe{
 
 
     unsafe{
+        //NOTE
+        //Setting up GLOBAL_BACKBUFFER dimensions and dpi properties.
+
         GLOBAL_BACKBUFFER.info.width = window_width as i32;
         GLOBAL_BACKBUFFER.info.height = window_height as i32;
         GLOBAL_BACKBUFFER.info.planes = 1;
@@ -191,7 +188,6 @@ pub fn make_window() {unsafe{
 
 
 
-    XFlush(dis); //TODO remove once event handling is implemented
 
     let mut mouseinfo   = MouseInfo::new();
     let mut textinfo = TextInfo{character: Vec::with_capacity(10), timing:Vec::new()};
@@ -202,6 +198,9 @@ pub fn make_window() {unsafe{
     let mut stopwatch = StopWatch::new();
     let mut stopwatch_lbutton = StopWatch::new();
     let mut old_window_info = GLOBAL_WINDOWINFO;
+
+
+
 
     let mut exit = false;
     loop{
@@ -293,8 +292,6 @@ pub fn make_window() {unsafe{
         textinfo.timing.clear();
 
 
-        //TODO
-        //does all the mouse location stuff any maybe button handling 
         mouseinfo.old_lbutton = mouseinfo.lbutton;
         mouseinfo.old_rbutton = mouseinfo.rbutton;
         mouseinfo.lbutton = ButtonStatus::Up;
@@ -394,18 +391,10 @@ pub fn make_window() {unsafe{
 
         if circuit_sim(&mut OsPackage{window_canvas: &mut GLOBAL_BACKBUFFER, window_info: &mut GLOBAL_WINDOWINFO},
                     &mut ls_app_storage, &keyboardinfo, &textinfo, &mouseinfo) != 0 { break; }
-        //if color_studies(&mut OsPackage{window_canvas: &mut GLOBAL_BACKBUFFER, window_info: &mut GLOBAL_WINDOWINFO},
-        //            &mut cs_app_storage, &keyboardinfo, &textinfo, &mouseinfo) != 0 { break; }
-        //if cloud_game(&mut OsPackage{window_canvas: &mut GLOBAL_BACKBUFFER, window_info: &mut GLOBAL_WINDOWINFO}, 
-        //              &mut cg_app_storage, &keyboardinfo, &textinfo, &mouseinfo) != 0 { break; }
-        //if ui_test(&mut OsPackage{window_canvas: &mut GLOBAL_BACKBUFFER, window_info: &mut GLOBAL_WINDOWINFO},
-        //           &keyboardinfo, &textinfo, &mouseinfo) != 0 { break; }
 
         let delta_time = stopwatch.lap_time();
         //draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:#.3?}", delta_time), 0, GLOBAL_BACKBUFFER.h-30, C4_WHITE, 26.0);//TODO we should avg things so we no flicker
         stopwatch.reset_lap_timer();
-        //
-        //sleep(Duration::new(0, 10E6 as u32));//TODO
         if exit {
             break;
         }
@@ -414,5 +403,4 @@ pub fn make_window() {unsafe{
     XFreeGC(dis, gc);
     XDestroyWindow(dis, win);
     XCloseDisplay(dis);	
-    println!("End");
 }}

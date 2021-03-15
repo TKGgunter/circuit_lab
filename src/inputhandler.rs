@@ -1,3 +1,14 @@
+//! This module is contains structs and functions that handle event input.
+//!
+//! There are three basic structs defined by this module.
+//! They are `KeyboardInfo`, `MouseInfo`, and `TextInfo`.
+//! `KeyboardInfo` holds current keyboard events. 
+//! `MouseInfo` holds current mouse events.
+//! `TextInfo` holds the most recent character, as defined by the operating system.
+//!
+
+
+
 #![allow(unused)]
 
 #[cfg(target_os = "windows")]
@@ -22,6 +33,23 @@ impl Default for ButtonStatus{
 }
 
 
+/// MouseInfo is designed to interface with a standard two button plus middle wheel mouse. 
+///
+/// MouseInfo is to be filled out by the operating system specific modules.
+/// A basic left click example is given below.
+/// ## Example
+/// ```
+/// ...
+/// let mut mouseinfo =  MouseInfo::new();
+/// {//Get events
+///     ...
+/// }
+///
+/// let left_button_clicked = mouseinfo.lclicked();
+/// if left_button_clicked {
+///     //Do things when left button is clicked.
+/// }
+/// ```
 #[derive(Debug)]
 pub struct MouseInfo{
     pub x: i32,
@@ -95,16 +123,21 @@ pub enum KeyboardEnum{
 }
 
 
+/// TextInfo is contains utf-8 compatible character and associated time steps.
+///
+/// TextInfo is to be filled by operating system modules.
 pub struct TextInfo{
     pub character: Vec<char>,
     pub timing: Vec<i32>
 }
 
+/// KeyboardInfo is contains keyboard button status.
+///
+/// KeyboardInfo is to be filled by operating system modules.
 pub struct KeyboardInfo{
     pub key: Vec<KeyboardEnum>,
     pub status: Vec<ButtonStatus>,
 
-    //TODO include keyboard as unique thingoos
 }
 
 macro_rules! update_down{
