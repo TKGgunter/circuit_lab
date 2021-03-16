@@ -66,6 +66,7 @@ use std::io::prelude::*;
 use std::ptr::{null, null_mut};
 
 use std::f32::consts::PI;
+use std::f32::consts::FRAC_PI_2;
 
 
 use std::thread::sleep;
@@ -119,14 +120,22 @@ const ERROR_MESSAGE_ONSCREEN_DURATION   : Duration = Duration::from_millis(7500)
 
 
 
+/// This funciton sets the static variable `GLOBAL_PROPERTIES_Z`.
+/// This is not thread safe.
 fn set_global_properties_z(x: usize){unsafe{
     GLOBAL_PROPERTIES_Z = x;
 }}
+
+/// This function returns the last `GLOBAL_PROPERTIES_Z` and increments the varable. 
+/// This is not thread safe.
 fn get_and_update_global_properties_z()->usize{unsafe{
     let rt = GLOBAL_PROPERTIES_Z;
     GLOBAL_PROPERTIES_Z += 1;
     return rt;
 }}
+
+/// This function returns the value of `GLOBAL_PROPERTIES_Z`.
+/// This is not thread safe.
 fn get_global_properties_z()->usize{unsafe{
     let rt = GLOBAL_PROPERTIES_Z;
     return rt;
@@ -257,17 +266,22 @@ enum ACSourceType{
     Step,
 }
 
-static mut unique_node_int: usize = 0;
-fn get_unique_id()->usize{unsafe{ //NOTE this is NOT thread safe
-    let id = unique_node_int;
+static mut UNIQUE_NODE_INT: usize = 0;
 
-    unique_node_int += 1;
+/// This function returned a unique integer to be used to uniquely identify circuit elements.
+/// This function is not thread safe.
+fn get_unique_id()->usize{unsafe{ 
+    let id = UNIQUE_NODE_INT;
+
+    UNIQUE_NODE_INT += 1;
     return id;
 
 }}
 
+/// This function sets `UNIQUE_NODE_INT`.
+/// This function is not thread safe.
 fn set_unique_id(n: usize){unsafe{
-    unique_node_int = n;
+    UNIQUE_NODE_INT = n;
 }}
 
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -1267,7 +1281,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 resize_bmp = sampling_reduction_bmp(&app_storage.custom_bmp, 80, 80);
             }
 
-            let rotated_bmp = rotate_bmp(&mut resize_bmp, app_storage.selected_circuit_element_orientation, false).unwrap();
+            let rotated_bmp = rotate_bmp(&mut resize_bmp, app_storage.selected_circuit_element_orientation).unwrap();
             draw_bmp(&mut os_package.window_canvas, &rotated_bmp, x, y, 0.98, None, None);
             if app_storage.selected_circuit_element == SelectedCircuitElement::Custom
             || app_storage.selected_circuit_element == SelectedCircuitElement::CustomVoltmeter
@@ -1684,7 +1698,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     if it.circuit_element_type == SelectedCircuitElement::Battery{
                         bmp = &app_storage.battery_bmp;
                         if it.voltage < 0.0 {
-                            temp_bmp = rotate_bmp(&mut app_storage.battery_bmp, PI, false).unwrap();
+                            temp_bmp = rotate_bmp(&mut app_storage.battery_bmp, PI).unwrap();
                             bmp = &temp_bmp;
                         }
                     } else if it.circuit_element_type == SelectedCircuitElement::Capacitor {
@@ -1752,7 +1766,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         }
 
 
-                        let _rbmp = rotate_bmp(&mut _bmp, theta, false).unwrap(); 
+                        let _rbmp = rotate_bmp(&mut _bmp, theta).unwrap(); 
                         draw_bmp(&mut os_package.window_canvas, &_rbmp, it.x, it.y, 0.7, None, None);
 
                         if mouseinfo.lclicked(){
@@ -1769,10 +1783,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 }
                             } else { 
                                 if _sin >= 0f32 {
-                                    theta = PI/2f32;
+                                    theta = FRAC_PI_2; 
                                 }
                                 else { 
-                                    theta = 3f32*PI/2f32;
+                                    theta = 3f32*FRAC_PI_2;
                                 }
                             }
                             it.orientation = theta;
@@ -1796,7 +1810,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     }
 
                     if orientation == 0.0 {
-                        let mut _bmp = rotate_bmp(&mut _bmp, it.orientation, false).unwrap();
+                        let mut _bmp = rotate_bmp(&mut _bmp, it.orientation).unwrap();
                         draw_bmp(&mut os_package.window_canvas, &_bmp, it.x, it.y, 0.98, None, None);
                         if it.circuit_element_type == SelectedCircuitElement::Custom
                         || it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
@@ -1809,7 +1823,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         }
                     }
                     else if orientation == 1.0 {
-                        let mut _bmp = rotate_bmp(&mut _bmp, it.orientation, false).unwrap();
+                        let mut _bmp = rotate_bmp(&mut _bmp, it.orientation).unwrap();
                         draw_bmp(&mut os_package.window_canvas, &_bmp, it.x, it.y, 0.98, None, None);
 
                         if it.circuit_element_type == SelectedCircuitElement::Custom
@@ -1835,10 +1849,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         match it.direction{
                             Some(CircuitElementDirection::AtoB)=>{
                                 if orientation == 0.0 {
-                                    let rotated_bmp = rotate_bmp( &mut arrow_resize_bmp, PI, false).unwrap(); //TODO do this some where else further up stream maybe
+                                    let rotated_bmp = rotate_bmp( &mut arrow_resize_bmp, PI).unwrap(); //TODO do this some where else further up stream maybe
                                     draw_bmp( &mut os_package.window_canvas, &rotated_bmp, it.x + 30, it.y, 0.98, None, None);
                                 } else if orientation == 1.0 {
-                                    let rotated_bmp = rotate_bmp(&mut arrow_resize_bmp, PI*3.0/2.0, false).unwrap();
+                                    let rotated_bmp = rotate_bmp(&mut arrow_resize_bmp, PI*3.0/2.0).unwrap();
                                     draw_bmp( &mut os_package.window_canvas, &rotated_bmp, it.x+60, it.y +30, 0.98, None, None);
                                 }
                             },
@@ -1846,7 +1860,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 if orientation == 0.0 {
                                     draw_bmp( &mut os_package.window_canvas, &arrow_resize_bmp, it.x+30, it.y, 0.98, None, None);
                                 } else if orientation == 1.0 {
-                                    let rotated_bmp = rotate_bmp(&mut arrow_resize_bmp, PI/2.0, false).unwrap();
+                                    let rotated_bmp = rotate_bmp(&mut arrow_resize_bmp, FRAC_PI_2).unwrap();
                                     draw_bmp( &mut os_package.window_canvas, &rotated_bmp, it.x+60, it.y+30, 0.98, None, None);
                                 }
                             },
@@ -2563,9 +2577,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 draw_rect(&mut os_package.window_canvas, [properties_x+1, properties_y+35, properties_w-2, 1], C4_DGREY, true);
 
 
-                //TODO I should implement this
-                //fn do_button(canvas: WindowCanvas, string: &str, x: i32, y: i32, mouseinfo: &mouseinfo, extra: Option<ButtonExtras>)->VButtonStatus{down: bool, clicked: bool, over: bool, button_width};
-                //struct ButtonExtras{ x_pad, y_pad, text_color, text_alt_color, bkg_color, bkg_alt_color, font_size }
                 ////Rotate Button
                 let rotation_button_width = {
                     let button_x = properties_x+5;
@@ -2578,7 +2589,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         draw_rect(&mut os_package.window_canvas, [button_x, button_y, button_w, button_h], C4_GREY, true);
                         if mouseinfo.lclicked()
                         && it.properties_z == get_global_properties_z() - 1{
-                            it.orientation += PI/2.0;
+                            it.orientation += FRAC_PI_2;
 
                             //if (it.orientation/PI).abs().fract() < 0.001 { it.orientation = 0.0; }
                             //else if (it.orientation/(PI/2.0)).abs().fract() < 0.001 { it.orientation = PI/2.0; }
@@ -4661,25 +4672,22 @@ pub fn generate_wrapped_strings(string: &str, font: f32, max_width: i32)->Vec<St
 }
 
 
-//TODO
-//this is hella slow
-//move to render tools
-//we have artifacts we should correct for
-fn rotate_bmp(src_bmp: &mut TGBitmap, angle: f32, inplace: bool)->Option<TGBitmap>{unsafe{
+/// Returns a rotated bmp determined by the given angle.
+///
+/// The angle must be in radians.
+fn rotate_bmp(src_bmp: &mut TGBitmap, angle: f32)->Option<TGBitmap>{unsafe{
 
     fn calc_xy(x: f32, y: f32, angle: f32)->(f32, f32){
         let cos = angle.cos();
         let sin = angle.sin();
-        let rt = ( (x as f32 * cos + y as f32 * sin).round(),
-                   (-x as f32 * sin + y as f32 * cos).round()
+        let rt = ( x as f32 * cos + y as f32 * sin,
+                   -x as f32 * sin + y as f32 * cos,
                  );
         return rt;
     }
 
 
-    if inplace {
-        panic!("TODO: Rotate bmp inplace is on the todo list.");
-    } else {
+    {
         let dst_w = (src_bmp.width as f32 * angle.cos().abs() + src_bmp.height as f32 * angle.sin().abs()).round() as isize;
         let dst_h = (src_bmp.width as f32 * angle.sin().abs() + src_bmp.height as f32 * angle.cos().abs()).round() as isize;
         let mut dst_bmp = TGBitmap::new(dst_w as i32, dst_h as i32);//TODO
@@ -4705,9 +4713,9 @@ fn rotate_bmp(src_bmp: &mut TGBitmap, angle: f32, inplace: bool)->Option<TGBitma
                 let y = y.round() as isize;
 
 
-                if x > w as isize || x < 0 { 
+                if x >= w as isize || x < 0 { 
                     continue; }
-                if y > h as isize || y < 0 { 
+                if y >= h as isize || y < 0 { 
                     continue; }
                 if x+y*w >= h*w {
                     continue;
@@ -7032,6 +7040,8 @@ impl core::fmt::Debug for TinyString{
 
 
 
+/// The function pulls a random number from a Gaussian distribution with a standard devivation as
+/// given by the user.
 fn sample_normal(std: f32)->f32{unsafe{
     let one_over_sqrt_2 = 0.70710678118;
     let dst = Normal::new(0.0, std*one_over_sqrt_2).unwrap();
