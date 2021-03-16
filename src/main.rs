@@ -118,7 +118,6 @@ mod unix;
 #[cfg(target_os = "linux")]
 use unix::make_window;
 
-mod eq_potential;
 
 
 

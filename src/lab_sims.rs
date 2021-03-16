@@ -75,7 +75,6 @@ use std::time::{Instant, Duration};
 use rand::thread_rng;
 use rand_distr::{Normal, Distribution};
 
-use crate::eq_potential::*;
 use parser::*;
 
 
@@ -592,7 +591,6 @@ pub enum MessageType{
 ///
 pub struct LS_AppStorage{
     pub init: bool,
-    pub eq_storage: EQ_Storage,
 
     pub menu_canvas: SubCanvas,
     pub menu_move_activated_time: u128,
@@ -674,7 +672,6 @@ impl LS_AppStorage{
     pub fn  new()->LS_AppStorage{
         LS_AppStorage{
             init: false,
-            eq_storage: EQ_Storage::new(),
 
             menu_canvas: SubCanvas::new(0,0),
             menu_move_activated_time: 0,
@@ -1208,11 +1205,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         }
     }
 
-    //TODO remove me
-    if false {
-        eq_potential_sim(os_package, app_storage, keyboardinfo, textinfo, mouseinfo);
-        return 0;
-    }
     
 
 
@@ -6147,6 +6139,15 @@ updated externally.
 
 
 
+/// Draws a graph to a given window canvas. x and y are buffers containing input data.
+///
+/// ## Example
+/// ```
+/// let x_data = [1f32,2f32,3f32,4f32,5f32];
+/// let y_data = [1f32,2f32,3f32,4f32,5f32];
+///
+/// draw_graph(canvas, &x_data, &y_data, [10, 10, 200, 200], 5f32, 18f32);
+/// ```
 fn draw_graph(canvas: &mut WindowCanvas, x: &[f32], y: &[f32], rect: [i32; 4], min_x_range: f32, font_size: f32,
               mouseinfo: &MouseInfo){
     let _rect = [ rect[0] + font_size as i32 + 3, 
