@@ -384,14 +384,21 @@ impl CircuitElementTextBox{
     }
 }
 
+/// CircuitElement is the primary structure of this module.
+/// The struct is used to store the element properties ie. voltage, resistance, capacitance etc.
+/// Position and orientation are also stored here.
+///
+/// Each circuit element placed in the user area are given a set of unique identifiers.
+/// The unique identifier is determined by `get_unique_id`. This function is not thread safe.
+/// Do not use CircuitElement::new() in a multi threaded capacity.
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 struct CircuitElement{
-    circuit_element_type: SelectedCircuitElement, //Special
-    orientation: f32,                             //Special
-    x: i32,                                       //Special
-    y: i32,                                       //Special
-    length: i32,                                  //Special
+    circuit_element_type: SelectedCircuitElement, 
+    orientation: f32,                             
+    x: i32,                                       
+    y: i32,                                       
+    length: i32,                                  
     selected: bool,
     selected_rotation: bool,
 
@@ -401,48 +408,48 @@ struct CircuitElement{
     properties_offset_y: Option<i32>,
 
 
-    unique_a_node: usize,                        //Special
+    unique_a_node: usize,                        
     a_node: usize,
-    unique_b_node: usize,                        //Special
+    unique_b_node: usize,                        
     b_node: usize,
 
-    resistance: f32,                            //Special
-    voltage: f32,                               //Special
-    current: f32,                               //Special
+    resistance: f32,                            
+    voltage: f32,                               
+    current: f32,                               
 
-    unc_resistance: f32,                            //Special
-    unc_voltage: f32,                               //Special
-    unc_current: f32,                               //Special
+    unc_resistance: f32,                       
+    unc_voltage: f32,                          
+    unc_current: f32,                          
 
-    capacitance: f32,                           //Special
-    inductance: f32,                            //Special
-    charge:     f32,                            //Special
-    magnetic_flux: f32,                         //Special
+    capacitance: f32,                         
+    inductance: f32,                          
+    charge:     f32,                          
+    magnetic_flux: f32,                       
 
-    unc_capacitance: f32,                           //Special
-    unc_inductance: f32,                            //Special
-    unc_charge:     f32,                            //Special
-    unc_magnetic_flux: f32,                         //Special
+    unc_capacitance: f32,                    
+    unc_inductance: f32,                     
+    unc_charge:     f32,                     
+    unc_magnetic_flux: f32,                  
     
     max_voltage: f32,
     d_voltage_over_dt: f32,
     frequency: f32,
 
-    solved_voltage: Option<f32>, //Temp until Thoth(9/24/2020) is comfortable with how things are setup
-    solved_current: Option<f32>, //Temp until Thoth(9/24/2020) is comfortable with how things are setup
+    solved_voltage: Option<f32>, 
+    solved_current: Option<f32>, 
 
-    print_voltage: Option<f32>, //Temp until Thoth(9/24/2020) is comfortable with how things are setup
-    print_current: Option<f32>, //Temp until Thoth(9/24/2020) is comfortable with how things are setup
+    print_voltage: Option<f32>,  
+    print_current: Option<f32>,  
 
     discovered: bool,
 
     direction : Option<CircuitElementDirection>,
 
-    is_circuit_element: bool, //TODO we will test without using this
+    is_circuit_element: bool,   //TODO we will test without using this
     a_index: [Option<usize>; 3],//TODO do we use this?
     b_index: [Option<usize>; 3],//TODO do we use this?
 
-    ac_source_type:  ACSourceType,            //Special
+    ac_source_type:  ACSourceType,            
     temp_step_voltage : f32,
     alt_sim_time: f32,
 
@@ -481,7 +488,6 @@ impl CircuitElement{
             unc_voltage:  0.0f32,
             unc_current:  0.0f32,
 
-            //TODO new (10/26/2020)
             capacitance: 0f32,
             inductance : 0f32,
             charge :     0f32,
@@ -496,8 +502,8 @@ impl CircuitElement{
             d_voltage_over_dt: 0f32,
             frequency   : 0f32,
 
-            solved_voltage: None, //Temp until Thoth(9/24/2020) is comfortable with how things are setup
-            solved_current: None, //Temp until Thoth(9/24/2020) is comfortable with how things are setup
+            solved_voltage: None, 
+            solved_current: None, 
 
             print_voltage: None, 
             print_current: None, 
@@ -535,77 +541,16 @@ impl CircuitElement{
         let a_id  = get_unique_id();
         let b_id = get_unique_id();
 
+        let mut ce = CircuitElement::empty();
 
-        CircuitElement{
-            circuit_element_type: SelectedCircuitElement::None,
-            orientation: 0.0,
-            x: 0,
-            y: 0,
-            length: 0,
-            selected: false,
-            selected_rotation: false,
+        ce.unique_a_node = a_id;
+        ce.a_node        = a_id;
 
-            properties_selected: false,
-            properties_move_selected: false,
-            properties_offset_x: None,
-            properties_offset_y: None,
+        ce.unique_b_node = b_id;
+        ce.b_node        = b_id;
 
-            resistance: 0.0f32,
-            voltage:  0.0f32,
-            current:  0.0f32,
+        return ce;
 
-            unc_resistance: 0.0f32,
-            unc_voltage:  0.0f32,
-            unc_current:  0.0f32,
-
-            capacitance: 0f32,
-            inductance : 0f32,
-            charge :     0f32,
-            magnetic_flux: 0f32,
-
-            unc_capacitance: 0f32,
-            unc_inductance : 0f32,
-            unc_charge :     0f32,
-            unc_magnetic_flux: 0f32,
-
-            max_voltage : 0f32,
-            d_voltage_over_dt : 0f32,
-            frequency   : 0f32,
-
-
-            solved_voltage: None, //Temp until Thoth(9/24/2020) is comfortable with how things are setup
-            solved_current: None, //Temp until Thoth(9/24/2020) is comfortable with how things are setup
-
-            print_voltage: None, 
-            print_current: None, 
-
-            unique_a_node: a_id,
-            a_node: a_id,
-            unique_b_node: b_id,
-            b_node: b_id,
-
-            discovered: false,
-
-            direction : None,
-
-            is_circuit_element: false,
-            a_index: [None; 3],
-            b_index: [None; 3],
-
-            ac_source_type:  ACSourceType::Sin,
-            temp_step_voltage : 0f32,
-            alt_sim_time: 0f32,
-
-            properties_z: 0,
-            label: TinyString::new(),
-
-            bias: 0f32,
-            noise: 0f32,
-            drift: 0f32,
-
-            initial_altered_rotation: 0f32,
-            time: 0f32,
-        }
     }
 }
 
@@ -627,6 +572,10 @@ pub enum MessageType{
     Default
 }
 
+/// LS_AppStorage contains data that must be stored across the frame boundary.
+/// LS_AppStorage contians the list of circuit elements that the user has placed in the
+/// user space.  
+///
 pub struct LS_AppStorage{
     pub init: bool,
     pub eq_storage: EQ_Storage,
@@ -1041,6 +990,38 @@ fn uncompress_panelfile( panelfile: &PanelFile )->String{
 
 
 
+/// `circuit_sim` is the most important function in this module.
+/// Everything happens here. `circuit_sim` requires keyboard, text and mouse information
+/// structs as input. These structs contain all interactive data the application needs to run.
+/// You may find the definitions of these structs in the `inputhandler` module, though it 
+/// should be noted that these structs are filled out on an operating system by operating 
+/// system bases. You may need to look into the `macos`, `windows` or `unix` modules for 
+/// interface details.
+///
+/// `circuit_sim` begins with an initialization block, `app_storage.init`. 
+/// In this block window size is set, assets are initialized and configuration files are 
+/// loaded. If you wish to incorporate more assets they should be initialized here.
+///
+/// TA mode is handled shortly after. 
+/// TA mode give the user the ability to author content. The retractable size panel 
+/// and the Custom Element panel can be edited using TA mode.
+/// TA mode is activated when a file with the name
+/// given by `TA_FILE_NAME` is in the program's directory and the tab button is pressed. 
+/// 
+/// User created circuits, and associated circuit elements, are render next. 
+/// Logic relating to circuit element property panels are handled in this block as well.
+/// The block has three distinct parts. 
+///  - Circuit element rendering, movement logic,
+///  - property panel z-coordinate organization,
+///  - property panel rendering and logic.
+/// Z-coordinate organization refers to the order property panels are rendered and 
+/// which panels has inputs recognized if multiple panels overlap.
+/// 
+///
+/// The final block handles circuit simulation. `compute_circuit` is these most 
+/// important function in this section. The circuit simulation is done using the
+/// sparse tableau network analysis approach, using Gaussian elimination to solve the 
+/// resulting matrix. You can find the text [here](http://web.engr.oregonstate.edu/~karti/ece521/sta.pdf).
 pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, keyboardinfo: &KeyboardInfo, textinfo: &TextInfo, mouseinfo: &MouseInfo)->i32{
 
     let window_w = os_package.window_canvas.w;
@@ -1072,8 +1053,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         }
 
 
-        //#["windows"]
-        //os_package.window_info.h = 750-70;
 
         app_storage.menu_canvas = SubCanvas::new( 492, window_h);
 
@@ -1205,8 +1184,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         }
 
         if keyboardinfo.is_key_pressed(KeyboardEnum::Tab){
-            //TODO
-            //save slightly encoded using miniz
             let mut panel = PanelFile{ original_length: app_storage.lab_text.as_bytes().len() as u64,
                                    buffer: Vec::new()
                                   };
@@ -7055,10 +7032,9 @@ impl core::fmt::Debug for TinyString{
 
 
 
-
-
 fn sample_normal(std: f32)->f32{unsafe{
-    let dst = Normal::new(0.0, std*2f32.powf(-0.5)).unwrap();
+    let one_over_sqrt_2 = 0.70710678118;
+    let dst = Normal::new(0.0, std*one_over_sqrt_2).unwrap();
     return dst.sample(&mut thread_rng());
 }}
 
