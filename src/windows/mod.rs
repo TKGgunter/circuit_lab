@@ -72,7 +72,10 @@ pub fn make_window(){unsafe{
     use std::os::windows::ffi::OsStrExt;
 
 
-
+    let mut exe_path = std::env::current_exe().expect("could not find the exe path");
+    if !exe_path.to_string_lossy().contains("target/release"){
+    winapi::um::wincon::FreeConsole();
+    }
 
 
 

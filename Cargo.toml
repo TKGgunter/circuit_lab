@@ -31,7 +31,7 @@ core-graphics = "0.13.0"
 [target.'cfg(windows)'.dependencies.winapi]
 path = "winapi-0.3.8"
 version = "0.3.8"
-features = ["winuser", "windef", "wingdi", "winnt", "libloaderapi", "memoryapi", "processenv",
+features = ["winuser", "windef", "wingdi", "winnt", "libloaderapi", "memoryapi", "processenv", "wincon",
             "mmdeviceapi", "combaseapi", "audioclient", "dsound", "impl-default", "errhandlingapi", "hidpi"] 
 
 
