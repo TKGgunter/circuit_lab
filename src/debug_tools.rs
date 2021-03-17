@@ -1,4 +1,16 @@
-use std::collections::HashMap; //TODO replace with something fast
+//! This module contains a set of performance debugging tools, akin to telemetry. 
+//!
+//! To assist in the optimization process the following tools are provided.
+//! The macros `timeit!` and `DEBUG_timeit!` should be used when timing a block of code.
+//! `timeit!` is a macro that will print the elapsed time and cycle counts at the end of the code
+//! block.
+//! `DEBUG_timeit!` is a macro that should be used in conjunction with a statically initialized
+//! `DebugStruct`, `reset_frame_debugging` and `draw_debuginfo`.  `draw_debuginfo` will render debug data to the given
+//! canvas. `DebugStruct` collects timings across a specified frame such that `draw_debuginfo` can deliver averaged statistics.
+
+
+
+use std::collections::HashMap;
 use std::time::{Instant, Duration};
 
 use crate::misc::StopWatch;
@@ -6,10 +18,6 @@ use crate::WindowCanvas;
 use crate::inputhandler::*;
 use crate::rendertools::*;
 
-
-//TODO
-//+cpu cycle counds need to be added
-//+begin/end macro timers
 
 
 pub const MAX_AVG_N : usize = 3;
@@ -105,6 +113,19 @@ pub fn reset_frame_debugging(){unsafe{
     }
 }}
 
+/// This macro will print elapsed time and clock cycles over the course of a code block.
+///
+/// ## Example
+/// ```
+/// timeit!{{
+///     //Do some work
+/// }}
+///
+/// timeit!{"name of block", {
+///     //Do some work
+///     //The name of timeit block will be printed before results.
+/// }}
+/// ```
 #[macro_export]
 macro_rules! timeit{
     ($x:block) => 
@@ -126,6 +147,17 @@ macro_rules! timeit{
     };
 }
 
+/// This macro will store elapsed time and clock cycles over the course of a code block.
+/// 
+/// ## Example
+/// ```
+///
+/// DEBUG_timeit!{"name of block", {
+///     //Do some work
+///     //The name of timeit block will be set for results.
+/// }}
+/// ```
+/// 
 #[macro_export]
 macro_rules! DEBUG_timeit{
     ($x:tt, $y:block)=>
@@ -158,11 +190,13 @@ macro_rules! DEBUG_timeit{
 
 
 
-pub fn update_debuginfo(keyboardinfo: &KeyboardInfo, textinfo: &TextInfo, mouseinfo: &MouseInfo){
-    //TODO 
-    //some form of interaction maybe
-}
+//pub fn update_debuginfo(keyboardinfo: &KeyboardInfo, textinfo: &TextInfo, mouseinfo: &MouseInfo){
+//    //TODO 
+//    //some form of interaction maybe
+//}
 
+/// Draws the debug info to the canvas provided. The results will be rendered across the entire
+/// canvas.
 pub fn draw_debuginfo(canvas: &mut WindowCanvas){unsafe{
 
     let _x = GLOBAL_DEBUG_RENDER.x;

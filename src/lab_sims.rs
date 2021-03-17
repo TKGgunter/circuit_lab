@@ -6971,9 +6971,11 @@ fn test_undir_to_directed(){
 
 
 
-//TODO size needs to be a template style parameter
-//TODO add to misc
 const _FIXED_CHAR_BUFFER_SIZE : usize = 15;
+
+
+/// TinyString is a fixed size stack allocated string struct.
+///
 #[derive(Clone, Copy)]
 pub struct TinyString{
     //NOTE
