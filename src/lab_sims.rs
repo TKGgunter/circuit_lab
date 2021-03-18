@@ -2072,6 +2072,18 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         tb.draw(window_canvas, time);
                         *offset_x += tb.max_render_length;
                     }
+                    fn do_clear_button(canvas: &mut WindowCanvas, mouseinfo: &MouseInfo, properties_x: i32, properties_y: i32, properties_h: i32, properties_z: usize,
+                                       offset_x: i32, offset_y: i32, property: &mut f32, panel_font: f32){
+                        let clear_rect = [properties_x+offset_x+14,  properties_y+properties_h-offset_y+3, get_advance_string("clear", panel_font)+5, panel_font as _];
+                        if in_rect(mouseinfo.x, mouseinfo.y, clear_rect){
+                            draw_rect(canvas, clear_rect, C4_DGREY, true);
+                            if mouseinfo.lclicked() 
+                            && properties_z == get_global_properties_z() - 1{
+                                *property = 0.0;
+                            }
+                        }
+                        draw_string(canvas, "clear", properties_x+12+offset_x, properties_y+properties_h-offset_y, C4_WHITE, panel_font);
+                    }
 
                     match it.circuit_element_type{
                         SelectedCircuitElement::Wire | 
@@ -2140,6 +2152,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 }
                             }
                             offset_x += draw_char(&mut os_package.window_canvas, '-', properties_x+2+offset_x, properties_y+properties_h-offset_y, C4_WHITE, panel_font);
+
+
+                            do_clear_button(&mut os_package.window_canvas, mouseinfo, properties_x, properties_y, properties_h, it.properties_z, 
+                                            offset_x, offset_y, &mut it.voltage, panel_font);
                              
                         },
                         SelectedCircuitElement::Capacitor=>{ 
@@ -2173,6 +2189,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 }
                             }
                             offset_x += draw_char(&mut os_package.window_canvas, '-', properties_x+2+offset_x, properties_y+properties_h-offset_y, C4_WHITE, panel_font);
+
+                            do_clear_button(&mut os_package.window_canvas, mouseinfo, properties_x, properties_y, properties_h, it.properties_z, 
+                                            offset_x, offset_y, &mut it.capacitance, panel_font);
                             offset_y += 23;
 
                             offset_x = 0;
@@ -2212,6 +2231,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             }
                             offset_x += draw_char(&mut os_package.window_canvas, '-', properties_x+2+offset_x, properties_y+properties_h-offset_y, C4_WHITE, panel_font);
 
+                            do_clear_button(&mut os_package.window_canvas, mouseinfo, properties_x, properties_y, properties_h, it.properties_z, 
+                                            offset_x, offset_y, &mut it.charge, panel_font);
+
 
                         },
                         SelectedCircuitElement::Inductor=>{ 
@@ -2245,6 +2267,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 }
                             }
                             offset_x += draw_char(&mut os_package.window_canvas, '-', properties_x+2+offset_x, properties_y+properties_h-offset_y, C4_WHITE, panel_font);
+
+                            do_clear_button(&mut os_package.window_canvas, mouseinfo, properties_x, properties_y, properties_h, it.properties_z, 
+                                            offset_x, offset_y, &mut it.inductance, panel_font);
                             offset_y += 23;
 
                             offset_x = 0;
@@ -2285,6 +2310,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             }
                             offset_x += draw_char(&mut os_package.window_canvas, '-', properties_x+2+offset_x, properties_y+properties_h-offset_y, C4_WHITE, panel_font);
 
+                            do_clear_button(&mut os_package.window_canvas, mouseinfo, properties_x, properties_y, properties_h, it.properties_z, 
+                                            offset_x, offset_y, &mut it.magnetic_flux, panel_font);
+
 
                         },
                         SelectedCircuitElement::Resistor=>{  
@@ -2315,6 +2343,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 }
                             }
                             offset_x += draw_char(&mut os_package.window_canvas, '-', properties_x+2+offset_x, properties_y+properties_h-offset_y+1, C4_WHITE, panel_font);
+
+                            do_clear_button(&mut os_package.window_canvas, mouseinfo, properties_x, properties_y, properties_h, it.properties_z, 
+                                            offset_x, offset_y, &mut it.resistance, panel_font);
                         },
                         SelectedCircuitElement::Voltmeter | SelectedCircuitElement::CustomVoltmeter=>{  
                             draw_string(&mut os_package.window_canvas, "No changeable properties.", properties_x, properties_y+properties_h-offset_y, C4_GREY, 20.0);
@@ -2411,6 +2442,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 }
                             }
                             offset_x += draw_char(&mut os_package.window_canvas, '-', properties_x+2+offset_x, properties_y+properties_h-offset_y, C4_WHITE, panel_font);
+
+                            do_clear_button(&mut os_package.window_canvas, mouseinfo, properties_x, properties_y, properties_h, it.properties_z, 
+                                            offset_x, offset_y, &mut it.max_voltage, panel_font);
                             offset_y += 23;
 
                             offset_x = 0;
@@ -2445,8 +2479,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 && it.properties_z == get_global_properties_z() - 1{
                                     it.d_voltage_over_dt = it.d_voltage_over_dt / ( 2f32 * PI * it.frequency );
 
-                                    let _angle = it.d_voltage_over_dt.acos() / it.frequency;
-
                                     it.frequency -= 0.25;
                                     if it.frequency < 0f32 {
                                         it.frequency = 0.00001;
@@ -2455,6 +2487,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 }
                             }
                             offset_x += draw_char(&mut os_package.window_canvas, '-', properties_x+2+offset_x, properties_y+properties_h-offset_y, C4_WHITE, panel_font);
+                            do_clear_button(&mut os_package.window_canvas, mouseinfo, properties_x, properties_y, properties_h, it.properties_z, 
+                                            offset_x, offset_y, &mut it.frequency, panel_font);
 
                             offset_y += 23;
                             offset_x = 0;
@@ -4101,26 +4135,25 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 if it.circuit_element_type == SelectedCircuitElement::AC
                 && it.solved_current.is_some(){//TODO does not work when you change max voltage or frequency
                     if it.ac_source_type == ACSourceType::Sin{
-                        let max_voltage = it.max_voltage * PI;
-                        let d_voltage2_over_dt2 = -1.0* ( 2f32*PI*it.frequency ).powi(2)*it.temp_step_voltage;
+                        //let max_voltage = it.max_voltage * PI;
+                        //let d_voltage2_over_dt2 = -1.0* ( 2f32*PI*it.frequency ).powi(2)*it.temp_step_voltage;
 
-                        it.d_voltage_over_dt += d_voltage2_over_dt2 * TIME_STEP;
-                        it.d_voltage_over_dt = it.d_voltage_over_dt.max(-1.0).min(1.0);
+                        //it.d_voltage_over_dt += d_voltage2_over_dt2 * TIME_STEP;
+                        //it.d_voltage_over_dt = it.d_voltage_over_dt.max(-1.0).min(1.0);
 
 
-                        it.temp_step_voltage +=  it.d_voltage_over_dt * TIME_STEP;
-                        it.temp_step_voltage  =  it.temp_step_voltage.max(-1.0/PI).min(1.0/PI);
-                        it.voltage =  it.temp_step_voltage * max_voltage;
+                        //it.temp_step_voltage +=  it.d_voltage_over_dt * TIME_STEP;
+                        //it.temp_step_voltage  =  it.temp_step_voltage.max(-1.0/PI).min(1.0/PI);
+                        //it.voltage =  it.temp_step_voltage * max_voltage;
                         it.voltage =  it.max_voltage * (2f32 * PI * it.frequency * it.time).sin();
 
                     } else if it.ac_source_type == ACSourceType::Step{
-                        let d_voltage2_over_dt2 = -1.0*( 2f32*PI*it.frequency ).powi(2)*it.temp_step_voltage/it.max_voltage;
+                        //let d_voltage2_over_dt2 = -1.0*( 2f32*PI*it.frequency ).powi(2)*it.temp_step_voltage/it.max_voltage;
+                        //it.d_voltage_over_dt += d_voltage2_over_dt2 * TIME_STEP;
+                        //it.d_voltage_over_dt = it.d_voltage_over_dt.max(-1.0).min(1.0);
+                        //let d_voltage_over_dt = it.d_voltage_over_dt;
 
-                        it.d_voltage_over_dt += d_voltage2_over_dt2 * TIME_STEP;
-                        it.d_voltage_over_dt = it.d_voltage_over_dt.max(-1.0).min(1.0);
-                        let d_voltage_over_dt = it.d_voltage_over_dt;
-
-                        it.temp_step_voltage +=  it.d_voltage_over_dt * TIME_STEP * it.max_voltage;
+                        //it.temp_step_voltage +=  it.d_voltage_over_dt * TIME_STEP * it.max_voltage;
                         it.temp_step_voltage =  (2f32 * PI * it.frequency * it.time).sin();
 
                         it.voltage = if it.temp_step_voltage > 0f32 {  it.max_voltage } else { -1.0*it.max_voltage};
@@ -6620,7 +6653,15 @@ impl TextBox{
         draw_rect(canvas,
              [self.x+4, self.y + 4, self.max_render_length , self.text_size as i32],
              self.bg_color, true);
-        draw_string(canvas, &self.text_buffer, self.x, self.y, self.text_color, self.text_size);
+        //draw_string(canvas, &self.text_buffer, self.x, self.y, self.text_color, self.text_size);
+        let mut offset = 0;
+
+        for  (i, it) in self.text_buffer.chars().enumerate(){
+            if i >= self.max_char as _{
+                break;
+            }
+            offset += draw_char(canvas, it, self.x + offset, self.y, self.text_color, self.text_size);
+        }
 
 
         if self.active {
