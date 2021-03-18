@@ -50,6 +50,10 @@ use crate::{WindowCanvas, WindowInfo,
 use inputhandler::*;
 use crate::misc::*;
 
+#[macro_use]
+use crate::{timeit, DEBUG_timeit};
+use crate::debug_tools::*;
+
 /////////////
 //TODO
 // + do the many little things
@@ -89,12 +93,6 @@ fn update_window<T: NSWindow + std::marker::Copy>(bitmap: &mut WindowCanvas, win
     let device_color_space = NSString::alloc(nil).init_str("NSDeviceRGBColorSpace");
 
 
-//NOTE this is really slow we should just copy the new bitmap data using 
-//  https://developer.apple.com/documentation/appkit/nsbitmapimagerep/1395421-bitmapdata?language=occ 
-    if BACKBUFFER.backbuffer != null_mut() {
-        let _ : id = msg_send![BACKBUFFER.image, removeRepresentation: BACKBUFFER.backbuffer];
-        let _ : id = msg_send![BACKBUFFER.backbuffer, dealloc]; 
-    } 
 
     let count = bitmap.w as usize * 4;
     let mut temp = vec![0u8; count]; //TODO do not allocate this all the time
@@ -106,7 +104,14 @@ fn update_window<T: NSWindow + std::marker::Copy>(bitmap: &mut WindowCanvas, win
         std::ptr::copy_nonoverlapping(bitmap.buffer.offset( ptr_offset_high), bitmap.buffer.offset(ptr_offset_low), count);
         std::ptr::copy_nonoverlapping(temp.as_ptr(), bitmap.buffer.offset(ptr_offset_high) as *mut u8, count);
     }
+//NOTE this is really slow we should just copy the new bitmap data using 
+//  https://developer.apple.com/documentation/appkit/nsbitmapimagerep/1395421-bitmapdata?language=occ 
 
+    if BACKBUFFER.backbuffer != null_mut() {
+        let _ : id = msg_send![BACKBUFFER.image, removeRepresentation: BACKBUFFER.backbuffer];
+        let _ : id = msg_send![BACKBUFFER.backbuffer, dealloc]; 
+    }
+ 
     BACKBUFFER.backbuffer = msg_send![class!(NSBitmapImageRep), alloc];
     BACKBUFFER.backbuffer = msg_send![ BACKBUFFER.backbuffer, initWithBitmapDataPlanes: &bitmap.buffer as * const _//temp as * const _ 
                                                              pixelsWide: bitmapWidth
@@ -259,8 +264,6 @@ pub fn make_window<'a>() {unsafe{
         
 
         let display_pixel_dim : NSSize = msg_send![display_device_size, sizeValue];
-        println!("{:?} {:?}", display_pixel_dim.width, display_pixel_dim.height);
-        println!("{:?} {:?}", screen_size.width, screen_size.height);
 
         GLOBAL_BACKBUFFER.display_width = display_pixel_dim.width.round() as _;
         GLOBAL_BACKBUFFER.display_height = display_pixel_dim.height.round() as _;
@@ -348,7 +351,6 @@ pub fn make_window<'a>() {unsafe{
                     exe_path.pop();
                 }
             }
-            println!("{:?}", exe_path);
             std::env::set_current_dir(exe_path).expect("could not do the thing");
 
 
