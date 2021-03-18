@@ -2030,8 +2030,11 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                 {
                     let mut offset_x = 0;
-                    let mut offset_y = 55;
+                    let mut offset_y = 57;
+
                     let textbox = app_storage.circuit_textbox_hash.get_mut(&(it.unique_a_node, it.unique_b_node)).expect("could not find textbox");
+
+
                     fn do_text_box_things( tb: &mut TextBox, properties_x: i32, properties_y: i32, properties_w: i32, properties_h: i32, properties_z: usize,
                                            textinfo: &TextInfo, mouseinfo: &MouseInfo, keyboardinfo: &KeyboardInfo,
                                            it_property: &mut f32, window_canvas: &mut WindowCanvas, time: f32,
@@ -2170,7 +2173,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 }
                             }
                             offset_x += draw_char(&mut os_package.window_canvas, '-', properties_x+2+offset_x, properties_y+properties_h-offset_y, C4_WHITE, panel_font);
-                            offset_y += 22;
+                            offset_y += 23;
 
                             offset_x = 0;
                             offset_x += draw_string(&mut os_package.window_canvas, "Charge(C):   ", properties_x+2, properties_y+properties_h-offset_y, C4_GREY, panel_font);
@@ -2242,7 +2245,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 }
                             }
                             offset_x += draw_char(&mut os_package.window_canvas, '-', properties_x+2+offset_x, properties_y+properties_h-offset_y, C4_WHITE, panel_font);
-                            offset_y += 22;
+                            offset_y += 23;
 
                             offset_x = 0;
                             offset_x += draw_string(&mut os_package.window_canvas, "Flux(Wb):   ", properties_x+2, properties_y+properties_h-offset_y, C4_GREY, panel_font);
@@ -2408,7 +2411,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 }
                             }
                             offset_x += draw_char(&mut os_package.window_canvas, '-', properties_x+2+offset_x, properties_y+properties_h-offset_y, C4_WHITE, panel_font);
-                            offset_y += 22;
+                            offset_y += 23;
 
                             offset_x = 0;
                             offset_x += draw_string(&mut os_package.window_canvas, "Frequency(Hz):  ", properties_x+2, properties_y+properties_h-offset_y, C4_GREY, panel_font);
@@ -2453,7 +2456,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             }
                             offset_x += draw_char(&mut os_package.window_canvas, '-', properties_x+2+offset_x, properties_y+properties_h-offset_y, C4_WHITE, panel_font);
 
-                            offset_y += 22;
+                            offset_y += 23;
                             offset_x = 0;
                             offset_x += draw_string(&mut os_package.window_canvas, "Source Type: ", properties_x+2, properties_y+properties_h-offset_y, C4_GREY, panel_font);
 
@@ -2492,7 +2495,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         _=>{panic!("TODO");}
                     }
 
-                    offset_y += 22;
+                    offset_y += 23;
                     if app_storage.teacher_mode {
                         match it.print_current{
                             Some(c)=>{ 
@@ -2521,7 +2524,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                                [properties_x+2, properties_y+properties_h-offset_y, properties_w-4, (properties_h/2).max(50)], 
                                                5.0, 18.0, mouseinfo);
 
-                                    offset_y += 22;
+                                    offset_y += 23;
                                     let save_rect = [properties_x+properties_w-62, properties_y+properties_h-offset_y, 60, 20];
                                     let mut save_rect_color = C4_DGREY;
 
@@ -3257,14 +3260,19 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                     } else if it.circuit_element_type == SelectedCircuitElement::Custom{
 
+
+                        let pm_len = get_advance_string( "+ ", PANEL_FONT); 
+                        let textbox_width = c_textbox.resistance_textbox.max_render_length + 5 + pm_len + c_textbox.unc_resistance_textbox.max_render_length;
+
+                        let textbox_x = properties_rect[0] + properties_rect[2] - textbox_width;
                         {
                             let rstr_len = draw_string(&mut os_package.window_canvas, "Resistance(Ω): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
-                            do_text_box_things( &mut c_textbox.resistance_textbox, properties_rect[0] + rstr_len, prop_y_offset,
+                            do_text_box_things( &mut c_textbox.resistance_textbox, textbox_x, prop_y_offset,
                                                    textinfo, mouseinfo, keyboardinfo,
                                                    &mut it.resistance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
                                                    );
 
-                            let _len = properties_rect[0]+rstr_len+c_textbox.resistance_textbox.max_render_length;
+                            let _len = textbox_x+c_textbox.resistance_textbox.max_render_length;
                             let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
                                                      prop_y_offset, C4_WHITE, PANEL_FONT);
                             do_text_box_things( &mut c_textbox.unc_resistance_textbox, _len + pm_len, prop_y_offset,
@@ -3276,12 +3284,12 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                         {
                             let vstr_len = draw_string(&mut os_package.window_canvas, "Voltage(V): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
-                            do_text_box_things( &mut c_textbox.voltage_textbox, properties_rect[0] + vstr_len, prop_y_offset,
+                            do_text_box_things( &mut c_textbox.voltage_textbox, textbox_x, prop_y_offset,
                                                    textinfo, mouseinfo, keyboardinfo,
                                                    &mut it.voltage, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
                                                    );
 
-                            let _len = properties_rect[0]+vstr_len+c_textbox.voltage_textbox.max_render_length;
+                            let _len = textbox_x+c_textbox.voltage_textbox.max_render_length;
                             let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
                                                      prop_y_offset, C4_WHITE, PANEL_FONT);
                             do_text_box_things( &mut c_textbox.unc_voltage_textbox, _len + pm_len, prop_y_offset,
@@ -3309,11 +3317,11 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                         {
                             let cstr_len = draw_string(&mut os_package.window_canvas, "Capacitance(F): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
-                            do_text_box_things( &mut c_textbox.capacitance_textbox, properties_rect[0] + cstr_len, prop_y_offset,
+                            do_text_box_things( &mut c_textbox.capacitance_textbox, textbox_x, prop_y_offset,
                                                    textinfo, mouseinfo, keyboardinfo,
                                                    &mut it.capacitance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
                                                    );
-                            let _len = properties_rect[0]+cstr_len+c_textbox.capacitance_textbox.max_render_length;
+                            let _len = textbox_x + c_textbox.capacitance_textbox.max_render_length;
                             let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
                                                      prop_y_offset, C4_WHITE, PANEL_FONT);
                             do_text_box_things( &mut c_textbox.unc_capacitance_textbox, _len + pm_len, prop_y_offset,
@@ -3325,11 +3333,11 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                         {
                             let istr_len = draw_string(&mut os_package.window_canvas, "Inductance(H): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
-                            do_text_box_things( &mut c_textbox.inductance_textbox, properties_rect[0] + istr_len, prop_y_offset,
+                            do_text_box_things( &mut c_textbox.inductance_textbox, textbox_x, prop_y_offset,
                                                    textinfo, mouseinfo, keyboardinfo,
                                                    &mut it.inductance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
                                                    );
-                            let _len = properties_rect[0]+istr_len+c_textbox.inductance_textbox.max_render_length;
+                            let _len = textbox_x+c_textbox.inductance_textbox.max_render_length;
                             let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
                                                      prop_y_offset, C4_WHITE, PANEL_FONT);
                             do_text_box_things( &mut c_textbox.unc_inductance_textbox, _len + pm_len, prop_y_offset,
@@ -3341,11 +3349,11 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                         {
                             let cstr_len = draw_string(&mut os_package.window_canvas, "Charge(C): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
-                            do_text_box_things( &mut c_textbox.charge_textbox, properties_rect[0] + cstr_len, prop_y_offset,
+                            do_text_box_things( &mut c_textbox.charge_textbox, textbox_x, prop_y_offset,
                                                    textinfo, mouseinfo, keyboardinfo,
                                                    &mut it.charge, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
                                                    );
-                            let _len = properties_rect[0]+cstr_len+c_textbox.charge_textbox.max_render_length;
+                            let _len = textbox_x+c_textbox.charge_textbox.max_render_length;
                             let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
                                                      prop_y_offset, C4_WHITE, PANEL_FONT);
                             do_text_box_things( &mut c_textbox.unc_charge_textbox, _len + pm_len, prop_y_offset,
@@ -3357,11 +3365,11 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                         {
                             let mfstr_len = draw_string(&mut os_package.window_canvas, "Flux(Wb): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
-                            do_text_box_things( &mut c_textbox.magflux_textbox, properties_rect[0] + mfstr_len, prop_y_offset,
+                            do_text_box_things( &mut c_textbox.magflux_textbox, textbox_x, prop_y_offset,
                                                    textinfo, mouseinfo, keyboardinfo,
                                                    &mut it.magnetic_flux, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
                                                    );
-                            let _len = properties_rect[0]+mfstr_len+c_textbox.magflux_textbox.max_render_length;
+                            let _len = textbox_x+c_textbox.magflux_textbox.max_render_length;
                             let pm_len = draw_string(&mut os_package.window_canvas, "+ ", _len,
                                                      prop_y_offset, C4_WHITE, PANEL_FONT);
                             do_text_box_things( &mut c_textbox.unc_magflux_textbox, _len + pm_len, prop_y_offset,
@@ -6482,8 +6490,8 @@ impl TextBox{
             y: 0,
             text_color:[0.8;4],
             cursor_color:[0.8;4],
-            bg_color:[1.0, 1.0, 1.0, 0.1],
-            omega: 1.0f32,
+            bg_color:[1.0, 1.0, 1.0, 0.135],
+            omega: 4.0f32,
             active: false,
 
             offset_x: 0i32,
