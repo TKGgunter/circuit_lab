@@ -3,6 +3,14 @@ name = "xcopyfgc"
 version = "0.1.0"
 authors = ["TKGgunter <thothgunter@live.com>"]
 edition = "2018"
+description = "A Sleepy Ibis LLC production."
+build= "build.rs"
+
+
+
+[package.metadata.winres]
+LegalCopyright = "Copyright © ???"
+
 
 
 [dependencies]
@@ -27,6 +35,12 @@ cocoa = "0.19.1"
 objc = "0.2.3"
 core-foundation = "0.9.1"
 core-graphics = "0.13.0"
+
+
+[target.'cfg(target_os="windows")'.build-dependencies]
+winres = "0.1.11"
+winapi = {path="winapi-0.3.8"}
+
 
 [target.'cfg(windows)'.dependencies.winapi]
 path = "winapi-0.3.8"
