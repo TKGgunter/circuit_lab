@@ -1682,39 +1682,40 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                     if it.properties_z == get_global_properties_z()-1 
                     && it.properties_selected {
-                        //TODO make nice
                         
                         let font_size = 15f32;
-                        let mut offset_x = if it.orientation.sin().abs() < 0.001{ -5 } else { 3 };
-                        let mut offset_y = if it.orientation.sin().abs() < 0.001 { 3 } else { -10 };
+                        let mut offset_x = if it.orientation.sin().abs() < 0.001{ -5 } else { 1 };
+                        let mut offset_y = if it.orientation.sin().abs() < 0.001 { 0 } else { -10 };
                         
                         //NOTE
                         //unique_a 
                         let pos_x = if it.orientation.sin().abs() < 0.001 {
-                           it.x + ((it.orientation / 2f32).sin().abs() * (GRID_SIZE * 4) as f32) as i32 + 6 * it.orientation.sin().signum() as i32
-                        } else {
-                           it.x + (it.orientation.sin().abs() * (GRID_SIZE * 2) as f32) as i32 
-                        };
+                                       let _oset = if it.orientation.sin().signum() == -1f32 { -4 } else { 0 };
+                                       it.x + ((it.orientation / 2f32).sin().abs() * (GRID_SIZE * 4) as f32) as i32 + 6 * it.orientation.sin().signum() as i32 + _oset
+                                    } else {
+                                       it.x + (it.orientation.sin().abs() * (GRID_SIZE * 2) as f32) as i32 
+                                    };
 
                         let pos_y = if it.orientation.sin().abs() < 0.001 {
-                           it.y + (it.orientation.cos().abs() * (GRID_SIZE * 2) as f32) as i32
-                        } else {
-                           it.y + (( (it.orientation - PI/ 2f32) / 2f32 ).sin().abs() * (GRID_SIZE * 4) as f32) as i32
-                        };
+                                       it.y + (it.orientation.cos().abs() * (GRID_SIZE * 2) as f32) as i32
+                                    } else {
+                                       it.y + (( (it.orientation - PI/ 2f32) / 2f32 ).sin().abs() * (GRID_SIZE * 4) as f32) as i32 + 7 * it.orientation.sin().signum() as i32
+                                    };
 
                         draw_string(&mut os_package.window_canvas, &format!("{}", it.unique_a_node), pos_x + offset_x, pos_y + offset_y, C4_WHITE, font_size);
                         
                         //NOTE
                         //unique_b
                         let pos_x = if it.orientation.sin().abs() < 0.001 { 
-                                        it.x + ((it.orientation / 2f32).cos().abs() * (GRID_SIZE * 4) as f32) as i32  - 6 * it.orientation.sin().signum() as i32
+                                        let _oset = if it.orientation.sin().signum() == 1f32 { -4 } else { 0 };
+                                        it.x + ((it.orientation / 2f32).cos().abs() * (GRID_SIZE * 4) as f32) as i32  - 6 * it.orientation.sin().signum() as i32 + _oset
                                     } else { 
-                                        it.x + (it.orientation.sin().abs() * (GRID_SIZE * 2) as f32) as i32 + 4
+                                        it.x + (it.orientation.sin().abs() * (GRID_SIZE * 2) as f32) as i32 
                                     };
                         let pos_y = if it.orientation.sin().abs() < 0.001 {
                                         it.y + (it.orientation.cos().abs() * (GRID_SIZE * 2) as f32) as i32
                                     } else {
-                                        it.y + (( (it.orientation - PI/ 2f32) / 2f32 ).cos().abs() * (GRID_SIZE * 4) as f32) as i32
+                                        it.y + (( (it.orientation - PI/ 2f32) / 2f32 ).cos().abs() * (GRID_SIZE * 4) as f32) as i32 - 7 * it.orientation.sin().signum() as i32
                                     };
                         draw_string(&mut os_package.window_canvas, &format!("{}", it.unique_b_node), pos_x + offset_x, pos_y + offset_y, C4_WHITE, font_size);
                     }
