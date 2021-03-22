@@ -4403,8 +4403,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     || !solved_voltage.is_finite(){
                         let text = format!("Error:  Current({}) and or voltage({}), is not finite. Impacts node {} {}.   Tip: Does the circuit include a resistor?", 
                                            solved_current, solved_voltage,
-                                    app_storage.arr_circuit_elements[it.element_index].unique_a_node,
-                                    app_storage.arr_circuit_elements[it.element_index].unique_b_node);
+                                    app_storage.arr_circuit_elements[it.orig_element_index].unique_a_node,
+                                    app_storage.arr_circuit_elements[it.orig_element_index].unique_b_node);
                         if !app_storage.messages.contains(&(MessageType::Error, text.clone())){
                             app_storage.messages.push((MessageType::Error, text));
                         }
@@ -4413,36 +4413,36 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     }
                 }
 
-                app_storage.arr_circuit_elements[it.element_index].solved_current = Some(solved_current);
-                app_storage.arr_circuit_elements[it.element_index].solved_voltage = Some(solved_voltage);
+                app_storage.arr_circuit_elements[it.orig_element_index].solved_current = Some(solved_current);
+                app_storage.arr_circuit_elements[it.orig_element_index].solved_voltage = Some(solved_voltage);
 
                 let mut print_current = solved_current;
                 let mut print_voltage = solved_voltage;
 
                 let mut _direction;
 
-                if it.in_node == app_storage.arr_circuit_elements[it.element_index].a_node{
+                if it.in_node == app_storage.arr_circuit_elements[it.orig_element_index].a_node{
 
 
                     _direction = CircuitElementDirection::AtoB;
                     if solved_current < 0.0 {
-                        app_storage.arr_circuit_elements[it.element_index].direction = Some( CircuitElementDirection::BtoA );
+                        app_storage.arr_circuit_elements[it.orig_element_index].direction = Some( CircuitElementDirection::BtoA );
                     } else{
-                        app_storage.arr_circuit_elements[it.element_index].direction = Some( CircuitElementDirection::AtoB );
+                        app_storage.arr_circuit_elements[it.orig_element_index].direction = Some( CircuitElementDirection::AtoB );
                     }
                 } else {
 
                     _direction = CircuitElementDirection::BtoA;
                     if solved_current < 0.0 {
-                        app_storage.arr_circuit_elements[it.element_index].direction = Some( CircuitElementDirection::AtoB );
+                        app_storage.arr_circuit_elements[it.orig_element_index].direction = Some( CircuitElementDirection::AtoB );
                     } else{
-                        app_storage.arr_circuit_elements[it.element_index].direction = Some( CircuitElementDirection::BtoA );
+                        app_storage.arr_circuit_elements[it.orig_element_index].direction = Some( CircuitElementDirection::BtoA );
                     }
                 }
 
 
                 //We correct current and voltage to match what we assume a convention. Where current is assumed to enter node A and exit node B.
-                match app_storage.arr_circuit_elements[it.element_index].direction{
+                match app_storage.arr_circuit_elements[it.orig_element_index].direction{
                     Some(CircuitElementDirection::AtoB)=>{
                         print_current = print_current.abs();
                     },
@@ -4454,7 +4454,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 print_voltage = if print_current.signum() == -1f32 {  -1f32 * print_voltage.abs() } else { print_voltage.abs() };
 
 
-                let element = app_storage.arr_circuit_elements[it.element_index];
+                let element = app_storage.arr_circuit_elements[it.orig_element_index];
 
 
 
@@ -4470,13 +4470,13 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 }
 
 
-                app_storage.arr_circuit_elements[it.element_index].print_voltage = Some(print_voltage);
-                app_storage.arr_circuit_elements[it.element_index].print_current = Some(print_current);
-                let ce_time = app_storage.arr_circuit_elements[it.element_index].time;
+                app_storage.arr_circuit_elements[it.orig_element_index].print_voltage = Some(print_voltage);
+                app_storage.arr_circuit_elements[it.orig_element_index].print_current = Some(print_current);
+                let ce_time = app_storage.arr_circuit_elements[it.orig_element_index].time;
 
                 //Setting up current and graph storage
-                let a_node = app_storage.arr_circuit_elements[it.element_index].unique_a_node;
-                let b_node = app_storage.arr_circuit_elements[it.element_index].unique_b_node;
+                let a_node = app_storage.arr_circuit_elements[it.orig_element_index].unique_a_node;
+                let b_node = app_storage.arr_circuit_elements[it.orig_element_index].unique_b_node;
                 match app_storage.saved_circuit_currents.get_mut(&(a_node, b_node)){
                     Some(currents_times)=>{
                         if currents_times[0].len() > MAX_SAVED_MEASURMENTS{
@@ -4498,7 +4498,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             volts_times[1].remove(0);
                         }
 
-                        let element = app_storage.arr_circuit_elements[it.element_index];
+                        let element = app_storage.arr_circuit_elements[it.orig_element_index];
                         volts_times[0].push(print_voltage);
                         volts_times[1].push(ce_time);
                         //volts_times[1].push(app_storage.sim_time);
@@ -5627,28 +5627,16 @@ fn mult_test(){
 }
 
 
-/*
-1  procedure BFS(G, root) is
-2      let Q be a queue
-3      label root as discovered
-4      Q.enqueue(root)
-5      while Q is not empty do
-6          v := Q.dequeue()
-7          if v is the goal then
-8              return v
-9          for all edges from v to w in G.adjacentEdges(v) do
-10             if w is not labeled as discovered then
-11                 label w as discovered
-12                 w.parent := v
-13                 Q.enqueue(w)
-*/
 #[derive(Copy, Clone, Debug, PartialEq)]
 struct Pair{ 
     in_node: usize, 
     out_node: usize, 
     good: bool, 
-    element_index: usize
+    element_index: usize,
+    orig_element_index: usize,
 }
+
+///TODO
 fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<usize>){
     
     let mut rt = Matrix::zeros(0,0);
@@ -5658,14 +5646,22 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
     }
 
     let mut unique_nodes = vec![];
+    let mut unique_elements = vec![];
     for it in graph.iter(){ 
-        if !unique_nodes.contains(&it.a_node){
+        let contains_a = unique_nodes.contains(&it.a_node);
+        let contains_b = unique_nodes.contains(&it.b_node);
+
+        if !contains_a{
             unique_nodes.push(it.a_node)
         }
-        if !unique_nodes.contains(&it.b_node){
+        if !contains_b{
             unique_nodes.push(it.b_node)
         }
+        unique_elements.push(it);
     }
+
+
+
     //Prune nodes
     //TODO we should while loop this just in case there 
     //more nodes to be pruned after first removal
@@ -5675,9 +5671,10 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
         element_was_removed = false;
 
         let mut remove = vec![];
+        let mut remove_element = vec![];
         for (j, jt) in unique_nodes.iter().enumerate(){ 
             let mut n = 0;
-            for it in graph.iter(){ 
+            for (i, it) in unique_elements.iter().enumerate(){ 
                 if it.b_node == *jt
                 || it.a_node == *jt{
                     n+=1;
@@ -5691,9 +5688,22 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
         for it in remove.iter().rev(){
             unique_nodes.remove(*it);
         }
+
+        for (j, jt) in unique_elements.iter().enumerate(){
+            if !unique_nodes.contains(&jt.a_node)
+            || !unique_nodes.contains(&jt.b_node){
+                remove_element.push(j);
+            }
+            
+        }
+        for it in remove_element.iter().rev(){
+            unique_elements.remove(*it);
+        }
     }
    
-//println!("unique nodes: {:?}", &unique_nodes);
+    if  unique_elements.len() < 4 {
+        return (rt, vec![], Vec::new());
+    }
 
 
 
@@ -5720,144 +5730,28 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
     }
 
 
-
-
-
-    let mut graph_index = 0;
-    let mut graph_a_node = 0;
-    let mut graph_b_node = 0;
-
-    'a: loop{//NOTE checking for non first element
-        let a_node = graph[graph_index].a_node;
-        let b_node = graph[graph_index].b_node;
-
-        let mut found_a = false;
-        let mut found_b = false;
-
-        for (i, it) in graph.iter().enumerate() { //TODO we should check both nodes. It there in an and out going connects the element is most likely good.
-
-            if i != graph_index{
-                if a_node == it.a_node 
-                || a_node == it.b_node {
-                    found_a = true;
-                }
-
-                if b_node == it.b_node
-                || b_node == it.a_node{
-                    found_b = true;
-                }
-            }
-        }
-
-        if found_a 
-        && found_b {
-            graph_a_node = a_node;
-            graph_b_node = b_node;
-            break 'a;
-        }
-        graph_index += 1;
-        if graph_index >= graph.len(){
-            return (rt, vec![], Vec::new());
-        }
-    }
-
     let mut init_index = 0;
-    let mut found_index = false;
-    for (i, it) in unique_nodes.iter().enumerate(){
-        if graph_a_node == *it {
-            found_index = true;
-            init_index = i;
-        }
-    }
-    if found_index == false{
-        panic!("could not find index.");
-    }
-
     let exit_node = unique_nodes[init_index]; 
 
     let mut queue = vec![unique_nodes[init_index]]; //TODO we are making an assumption here
     let mut pairs = vec![];
     let mut init = true;
 
-    let mut prev_pair = Pair{in_node: 0, out_node: 0, good: false, element_index: 0};
 
-    
-    while queue.len() > 0 {
-        let node = queue.pop().unwrap();
-
-//TODO If setup has not been initialized should and the 
-//first graph node has no connecter perhaps we should
-//skip to the next node in the unique node list.
-        for (i, it) in graph.iter().enumerate(){
-            if node == it.a_node || node == it.b_node{
-                if !unique_nodes.contains(&it.a_node)
-                || !unique_nodes.contains(&it.b_node){
-                    continue;
-                }
-
-                let mut next_node;
-
-                if node == it.a_node {
-                    next_node = it.b_node;
-                } else {
-                    next_node = it.a_node;
-                }
-                let mut pair = Pair{in_node: node, out_node: next_node, good: false, element_index: i};
-                if init {
-
-                    queue.push(next_node);
-                    pairs.push(pair);
-                    prev_pair = pair;
-
-
-                    init = false; //Removed because there could multiple elements connected to the initial node
-                    //break;//TODO This break might be causing issues
-                }
-
-
-                //TODO the following was done because I am lazy. I should not need to check each state this way.
-                if pairs.contains(&Pair{in_node: pair.in_node, out_node: pair.out_node, good: false, element_index: pair.element_index}) {
-                } else if pairs.contains( &Pair{ in_node: pair.out_node, out_node: pair.in_node, good: false, element_index: pair.element_index} ){
-                } else if pairs.contains(&Pair{in_node: pair.out_node, out_node: pair.in_node, good: true, element_index: pair.element_index}) { 
-                } else if pairs.contains(&Pair{in_node: pair.in_node, out_node: pair.out_node, good: true, element_index: pair.element_index}) { 
-
-                    is_pair_good(pairs.len() - 1, &mut pairs, exit_node);
-                } else {
-
-                    //println!("q: {:?}", &queue);
-                    //println!("pairs: {:?}", &pairs);
-                    if next_node == exit_node{
-                        
-                        pairs.push(pair);
-                        is_pair_good(pairs.len() - 1, &mut pairs, exit_node);
-                        let i_pairs = pairs.len()-1;
-                        pairs[i_pairs].good = true;
-
-
-                        break;//TODO Prob should not break
-                    } else {
-                        queue.push(next_node);
-                        pairs.push(pair);
-                        prev_pair = pair;
-
-                    }
-                }
-            } else {}
+    for (i, it) in unique_elements.iter().enumerate(){
+        let mut orig_index = 0;
+        for (j, jt) in graph.iter().enumerate(){
+            if jt.a_node == it.a_node
+            && jt.b_node == it.b_node {
+                orig_index = j;
+            }
         }
+        pairs.push( Pair{in_node: it.a_node, out_node: it.b_node, good: true, element_index: i, orig_element_index: orig_index});
     }
+    
+//TODO 
+//multi circuits do not work :(
 
-//    {//Prune pairs
-//        let mut bad_nodes = vec![];
-//        for (j, jt) in pairs.iter().enumerate(){
-//            if jt.good == false {
-//                bad_nodes.push(j);
-//            }
-//        }
-//        for it in bad_nodes.iter().rev(){
-//println!("remove {:?} {}", pairs[*it], *it);
-//            pairs.remove(*it);
-//        }
-//    }
 
     {//NOTE prune unique_nodes
         let mut bad_nodes = vec![];
@@ -5894,15 +5788,15 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
             let in_node  = match unique_nodes.binary_search(&it.in_node) {
                 Ok(n) => {n},
                 Err(_) => { 
-                    println!("There was no in_node found in unique. {:?} {} {}", it, graph[it.element_index].unique_a_node, graph[it.element_index].unique_b_node);
+                    println!("There was no in_node found in unique. {:?} {} {}", it, unique_elements[it.element_index].unique_a_node, unique_elements[it.element_index].unique_b_node);
                     return (rt, vec![], Vec::new());
                 },
             };
             let out_node = match unique_nodes.binary_search(&it.out_node){
                 Ok(n) => {n},
                 Err(_) => { 
-                    println!("There was no out_node found in unique. {:?} {} {} | {} {}", it, graph[it.element_index].unique_a_node, graph[it.element_index].unique_b_node, 
-                                                                                               graph[it.element_index].a_node, graph[it.element_index].b_node);
+                    println!("There was no out_node found in unique. {:?} {} {} | {} {}", it, unique_elements[it.element_index].unique_a_node, unique_elements[it.element_index].unique_b_node, 
+                                                                                               unique_elements[it.element_index].a_node, unique_elements[it.element_index].b_node);
                     return (rt, vec![], Vec::new());
                 },
             };
@@ -5918,15 +5812,15 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
             let in_node  = match unique_nodes.binary_search(&it.in_node) {
                 Ok(n) => {n},
                 Err(_) => { 
-                    println!("There was no in_node found in unique. {:?} {} {}", it, graph[it.element_index].unique_a_node, graph[it.element_index].unique_b_node);
+                    println!("There was no in_node found in unique. {:?} {} {}", it, unique_elements[it.element_index].unique_a_node, unique_elements[it.element_index].unique_b_node);
                     return (rt, vec![], Vec::new());
                 },
             };
             let out_node = match unique_nodes.binary_search(&it.out_node){
                 Ok(n) => {n},
                 Err(_) => { 
-                    println!("There was no out_node found in unique. {:?} {} {} | {} {}", it, graph[it.element_index].unique_a_node, graph[it.element_index].unique_b_node, 
-                                                                                               graph[it.element_index].a_node, graph[it.element_index].b_node);
+                    println!("There was no out_node found in unique. {:?} {} {} | {} {}", it, unique_elements[it.element_index].unique_a_node, unique_elements[it.element_index].unique_b_node, 
+                                                                                               unique_elements[it.element_index].a_node, unique_elements[it.element_index].b_node);
                     return (rt, vec![], Vec::new());
                 },
             };
@@ -5981,15 +5875,15 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
         let in_node  = match unique_nodes.binary_search(&it.in_node) {
             Ok(n) => {n},
             Err(_) => { 
-                println!("There was no in_node found in unique. {:?} {} {}", it, graph[it.element_index].unique_a_node, graph[it.element_index].unique_b_node);
+                println!("There was no in_node found in unique. {:?} {} {}", it, unique_elements[it.element_index].unique_a_node, unique_elements[it.element_index].unique_b_node);
                 return (rt, vec![], Vec::new());
             },
         };
         let out_node = match unique_nodes.binary_search(&it.out_node){
             Ok(n) => {n},
             Err(_) => { 
-                println!("There was no out_node found in unique. {:?} {} {} | {} {}", it, graph[it.element_index].unique_a_node, graph[it.element_index].unique_b_node, 
-                                                                                           graph[it.element_index].a_node, graph[it.element_index].b_node);
+                println!("There was no out_node found in unique. {:?} {} {} | {} {}", it, unique_elements[it.element_index].unique_a_node, unique_elements[it.element_index].unique_b_node, 
+                                                                                           unique_elements[it.element_index].a_node, unique_elements[it.element_index].b_node);
                 return (rt, vec![], Vec::new());
             },
         };
@@ -5997,68 +5891,68 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
         *m.get_element(in_node, i) = 1.0;
         *m.get_element(out_node, i) = -1.0;
         
-        *z.get_element(i, i) = -1.0* ( graph[it.element_index].resistance  + graph[it.element_index].unc_resistance );
+        *z.get_element(i, i) = -1.0* ( unique_elements[it.element_index].resistance  + unique_elements[it.element_index].unc_resistance );
 
-        if graph[it.element_index].capacitance > 0.0{ //TODO should we check circuit element type instead?
-            *y.get_element(i, i) = graph[it.element_index].capacitance + graph[it.element_index].unc_capacitance;
+        if unique_elements[it.element_index].capacitance > 0.0{ //TODO should we check circuit element type instead?
+            *y.get_element(i, i) = unique_elements[it.element_index].capacitance + unique_elements[it.element_index].unc_capacitance;
         }
 
-        if graph[it.element_index].inductance > 0.0{ //TODO should we check circuit element type instead?
-            *z.get_element(i, i) = graph[it.element_index].inductance + graph[it.element_index].unc_inductance;
+        if unique_elements[it.element_index].inductance > 0.0{ //TODO should we check circuit element type instead?
+            *z.get_element(i, i) = unique_elements[it.element_index].inductance + unique_elements[it.element_index].unc_inductance;
             *y.get_element(i, i) = 0.0;
         }
 
 
-        *s.get_element(i, 0) = if it.in_node == graph[it.element_index].a_node { graph[it.element_index].voltage + graph[it.element_index].unc_voltage } 
-                               else {-1.0 * (graph[it.element_index].voltage + graph[it.element_index].unc_voltage )};
+        *s.get_element(i, 0) = if it.in_node == unique_elements[it.element_index].a_node { unique_elements[it.element_index].voltage + unique_elements[it.element_index].unc_voltage } 
+                               else {-1.0 * (unique_elements[it.element_index].voltage + unique_elements[it.element_index].unc_voltage )};
 
-        if graph[it.element_index].circuit_element_type == SelectedCircuitElement::Capacitor{
+        if unique_elements[it.element_index].circuit_element_type == SelectedCircuitElement::Capacitor{
             b.grow(0,1);
             f.grow(1,1);
             t.grow(1,0);
 
             let _i = t.rows-1;
 
-            *t.get_element(_i, 0) = if it.in_node == graph[it.element_index].a_node { graph[it.element_index].charge } 
-                               else { -1f32 * graph[it.element_index].charge };
+            *t.get_element(_i, 0) = if it.in_node == unique_elements[it.element_index].a_node { unique_elements[it.element_index].charge } 
+                               else { -1f32 * unique_elements[it.element_index].charge };
             *b.get_element(i, _i) = -1.0;
             *f.get_element(_i, _i) = 1.0;
         }
 
-        if graph[it.element_index].circuit_element_type == SelectedCircuitElement::Inductor{
+        if unique_elements[it.element_index].circuit_element_type == SelectedCircuitElement::Inductor{
             b.grow(0,1);
             f.grow(1,1);
             t.grow(1,0);
 
             let _i = t.rows-1;
 
-            *t.get_element(_i, 0) = graph[it.element_index].magnetic_flux;
+            *t.get_element(_i, 0) = unique_elements[it.element_index].magnetic_flux;
             *b.get_element(i, _i) = -1.0;
             *f.get_element(_i, _i)= 1.0; 
         }
 
-        if graph[it.element_index].circuit_element_type == SelectedCircuitElement::Custom
-        && graph[it.element_index].capacitance.abs() > 0.00001f32{
+        if unique_elements[it.element_index].circuit_element_type == SelectedCircuitElement::Custom
+        && unique_elements[it.element_index].capacitance.abs() > 0.00001f32{
             b.grow(0,1);
             f.grow(1,1);
             t.grow(1,0);
 
             let _i = t.rows-1;
 
-            *t.get_element(_i, 0) = if it.in_node == graph[it.element_index].a_node { graph[it.element_index].charge + graph[it.element_index].unc_charge } 
-                               else { -1f32 * graph[it.element_index].charge + graph[it.element_index].unc_charge};
+            *t.get_element(_i, 0) = if it.in_node == unique_elements[it.element_index].a_node { unique_elements[it.element_index].charge + unique_elements[it.element_index].unc_charge } 
+                               else { -1f32 * unique_elements[it.element_index].charge + unique_elements[it.element_index].unc_charge};
             *b.get_element(i, _i) = -1.0;
             *f.get_element(_i, _i) = 1.0;
         }
-        if graph[it.element_index].circuit_element_type == SelectedCircuitElement::Custom
-        && graph[it.element_index].inductance.abs() > 0.00001f32{
+        if unique_elements[it.element_index].circuit_element_type == SelectedCircuitElement::Custom
+        && unique_elements[it.element_index].inductance.abs() > 0.00001f32{
             b.grow(0,1);
             f.grow(1,1);
             t.grow(1,0);
 
             let _i = t.rows-1;
 
-            *t.get_element(_i, 0) = graph[it.element_index].magnetic_flux + graph[it.element_index].unc_magnetic_flux;
+            *t.get_element(_i, 0) = unique_elements[it.element_index].magnetic_flux + unique_elements[it.element_index].unc_magnetic_flux;
             *b.get_element(i, _i) = -1.0;
             *f.get_element(_i, _i)= 1.0; 
         }
@@ -6422,7 +6316,6 @@ fn load_circuit_diagram(name: &str)->Vec<CircuitElement>{unsafe{
 
 
     let mut _it = vec![0u8; sizeof_circuit_elements as usize];
-    //let mut _it = [0u8; size_of::<CircuitElement>()]; OLD Thoth Gunter 2/3/2021
     let mut max_id = 0;
     for i in 0..number_circuit_elements{
         f.read(&mut _it);
@@ -6431,50 +6324,6 @@ fn load_circuit_diagram(name: &str)->Vec<CircuitElement>{unsafe{
         let mut element  = CircuitElement::empty();
         std::ptr::copy_nonoverlapping( _it.as_mut_ptr(), &mut element as *mut CircuitElement as *mut u8, sizeof_circuit_elements as usize);
 
-/* OLD Thoth Gunter 2/3/2021
-        let it = transmute::<_, &CircuitElement>(&_it);
-
-        let mut element  = CircuitElement::empty();
-        element.circuit_element_type = it.circuit_element_type;
-        element.orientation = it.orientation;
-        element.x = it.x;
-        element.y = it.y;
-        element.length = it.length;
-
-        element.unique_a_node = it.unique_a_node;
-        element.a_node = it.a_node;
-        element.unique_b_node = it.unique_b_node;
-        element.b_node = it.b_node;
-
-        element.resistance = it.resistance;
-        element.voltage = it.voltage;
-        element.current = it.current;
-
-        element.unc_resistance = it.unc_resistance;
-        element.unc_voltage    = it.unc_voltage;
-        element.unc_current    = it.unc_current;
-
-        element.capacitance   = it.capacitance;
-        element.inductance    = it.inductance;
-        element.charge        = it.charge;
-        element.magnetic_flux = it.magnetic_flux;
-
-        element.unc_capacitance   = it.unc_capacitance;
-        element.unc_inductance    = it.unc_inductance;
-        element.unc_charge        = it.unc_charge;
-        element.unc_magnetic_flux = it.unc_magnetic_flux;
-
-        element.max_voltage = it.max_voltage;
-        element.d_voltage_over_dt = it.d_voltage_over_dt;
-        element.frequency = it.frequency;
-        element.ac_source_type = it.ac_source_type;
-
-        element.label = it.label;
-
-        element.bias = it.bias;
-        element.noise = it.noise;
-*/
-        //TODO How are we rending things... I am confused
         if element.unique_b_node > max_id {
             max_id = element.unique_b_node;
         }
