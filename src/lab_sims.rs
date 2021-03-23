@@ -62,6 +62,12 @@ use crate::ui_tools;
 use matrixmath::*;
 
 
+#[macro_use]
+use crate::{timeit, DEBUG_timeit};
+use crate::debug_tools::*;
+
+
+
 use std::io::prelude::*;
 use std::ptr::{null, null_mut};
 
@@ -237,6 +243,7 @@ const DEFAULT_INDUCTANCE   : f32 = 2.0;
 const DEFAULT_FREQUENCY    : f32 = 0.5;
 const VOLTMETER_RESISTANCE : f32 = 99999.0;
 const WIRE_RESISTANCE      : f32 = 0.000001;
+const CURRENT_INF_CUT      : f32 = 1E4;
 
 
 const PANEL_FONT : f32 = 23.0;
@@ -628,6 +635,7 @@ pub struct LS_AppStorage{
 
     save_toggle: bool,
     save_toggle_saveload: SaveLoadEnum,
+    //TODO
 
     save_textbox : TextBox,
 
@@ -1329,9 +1337,11 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         match app_storage.selected_circuit_properties{
                             Some(copy_ele)=>{
                                 element.capacitance = copy_ele.capacitance; 
+                                element.resistance = WIRE_RESISTANCE; 
                             },
                             None=>{
                                 element.capacitance = DEFAULT_CAPACITANCE; 
+                                element.resistance = WIRE_RESISTANCE; 
                             },
                         }
                     },
@@ -3841,7 +3851,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     },
                     SaveLoadEnum::Load=>{
                         let load_menu_font = 26.0;
-                        let mut load_menu_rect = [window_w-300, rect[1] - load_menu_font as i32 * previously_saved_circuits.len() as i32, 300, load_menu_font as i32 * ( 1 + previously_saved_circuits.len() as i32 )];
+                        let mut load_menu_rect = [window_w-300, 
+                                                  rect[1] - load_menu_font as i32 * previously_saved_circuits.len() as i32, 
+                                                  300, 
+                                                  load_menu_font as i32 * ( 1 + previously_saved_circuits.len() as i32 )];
                         if !app_storage.menu_offscreen {
                             load_menu_rect[0] = 0;
                         }
@@ -4401,7 +4414,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 if bad_solved_value == false{
                     if !solved_current.is_finite() 
                     || !solved_voltage.is_finite(){
-                        let text = format!("Error:  Current({}) and or voltage({}), is not finite. Impacts node {} {}.   Tip: Does the circuit include a resistor?", 
+                        let text = format!("Error:  Current({}) and or voltage({}), is not finite. Impacted nodes {} {}.   Tip: Does the circuit include a resistor?", 
                                            solved_current, solved_voltage,
                                     app_storage.arr_circuit_elements[it.orig_element_index].unique_a_node,
                                     app_storage.arr_circuit_elements[it.orig_element_index].unique_b_node);
@@ -4410,6 +4423,18 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         }
                         bad_solved_value = true;
                         app_storage.run_circuit = false;
+                    }
+                    if solved_current.abs() >= CURRENT_INF_CUT{
+                        let text = format!("Error:  Current({}) is very large. A (larger)resistor maybe required. Impacted nodes {} {}.", 
+                                           solved_current, 
+                                           app_storage.arr_circuit_elements[it.orig_element_index].unique_a_node,
+                                           app_storage.arr_circuit_elements[it.orig_element_index].unique_b_node,
+                                           );
+                        if !app_storage.messages.contains(&(MessageType::Error, text.clone())){
+                            app_storage.messages.push((MessageType::Error, text));
+                        }
+                        bad_solved_value = true;
+                        //app_storage.run_circuit = false;
                     }
                 }
 
@@ -5382,6 +5407,7 @@ while h ≤ m and k ≤ n
                     k += 1;
                 }
             }
+            //println!("{:?}", self);
 
             ///////////////////////////////
             //TODO NEW
@@ -5391,6 +5417,13 @@ while h ≤ m and k ≤ n
 
                 minus_i -= 1;
                 let minus_1 = self.columns - 1;
+                //NOTE not the best solution ....
+                if (self.arr[i*self.columns+minus_1] == self.arr[i*self.columns+minus_i]
+                && self.arr[i*self.columns+minus_i] == 0f32)
+                || self.arr[i*self.columns+minus_i] == 0f32{
+                    continue;
+                }
+                //println!("{} {}", self.arr[i*self.columns+minus_1], self.arr[i*self.columns+minus_i]);
                 self.arr[i*self.columns+minus_1] = self.arr[i*self.columns+minus_1] / self.arr[i*self.columns+minus_i];
                 self.arr[i*self.columns+minus_i] = 1.0;
 
@@ -5424,7 +5457,7 @@ use std::fmt;
           let mut array_string = format!("Matrix rows {}, columns {} \n", self.rows, self.columns);
           array_string.push('[' );
           for (i, it) in self.arr.iter().enumerate(){
-              array_string.push_str( &it.to_string() );
+              array_string.push_str( &((it*100f32).round()/100f32).to_string() );
               array_string.push_str( ", " );
               if (i+1) %  self.columns == 0 && i != self.arr.len() - 1{
               array_string.push( '\n' );
@@ -5511,6 +5544,19 @@ fn gaussianelimination_test(){
     //};
     //m.gaussian_elimination();
     //panic!("{:?}", m);
+    //let mut m= Matrix{
+    //    arr: vec![
+    //        1.0, 1.0,  0.0, 0.0, 3.0,
+    //        3.0, -2.0, 0.0, 0.0, 4.0,
+    //        0.0, 0.0, 5.0, 0.4, 2.0,
+    //        0.0, 0.0, -1.0, 3.0, 1.0,
+    //    ],
+    //    rows: 4,
+    //    columns: 5,
+    //};
+    //m.gaussian_elimination();
+    panic!("{:?}", m);
+
 
 }
 
@@ -5806,7 +5852,6 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
         }
        
         undirected_to_directed_matrix(&mut m);
-    
         
         for (i, it) in pairs.iter_mut().enumerate(){
             let in_node  = match unique_nodes.binary_search(&it.in_node) {
@@ -6107,6 +6152,7 @@ updated externally.
     }
     
     //println!("cmatrix\n{:?}", c_matrix);
+    //panic!();
     return (c_matrix, pairs, unique_nodes);
 }
 
