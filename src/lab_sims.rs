@@ -580,6 +580,14 @@ enum SaveLoadEnum{
     Default,
 }
 
+enum ProgramElementsEnum{
+    CustomElement,
+    SidePanel,
+    Circuit,
+    Default,
+}
+
+
 #[derive(PartialEq)]
 enum CircuitMenuType{
     Custom,
@@ -635,9 +643,11 @@ pub struct LS_AppStorage{
 
     save_toggle: bool,
     save_toggle_saveload: SaveLoadEnum,
-    //TODO
+    save_toggle_programelements:  ProgramElementsEnum,
 
-    save_textbox : TextBox,
+    save_textbox        : TextBox,
+    ce_save_textbox     : TextBox,
+    panel_save_textbox  : TextBox,
 
     arr_circuit_elements: Vec<CircuitElement>,
     arr_panels: Vec<Panel>,
@@ -715,8 +725,11 @@ impl LS_AppStorage{
 
             save_toggle: false,
             save_toggle_saveload: SaveLoadEnum::Default,
+            save_toggle_programelements:  ProgramElementsEnum::Default,
 
-            save_textbox : TextBox::new(),
+            save_textbox        : TextBox::new(),
+            ce_save_textbox     : TextBox::new(),
+            panel_save_textbox  : TextBox::new(),
 
             arr_circuit_elements: Vec::new(),
             arr_panels: Vec::new(),
@@ -1078,6 +1091,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         app_storage.circuit_element_canvas = SubCanvas::new(180,350);
 
         app_storage.save_textbox.text_buffer += "MyCircuit.cd";
+        app_storage.ce_save_textbox.text_buffer += CUSTOM_FILE_NAME;
+        app_storage.panel_save_textbox.text_buffer += CIRCUIT_FILE_NAME;
 
 
         if std::path::Path::new(CIRCUIT_FILE_NAME).is_file(){
@@ -3780,13 +3795,16 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     app_storage.save_toggle = !app_storage.save_toggle;
                     if app_storage.save_toggle == false {
                         app_storage.save_toggle_saveload = SaveLoadEnum::Default;
+                        app_storage.save_toggle_programelements = ProgramElementsEnum::Default;
                     }
                 }
                 draw_bmp(canvas, icon, _icon_rect[0], _icon_rect[1], 0.98, Some(icon_rect[2]), Some(icon_rect[3]));
             } 
 
-            if app_storage.save_toggle{
+            if app_storage.save_toggle {
                 let mut previously_saved_circuits = vec![];
+                let mut previously_saved_custom = vec![];
+                let mut previously_saved_panels = vec![];
 
                 for it in std::fs::read_dir("./").unwrap(){//TODO why so many layers deep this is stupid
                     if it.is_ok(){
@@ -3797,148 +3815,481 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                     if temp_str == "cd"{
                                         previously_saved_circuits.push(ref_it.to_str().unwrap().to_string());
                                     }
+                                    if temp_str == "cce"{
+                                        previously_saved_custom.push(ref_it.to_str().unwrap().to_string());
+                                    }
+                                    if temp_str == "exp"{
+                                        previously_saved_panels.push(ref_it.to_str().unwrap().to_string());
+                                    }
                                 },
                                 _=>{}
                             }
                         }
                     }
                 }
-                match app_storage.save_toggle_saveload{
-                    SaveLoadEnum::Save=>{
+                match app_storage.save_toggle_programelements{
+                    ProgramElementsEnum::Circuit=>{
+                        match app_storage.save_toggle_saveload{
+                            SaveLoadEnum::Save=>{
 
 
-                        let save_menu_font = 26.0;
-                        let mut save_menu_rect = [window_w-300, rect[1]-save_menu_font as i32 * previously_saved_circuits.len() as i32, 300, 
-                                              save_menu_font as i32 * ( 1 + previously_saved_circuits.len() as i32 )];
-                        if !app_storage.menu_offscreen {
-                            save_menu_rect[0] = 0;
+                                let save_menu_font = 26.0;
+                                let mut save_menu_rect = [window_w-300, rect[1]-save_menu_font as i32 * previously_saved_circuits.len() as i32, 300, 
+                                                      save_menu_font as i32 * ( 1 + previously_saved_circuits.len() as i32 )];
+                                if !app_storage.menu_offscreen {
+                                    save_menu_rect[0] = 0;
+                                }
+
+                                draw_rect(canvas, save_menu_rect, C4_BLACK, true);
+                                draw_string(canvas, "Save:", save_menu_rect[0]+4, save_menu_rect[1] + save_menu_rect[3] - save_menu_font as i32, C4_WHITE, save_menu_font);
+
+                                for (i, it) in previously_saved_circuits.iter().enumerate(){
+                                    let y = save_menu_rect[1] + save_menu_rect[3] - (i + 2) as i32 * save_menu_font as i32 - 2;
+                                    let sub_rect = [save_menu_rect[0], y, save_menu_rect[2], save_menu_font as i32];
+                                    let _sub_rect = if app_storage.menu_offscreen{ [save_menu_rect[0], y, save_menu_rect[2], save_menu_font as i32]}
+                                                  else { [subcanvas_x+save_menu_rect[0], y, save_menu_rect[2], save_menu_font as i32] };
+
+                                    if in_rect(mouseinfo.x, mouseinfo.y, _sub_rect){
+                                        draw_rect(canvas, sub_rect, C4_GREY, true);
+                                        if mouseinfo.lclicked(){
+                                            app_storage.save_textbox.text_buffer = it.to_string();
+                                        }
+                                    }
+
+                                    draw_string(canvas, it, save_menu_rect[0]+4, y, C4_WHITE, save_menu_font);
+                                }
+                                if !app_storage.menu_offscreen { app_storage.save_textbox.offset_x = subcanvas_x;}
+                                app_storage.save_textbox.x = save_menu_rect[0]+50;
+                                app_storage.save_textbox.y = save_menu_rect[1] + save_menu_rect[3] - save_menu_font as i32;
+                                app_storage.save_textbox.omega = 4.0;
+
+                                app_storage.save_textbox.update(keyboardinfo, textinfo, mouseinfo);
+                                app_storage.save_textbox.draw(canvas, app_storage.timer.elapsed().as_secs_f32());
+
+                                if app_storage.arr_circuit_elements.len() != 0 
+                                && keyboardinfo.key.contains(&KeyboardEnum::Enter) {
+                                    save_circuit_diagram(&app_storage.save_textbox.text_buffer, &app_storage.arr_circuit_elements);
+                                    app_storage.save_toggle_saveload = SaveLoadEnum::Default;
+                                    app_storage.save_toggle_programelements = ProgramElementsEnum::Default;
+
+                                    app_storage.messages.push( (MessageType::Default, format!("Message: {} saved.", &app_storage.save_textbox.text_buffer)) );
+                                    app_storage.save_toggle = false;
+                                }
+                            },
+                            SaveLoadEnum::Load=>{
+                                let load_menu_font = 26.0;
+                                let mut load_menu_rect = [window_w-300, 
+                                                          rect[1] - load_menu_font as i32 * previously_saved_circuits.len() as i32, 
+                                                          300, 
+                                                          load_menu_font as i32 * ( 1 + previously_saved_circuits.len() as i32 )];
+                                if !app_storage.menu_offscreen {
+                                    load_menu_rect[0] = 0;
+                                }
+
+                                draw_rect(canvas, load_menu_rect, C4_BLACK, true);
+                                draw_string(canvas, "Load:", load_menu_rect[0]+4, load_menu_rect[1] + load_menu_rect[3] - load_menu_font as i32, C4_WHITE, load_menu_font);
+
+                                let mut temp_string  = String::new();
+                                for (i, it) in previously_saved_circuits.iter().enumerate(){
+                                    let y = load_menu_rect[1] + load_menu_rect[3] - (i + 2) as i32 * load_menu_font as i32 - 2;
+                                    let sub_rect = [load_menu_rect[0], y, load_menu_rect[2], load_menu_font as i32];
+                                    let _sub_rect = if app_storage.menu_offscreen{ [load_menu_rect[0], y, load_menu_rect[2], load_menu_font as i32]}
+                                                  else { [subcanvas_x+load_menu_rect[0], y, load_menu_rect[2], load_menu_font as i32] };
+                                    if in_rect(mouseinfo.x, mouseinfo.y, _sub_rect){
+                                        draw_rect(canvas, sub_rect, C4_GREY, true);
+                                        if mouseinfo.lclicked(){
+                                            temp_string = it.to_string();
+                                        }
+                                    }
+                                    draw_string(canvas, it, load_menu_rect[0]+4, y, C4_WHITE, load_menu_font);
+                                }
+                                if previously_saved_circuits.contains(&temp_string) {
+
+                                    let v = load_circuit_diagram(&temp_string);
+                                    app_storage.arr_circuit_elements = v;
+                                    
+                                    app_storage.saved_circuit_volts.clear();
+                                    app_storage.saved_circuit_currents.clear();
+                                    app_storage.circuit_textbox_hash.clear();
+
+                                    for it in app_storage.arr_circuit_elements.iter(){
+                                        app_storage.circuit_textbox_hash.insert((it.unique_a_node, it.unique_b_node), CircuitElementTextBox::new());
+
+                                        if it.circuit_element_type == SelectedCircuitElement::Voltmeter
+                                        || it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter{
+                                            app_storage.saved_circuit_volts.insert((it.unique_a_node, it.unique_b_node), [Vec::new(), Vec::new()]);
+                                        }
+                                        if it.circuit_element_type == SelectedCircuitElement::Ammeter
+                                        || it.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
+                                            app_storage.saved_circuit_currents.insert((it.unique_a_node, it.unique_b_node), [Vec::new(), Vec::new()]);
+                                        }
+                                    }
+
+                                    app_storage.save_toggle_programelements = ProgramElementsEnum::Default;
+                                    app_storage.save_toggle_saveload = SaveLoadEnum::Default;
+                                    app_storage.save_toggle = false;
+                                }
+                            },
+                            SaveLoadEnum::Default=>{
+                                draw_rect(canvas, rect, C4_BLACK, true);
+
+                                let mut save_color = C4_GREY;
+                                let save_rect  = [rect[0]+4, rect[1]+4, 50, 24];
+                                let mut _save_rect  = [rect[0]+4, rect[1]+4, 50, 24];
+                                if !app_storage.menu_offscreen {
+                                    _save_rect[0]  = rect[0]+4 + subcanvas_x;
+                                }
+
+                                if in_rect(mouseinfo.x, mouseinfo.y, _save_rect){
+                                    save_color = C4_LGREY;
+                                    if mouseinfo.lclicked(){
+                                        app_storage.save_toggle_saveload = SaveLoadEnum::Save;
+                                    }
+                                }
+                                draw_rect(canvas, save_rect, save_color, true);
+                                draw_string(canvas, "Save", save_rect[0], save_rect[1]-2, C4_WHITE, 24.0);
+
+
+
+                                let mut load_color = C4_GREY;
+                                let load_rect  = [rect[0]+57, rect[1]+4, 50, 24];
+                                let mut _load_rect  = [rect[0]+57, rect[1]+4, 50, 24];
+                                if !app_storage.menu_offscreen {
+                                    _load_rect[0]  = rect[0]+ 57 + subcanvas_x;
+                                }
+
+                                if in_rect(mouseinfo.x, mouseinfo.y, _load_rect){
+                                    load_color = C4_LGREY;
+                                    if mouseinfo.lclicked(){
+                                        app_storage.save_toggle_saveload = SaveLoadEnum::Load;
+                                    }
+                                }
+                                draw_rect(canvas, load_rect, load_color, true);
+                                draw_string(canvas, "Load", load_rect[0], load_rect[1]-2, C4_WHITE, 24.0);
+                            },
                         }
+                    },
+                    ProgramElementsEnum::SidePanel=>{
+                        match app_storage.save_toggle_saveload{
+                            SaveLoadEnum::Save=>{
+                                let save_menu_font = 26.0;
+                                let mut save_menu_rect = [window_w-300, rect[1]-save_menu_font as i32 * previously_saved_panels.len() as i32, 300, 
+                                                      save_menu_font as i32 * ( 1 + previously_saved_panels.len() as i32 )];
+                                if !app_storage.menu_offscreen {
+                                    save_menu_rect[0] = 0;
+                                }
 
-                        draw_rect(canvas, save_menu_rect, C4_BLACK, true);
-                        draw_string(canvas, "Save:", save_menu_rect[0]+4, save_menu_rect[1] + save_menu_rect[3] - save_menu_font as i32, C4_WHITE, save_menu_font);
+                                draw_rect(canvas, save_menu_rect, C4_BLACK, true);
+                                draw_string(canvas, "Save:", save_menu_rect[0]+4, save_menu_rect[1] + save_menu_rect[3] - save_menu_font as i32, C4_WHITE, save_menu_font);
 
-                        for (i, it) in previously_saved_circuits.iter().enumerate(){
-                            let y = save_menu_rect[1] + save_menu_rect[3] - (i + 2) as i32 * save_menu_font as i32 - 2;
-                            let sub_rect = [save_menu_rect[0], y, save_menu_rect[2], save_menu_font as i32];
-                            let _sub_rect = if app_storage.menu_offscreen{ [save_menu_rect[0], y, save_menu_rect[2], save_menu_font as i32]}
-                                          else { [subcanvas_x+save_menu_rect[0], y, save_menu_rect[2], save_menu_font as i32] };
+                                for (i, it) in previously_saved_panels.iter().enumerate(){
+                                    let y = save_menu_rect[1] + save_menu_rect[3] - (i + 2) as i32 * save_menu_font as i32 - 2;
+                                    let sub_rect = [save_menu_rect[0], y, save_menu_rect[2], save_menu_font as i32];
+                                    let _sub_rect = if app_storage.menu_offscreen{ [save_menu_rect[0], y, save_menu_rect[2], save_menu_font as i32]}
+                                                  else { [subcanvas_x+save_menu_rect[0], y, save_menu_rect[2], save_menu_font as i32] };
 
-                            if in_rect(mouseinfo.x, mouseinfo.y, _sub_rect){
-                                draw_rect(canvas, sub_rect, C4_GREY, true);
+                                    if in_rect(mouseinfo.x, mouseinfo.y, _sub_rect){
+                                        draw_rect(canvas, sub_rect, C4_GREY, true);
+                                        if mouseinfo.lclicked(){
+                                            app_storage.panel_save_textbox.text_buffer = it.to_string();
+                                        }
+                                    }
+
+                                    draw_string(canvas, it, save_menu_rect[0]+4, y, C4_WHITE, save_menu_font);
+                                }
+                                if !app_storage.menu_offscreen { app_storage.panel_save_textbox.offset_x = subcanvas_x;}
+                                app_storage.panel_save_textbox.x = save_menu_rect[0]+50;
+                                app_storage.panel_save_textbox.y = save_menu_rect[1] + save_menu_rect[3] - save_menu_font as i32;
+                                app_storage.panel_save_textbox.omega = 4.0;
+
+                                app_storage.panel_save_textbox.update(keyboardinfo, textinfo, mouseinfo);
+                                app_storage.panel_save_textbox.draw(canvas, app_storage.timer.elapsed().as_secs_f32());
+
+                                if keyboardinfo.key.contains(&KeyboardEnum::Enter) {
+                                    
+                                    let mut panel = PanelFile{ original_length: app_storage.lab_text.as_bytes().len() as u64,
+                                                           buffer: Vec::new()
+                                                          };
+                                     
+                                    panel.buffer = compress_panelfile(&app_storage.lab_text);
+                                    panel.save(&app_storage.panel_save_textbox.text_buffer);
+
+                                    app_storage.messages.push( (MessageType::Default, format!("Message: {} saved.", &app_storage.panel_save_textbox.text_buffer)) );
+
+                                    app_storage.save_toggle_programelements = ProgramElementsEnum::Default;
+                                    app_storage.save_toggle_saveload = SaveLoadEnum::Default;
+                                    app_storage.save_toggle = false;
+                                }
+                            },
+                            SaveLoadEnum::Load=>{
+                                let load_menu_font = 26.0;
+                                let mut load_menu_rect = [window_w-300, 
+                                                          rect[1] - load_menu_font as i32 * previously_saved_panels.len() as i32, 
+                                                          300, 
+                                                          load_menu_font as i32 * ( 1 + previously_saved_panels.len() as i32 )];
+                                if !app_storage.menu_offscreen {
+                                    load_menu_rect[0] = 0;
+                                }
+
+                                draw_rect(canvas, load_menu_rect, C4_BLACK, true);
+                                draw_string(canvas, "Load:", load_menu_rect[0]+4, load_menu_rect[1] + load_menu_rect[3] - load_menu_font as i32, C4_WHITE, load_menu_font);
+
+                                let mut temp_string  = String::new();
+                                for (i, it) in previously_saved_panels.iter().enumerate(){
+                                    let y = load_menu_rect[1] + load_menu_rect[3] - (i + 2) as i32 * load_menu_font as i32 - 2;
+                                    let sub_rect = [load_menu_rect[0], y, load_menu_rect[2], load_menu_font as i32];
+                                    let _sub_rect = if app_storage.menu_offscreen{ [load_menu_rect[0], y, load_menu_rect[2], load_menu_font as i32]}
+                                                  else { [subcanvas_x+load_menu_rect[0], y, load_menu_rect[2], load_menu_font as i32] };
+                                    if in_rect(mouseinfo.x, mouseinfo.y, _sub_rect){
+                                        draw_rect(canvas, sub_rect, C4_GREY, true);
+                                        if mouseinfo.lclicked(){
+                                            temp_string = it.to_string();
+                                        }
+                                    }
+                                    draw_string(canvas, it, load_menu_rect[0]+4, y, C4_WHITE, load_menu_font);
+                                }
+                                if previously_saved_panels.contains(&temp_string) {
+                                    //TODO
+                                    let pf = PanelFile::load(&temp_string);
+                                    let buffer = miniz::uncompress(&pf.buffer, pf.original_length as usize);
+
+                                    app_storage.lab_text.clear();
+                                    app_storage.lab_text.insert_str( 0, &String::from_utf8_lossy(&buffer.expect("something went wrong with decompression")) );
+
+                                    let (mut panels, mut errors) = parse_and_panel_filebuffer(&app_storage.lab_text);
+
+                                    app_storage.arr_panels.clear();
+                                    app_storage.arr_panels.append( &mut panels );
+                                    app_storage.messages = errors;
+                                    
+                                    app_storage.save_toggle = false;
+                                    app_storage.save_toggle_saveload = SaveLoadEnum::Default;
+                                    app_storage.save_toggle_programelements = ProgramElementsEnum::Default;
+                                }
+                            },
+                            SaveLoadEnum::Default=>{
+                                draw_rect(canvas, rect, C4_BLACK, true);
+
+                                let mut save_color = C4_GREY;
+                                let save_rect  = [rect[0]+4, rect[1]+4, 50, 24];
+                                let mut _save_rect  = [rect[0]+4, rect[1]+4, 50, 24];
+                                if !app_storage.menu_offscreen {
+                                    _save_rect[0]  = rect[0]+4 + subcanvas_x;
+                                }
+
+                                if in_rect(mouseinfo.x, mouseinfo.y, _save_rect){
+                                    save_color = C4_LGREY;
+                                    if mouseinfo.lclicked(){
+                                        app_storage.save_toggle_saveload = SaveLoadEnum::Save;
+                                    }
+                                }
+                                draw_rect(canvas, save_rect, save_color, true);
+                                draw_string(canvas, "Save", save_rect[0], save_rect[1]-2, C4_WHITE, 24.0);
+
+
+
+                                let mut load_color = C4_GREY;
+                                let load_rect  = [rect[0]+57, rect[1]+4, 50, 24];
+                                let mut _load_rect  = [rect[0]+57, rect[1]+4, 50, 24];
+                                if !app_storage.menu_offscreen {
+                                    _load_rect[0]  = rect[0]+ 57 + subcanvas_x;
+                                }
+
+                                if in_rect(mouseinfo.x, mouseinfo.y, _load_rect){
+                                    load_color = C4_LGREY;
+                                    if mouseinfo.lclicked(){
+                                        app_storage.save_toggle_saveload = SaveLoadEnum::Load;
+                                    }
+                                }
+                                draw_rect(canvas, load_rect, load_color, true);
+                                draw_string(canvas, "Load", load_rect[0], load_rect[1]-2, C4_WHITE, 24.0);
+                            },
+                        }
+                    },
+                    ProgramElementsEnum::CustomElement=>{
+                        match app_storage.save_toggle_saveload{
+                            SaveLoadEnum::Save=>{
+                                let save_menu_font = 26.0;
+                                let mut save_menu_rect = [window_w-300, rect[1]-save_menu_font as i32 * previously_saved_custom.len() as i32, 300, 
+                                                      save_menu_font as i32 * ( 1 + previously_saved_custom.len() as i32 )];
+                                if !app_storage.menu_offscreen {
+                                    save_menu_rect[0] = 0;
+                                }
+
+                                draw_rect(canvas, save_menu_rect, C4_BLACK, true);
+                                draw_string(canvas, "Save:", save_menu_rect[0]+4, save_menu_rect[1] + save_menu_rect[3] - save_menu_font as i32, C4_WHITE, save_menu_font);
+
+                                for (i, it) in previously_saved_custom.iter().enumerate(){
+                                    let y = save_menu_rect[1] + save_menu_rect[3] - (i + 2) as i32 * save_menu_font as i32 - 2;
+                                    let sub_rect = [save_menu_rect[0], y, save_menu_rect[2], save_menu_font as i32];
+                                    let _sub_rect = if app_storage.menu_offscreen{ [save_menu_rect[0], y, save_menu_rect[2], save_menu_font as i32]}
+                                                  else { [subcanvas_x+save_menu_rect[0], y, save_menu_rect[2], save_menu_font as i32] };
+
+                                    if in_rect(mouseinfo.x, mouseinfo.y, _sub_rect){
+                                        draw_rect(canvas, sub_rect, C4_GREY, true);
+                                        if mouseinfo.lclicked(){
+                                            app_storage.ce_save_textbox.text_buffer = it.to_string();
+                                        }
+                                    }
+
+                                    draw_string(canvas, it, save_menu_rect[0]+4, y, C4_WHITE, save_menu_font);
+                                }
+                                if !app_storage.menu_offscreen { app_storage.ce_save_textbox.offset_x = subcanvas_x;}
+                                app_storage.ce_save_textbox.x = save_menu_rect[0]+50;
+                                app_storage.ce_save_textbox.y = save_menu_rect[1] + save_menu_rect[3] - save_menu_font as i32;
+                                app_storage.ce_save_textbox.omega = 4.0;
+
+                                app_storage.ce_save_textbox.update(keyboardinfo, textinfo, mouseinfo);
+                                app_storage.ce_save_textbox.draw(canvas, app_storage.timer.elapsed().as_secs_f32());
+
+                                if keyboardinfo.key.contains(&KeyboardEnum::Enter) {
+                                    
+                                    
+                                    save_circuit_diagram(&app_storage.ce_save_textbox.text_buffer, &app_storage.custom_circuit_elements);
+
+                                    app_storage.messages.push( (MessageType::Default, format!("Message: {} saved.", &app_storage.ce_save_textbox.text_buffer)) );
+
+                                    app_storage.save_toggle_programelements = ProgramElementsEnum::Default;
+                                    app_storage.save_toggle_saveload = SaveLoadEnum::Default;
+                                    app_storage.save_toggle = false;
+                                }
+                            },
+                            SaveLoadEnum::Load=>{
+                                let load_menu_font = 26.0;
+                                let mut load_menu_rect = [window_w-300, 
+                                                          rect[1] - load_menu_font as i32 * previously_saved_custom.len() as i32, 
+                                                          300, 
+                                                          load_menu_font as i32 * ( 1 + previously_saved_custom.len() as i32 )];
+                                if !app_storage.menu_offscreen {
+                                    load_menu_rect[0] = 0;
+                                }
+
+                                draw_rect(canvas, load_menu_rect, C4_BLACK, true);
+                                draw_string(canvas, "Load:", load_menu_rect[0]+4, load_menu_rect[1] + load_menu_rect[3] - load_menu_font as i32, C4_WHITE, load_menu_font);
+
+                                let mut temp_string  = String::new();
+                                for (i, it) in previously_saved_custom.iter().enumerate(){
+                                    let y = load_menu_rect[1] + load_menu_rect[3] - (i + 2) as i32 * load_menu_font as i32 - 2;
+                                    let sub_rect = [load_menu_rect[0], y, load_menu_rect[2], load_menu_font as i32];
+                                    let _sub_rect = if app_storage.menu_offscreen{ [load_menu_rect[0], y, load_menu_rect[2], load_menu_font as i32]}
+                                                  else { [subcanvas_x+load_menu_rect[0], y, load_menu_rect[2], load_menu_font as i32] };
+                                    if in_rect(mouseinfo.x, mouseinfo.y, _sub_rect){
+                                        draw_rect(canvas, sub_rect, C4_GREY, true);
+                                        if mouseinfo.lclicked(){
+                                            temp_string = it.to_string();
+                                        }
+                                    }
+                                    draw_string(canvas, it, load_menu_rect[0]+4, y, C4_WHITE, load_menu_font);
+                                }
+                                if previously_saved_custom.contains(&temp_string) {
+
+                                    let mut custom_elements = load_circuit_diagram(&temp_string);
+                                    app_storage.custom_circuit_elements.clear();
+                                    app_storage.custom_circuit_elements.append(&mut custom_elements);
+                                    
+                                    
+                                    app_storage.save_toggle = false;
+                                    app_storage.save_toggle_saveload = SaveLoadEnum::Default;
+                                    app_storage.save_toggle_programelements = ProgramElementsEnum::Default;
+                                }
+                            },
+                            SaveLoadEnum::Default=>{
+                                draw_rect(canvas, rect, C4_BLACK, true);
+
+                                let mut save_color = C4_GREY;
+                                let save_rect  = [rect[0]+4, rect[1]+4, 50, 24];
+                                let mut _save_rect  = [rect[0]+4, rect[1]+4, 50, 24];
+                                if !app_storage.menu_offscreen {
+                                    _save_rect[0]  = rect[0]+4 + subcanvas_x;
+                                }
+
+                                if in_rect(mouseinfo.x, mouseinfo.y, _save_rect){
+                                    save_color = C4_LGREY;
+                                    if mouseinfo.lclicked(){
+                                        app_storage.save_toggle_saveload = SaveLoadEnum::Save;
+                                    }
+                                }
+                                draw_rect(canvas, save_rect, save_color, true);
+                                draw_string(canvas, "Save", save_rect[0], save_rect[1]-2, C4_WHITE, 24.0);
+
+
+
+                                let mut load_color = C4_GREY;
+                                let load_rect  = [rect[0]+57, rect[1]+4, 50, 24];
+                                let mut _load_rect  = [rect[0]+57, rect[1]+4, 50, 24];
+                                if !app_storage.menu_offscreen {
+                                    _load_rect[0]  = rect[0]+ 57 + subcanvas_x;
+                                }
+
+                                if in_rect(mouseinfo.x, mouseinfo.y, _load_rect){
+                                    load_color = C4_LGREY;
+                                    if mouseinfo.lclicked(){
+                                        app_storage.save_toggle_saveload = SaveLoadEnum::Load;
+                                    }
+                                }
+                                draw_rect(canvas, load_rect, load_color, true);
+                                draw_string(canvas, "Load", load_rect[0], load_rect[1]-2, C4_WHITE, 24.0);
+                            },
+                        }
+                    },
+                    ProgramElementsEnum::Default=>{
+                        fn _button_fn(canvas: &mut WindowCanvas, text_input: &str,  
+                                      menu_rect: &[i32; 4], subcanvas_x: i32, menu_x: i32, menu_font: f32, mouseinfo: &MouseInfo, menu_offscreen: bool)->(i32, bool){
+                            let length = get_advance_string(text_input, menu_font)+8;
+                            let mut bg_color = C4_GREY;
+                            let mut _rect = [menu_rect[0]+menu_x-3, menu_rect[1], length, menu_rect[3]];//TODO Handle when in menu canvas
+                            let _rect_in = if !menu_offscreen { [_rect[0]+subcanvas_x, _rect[1], _rect[2], _rect[3]] } 
+                                           else { _rect };
+
+                            let mut clicked = false;
+                            if in_rect(mouseinfo.x, mouseinfo.y, _rect_in) {
+                                bg_color = C4_LGREY;
                                 if mouseinfo.lclicked(){
-                                    app_storage.save_textbox.text_buffer = it.to_string();
+                                    clicked = true;
                                 }
                             }
-
-                            draw_string(canvas, it, save_menu_rect[0]+4, y, C4_WHITE, save_menu_font);
+                            _rect[0] += 4;
+                            _rect[1] += 2;
+                            _rect[2] -= 4;
+                            _rect[3] -= 4;
+                            draw_rect(canvas, _rect, bg_color, true);
+                            let x = draw_string(canvas, text_input, menu_rect[0]+menu_x, menu_rect[1]-3, C4_WHITE, menu_font);
+                            return (x+8, clicked);
                         }
-                        if !app_storage.menu_offscreen { app_storage.save_textbox.offset_x = subcanvas_x;}
-                        app_storage.save_textbox.x = save_menu_rect[0]+50;
-                        app_storage.save_textbox.y = save_menu_rect[1] + save_menu_rect[3] - save_menu_font as i32;
-                        app_storage.save_textbox.omega = 4.0;
 
-                        app_storage.save_textbox.update(keyboardinfo, textinfo, mouseinfo);
-                        app_storage.save_textbox.draw(canvas, app_storage.timer.elapsed().as_secs_f32());
 
-                        if app_storage.arr_circuit_elements.len() != 0 
-                        && keyboardinfo.key.contains(&KeyboardEnum::Enter) {
-                            save_circuit_diagram(&app_storage.save_textbox.text_buffer, &app_storage.arr_circuit_elements);
-                            app_storage.save_toggle_saveload = SaveLoadEnum::Default;
-
-                            app_storage.messages.push( (MessageType::Default, format!("Message: {} saved.", &app_storage.save_textbox.text_buffer)) );
-                            app_storage.save_toggle = false;
-                        }
-                    },
-                    SaveLoadEnum::Load=>{
-                        let load_menu_font = 26.0;
-                        let mut load_menu_rect = [window_w-300, 
-                                                  rect[1] - load_menu_font as i32 * previously_saved_circuits.len() as i32, 
-                                                  300, 
-                                                  load_menu_font as i32 * ( 1 + previously_saved_circuits.len() as i32 )];
+                        let menu_font = 26.0;
+                        let mut menu_rect = [window_w-300, rect[1] as i32, 325, menu_font as i32 ];
+                        let mut menu_x = 0;
                         if !app_storage.menu_offscreen {
-                            load_menu_rect[0] = 0;
+                            menu_rect[0] = 2;
+                        }
+                        draw_rect(canvas, menu_rect, C4_BLACK, true);
+
+                        change_font(FONT_NOTOSANS_BOLD);
+
+                        let sp_button_result = _button_fn(canvas, "SidePanel", &menu_rect, subcanvas_x, menu_x, menu_font, mouseinfo, app_storage.menu_offscreen);
+                        menu_x += sp_button_result.0; 
+                        if sp_button_result.1 {
+                            app_storage.save_toggle_programelements = ProgramElementsEnum::SidePanel;
                         }
 
-                        draw_rect(canvas, load_menu_rect, C4_BLACK, true);
-                        draw_string(canvas, "Load:", load_menu_rect[0]+4, load_menu_rect[1] + load_menu_rect[3] - load_menu_font as i32, C4_WHITE, load_menu_font);
 
-                        let mut temp_string  = String::new();
-                        for (i, it) in previously_saved_circuits.iter().enumerate(){
-                            let y = load_menu_rect[1] + load_menu_rect[3] - (i + 2) as i32 * load_menu_font as i32 - 2;
-                            let sub_rect = [load_menu_rect[0], y, load_menu_rect[2], load_menu_font as i32];
-                            let _sub_rect = if app_storage.menu_offscreen{ [load_menu_rect[0], y, load_menu_rect[2], load_menu_font as i32]}
-                                          else { [subcanvas_x+load_menu_rect[0], y, load_menu_rect[2], load_menu_font as i32] };
-                            if in_rect(mouseinfo.x, mouseinfo.y, _sub_rect){
-                                draw_rect(canvas, sub_rect, C4_GREY, true);
-                                if mouseinfo.lclicked(){
-                                    temp_string = it.to_string();
-                                }
-                            }
-                            draw_string(canvas, it, load_menu_rect[0]+4, y, C4_WHITE, load_menu_font);
+                        let c_button_result = _button_fn(canvas, "Circuit", &menu_rect, subcanvas_x, menu_x, menu_font, mouseinfo, app_storage.menu_offscreen);
+                        menu_x += c_button_result.0; 
+                        if c_button_result.1 {
+                            app_storage.save_toggle_programelements = ProgramElementsEnum::Circuit;
                         }
-                        if previously_saved_circuits.contains(&temp_string) {
 
-                            let v = load_circuit_diagram(&temp_string);
-                            app_storage.arr_circuit_elements = v;
-                            
-                            app_storage.saved_circuit_volts.clear();
-                            app_storage.saved_circuit_currents.clear();
-                            app_storage.circuit_textbox_hash.clear();
 
-                            for it in app_storage.arr_circuit_elements.iter(){
-                                app_storage.circuit_textbox_hash.insert((it.unique_a_node, it.unique_b_node), CircuitElementTextBox::new());
-
-                                if it.circuit_element_type == SelectedCircuitElement::Voltmeter
-                                || it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter{
-                                    app_storage.saved_circuit_volts.insert((it.unique_a_node, it.unique_b_node), [Vec::new(), Vec::new()]);
-                                }
-                                if it.circuit_element_type == SelectedCircuitElement::Ammeter
-                                || it.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
-                                    app_storage.saved_circuit_currents.insert((it.unique_a_node, it.unique_b_node), [Vec::new(), Vec::new()]);
-                                }
-                            }
-
-                            app_storage.save_toggle_saveload = SaveLoadEnum::Default;
-                            app_storage.save_toggle = false;
+                        let ce_button_result = _button_fn(canvas, "CustomElements", &menu_rect, subcanvas_x, menu_x, menu_font, mouseinfo, app_storage.menu_offscreen);
+                        menu_x += ce_button_result.0; 
+                        if ce_button_result.1 {
+                            app_storage.save_toggle_programelements = ProgramElementsEnum::CustomElement;
                         }
+                        change_font(FONT_NOTOSANS);
                     },
-                    SaveLoadEnum::Default=>{
-                        draw_rect(canvas, rect, C4_BLACK, true);
 
-                        let mut save_color = C4_GREY;
-                        let save_rect  = [rect[0]+4, rect[1]+4, 50, 24];
-                        let mut _save_rect  = [rect[0]+4, rect[1]+4, 50, 24];
-                        if !app_storage.menu_offscreen {
-                            _save_rect[0]  = rect[0]+4 + subcanvas_x;
-                        }
-
-                        if in_rect(mouseinfo.x, mouseinfo.y, _save_rect){
-                            save_color = C4_LGREY;
-                            if mouseinfo.lclicked(){
-                                app_storage.save_toggle_saveload = SaveLoadEnum::Save;
-                            }
-                        }
-                        draw_rect(canvas, save_rect, save_color, true);
-                        draw_string(canvas, "Save", save_rect[0], save_rect[1]-2, C4_WHITE, 24.0);
-
-
-
-                        let mut load_color = C4_GREY;
-                        let load_rect  = [rect[0]+57, rect[1]+4, 50, 24];
-                        let mut _load_rect  = [rect[0]+57, rect[1]+4, 50, 24];
-                        if !app_storage.menu_offscreen {
-                            _load_rect[0]  = rect[0]+ 57 + subcanvas_x;
-                        }
-
-                        if in_rect(mouseinfo.x, mouseinfo.y, _load_rect){
-                            load_color = C4_LGREY;
-                            if mouseinfo.lclicked(){
-                                app_storage.save_toggle_saveload = SaveLoadEnum::Load;
-                            }
-                        }
-                        draw_rect(canvas, load_rect, load_color, true);
-                        draw_string(canvas, "Load", load_rect[0], load_rect[1]-2, C4_WHITE, 24.0);
-                    },
                 }
             }
         }
@@ -5682,7 +6033,14 @@ struct Pair{
     orig_element_index: usize,
 }
 
-///TODO
+///This function computes the currents and voltages for the user defined
+///circuit.
+///
+///The function uses techniques defined in this paper, ["The Sparse Tableau Approach to Network Analysis and Design"](http://web.engr.oregonstate.edu/~karti/ece521/sta.pdf). The method
+///discribes constructing circuit as aset of linear equations to be solved using Gaussian
+///Elimination. More detailed notes can be found in the code.
+///
+///For an additional resource consult the textbook "Circuit Simulation" by Farid Najim.
 fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<usize>){
     
     let mut rt = Matrix::zeros(0,0);
