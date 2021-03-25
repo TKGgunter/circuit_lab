@@ -1,14 +1,14 @@
 
-//! This module contains a base of software rendering tools.
-//! Text rendering, simple shape, and bitmap rendering is provided.
+//! This module contains the set of software rendering tools used for this application.
+//! Text rendering, simple shape, and bitmap rendering is provided here.
 //!
-//! This module draws directly to the provided canvas.
-//! All draw calls are done directly on the cpu.  If you wish to use the gpu for rendering
+//! This module contains functions that draws directly to the provided canvas.
+//! All draw calls are done directly using the cpu.  If you wish to use the gpu for rendering
 //! you will need to set it up yourself then paint it to the canvas.
-//! The interface is pixel based, with the origin at bottom left corner of the canvas.
 //!
 //! 
 //!
+//! The interface is pixel based, with the origin at bottom left corner of the canvas.
 //! The example below shows how to draw a rectangle to WindowCanvas provided outside of this snips
 //! context. `C4_BLACK` is a const provided by the module for convenience. 
 //! This example will draw a black rectangle, who's bottom left corner will inhabit canvas coordinate of
@@ -103,12 +103,13 @@ static mut CURRENT_KEY        : usize = 0;
 ///Returns an array of length 4 that is the composite of the input array and alpha.
 ///
 /// # Example
-/// '''
+/// ```
 /// let v = [1f32, 0.5f32, 0.1f32];
 /// let a = 0.5f32;
 ///
 /// let v_a = [1f32, 0.5f32, 0.1f32, 0.5f32];
 /// assert_eq!(c3_to_c4(v, a), v_a);
+/// ```
 #[inline]
 pub fn c3_to_c4(c3: [f32; 3], alpha: f32)->[f32; 4]{
     [c3[0], c3[1], c3[2], alpha]
@@ -117,7 +118,7 @@ pub fn c3_to_c4(c3: [f32; 3], alpha: f32)->[f32; 4]{
 
 /// Updates the static font buffer using the buffer provided.
 /// Returns a result indicating if the function succeeded. 
-/// Note: This is not thread safe. Additionally if user is 
+/// Note: This is not thread safe. Additionally, if the user 
 /// constantly un(re)loading the same font files the user will
 /// incur performance penalties. 
 pub fn change_font(buffer: &[u8])->Result<(), &str>{unsafe{
@@ -183,7 +184,7 @@ pub fn get_advance(character: char, size: f32)->i32{unsafe{
 
 
 
-/// Returns the pixel width of the string.
+/// Returns the pixel width of the provided string.
 pub fn get_advance_string( string: &str, size: f32 )->i32{
     let mut offset = 0;
     for it in string.chars(){
@@ -195,7 +196,7 @@ pub fn get_advance_string( string: &str, size: f32 )->i32{
 
 
 
-/// Draws character to the provided canvas. size is rounded to the nearest integer. 
+/// Draws the provided character to the canvas. `size` is rounded to the nearest integer. 
 /// Returns character width in pixels.
 pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y: i32,
              color: [f32; 4], mut size: f32 )->i32{unsafe{
@@ -506,7 +507,7 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
 }}
 
 
-/// Draws string to the canvas provided. Returns string width in pixels.
+/// Draws the string to the canvas provided. Returns string width in pixels.
 /// Position values x and y are indicate where the string will begin.
 /// NOTE there is about a 4 pixel buffer between x and the first pixel the function is able to draw
 /// to.

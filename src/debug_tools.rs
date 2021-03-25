@@ -1,12 +1,19 @@
 //! This module contains a set of performance debugging tools, akin to telemetry. 
 //!
-//! To assist in the optimization process the following tools are provided.
+//! To assist in the optimization of the program the following tools are provided.
 //! The macros `timeit!` and `DEBUG_timeit!` should be used when timing a block of code.
 //! `timeit!` is a macro that will print the elapsed time and cycle counts at the end of the code
 //! block.
 //! `DEBUG_timeit!` is a macro that should be used in conjunction with a statically initialized
 //! `DebugStruct`, `reset_frame_debugging` and `draw_debuginfo`.  `draw_debuginfo` will render debug data to the given
 //! canvas. `DebugStruct` collects timings across a specified frame such that `draw_debuginfo` can deliver averaged statistics.
+//!
+//! When utilizing the module past the following to the file of interest.
+//! ```
+//!#[macro_use]
+//!use crate::{timeit, DEBUG_timeit};
+//!use crate::debug_tools::*;
+//! ```
 
 
 
@@ -87,6 +94,9 @@ pub static mut GLOBAL_DEBUG_RENDER : DebugRenderStruct = DebugRenderStruct{ bkg_
 
 
 
+/// This function initializes the debug render.
+///
+/// If this function is set with `None` the render will be set with defaults.
 pub fn init_debugging( rect: Option<[i32; 4]>){unsafe{
     GLOBAL_DEBUG_TIMEIT = Some(HashMap::new());
 
@@ -102,6 +112,11 @@ pub fn init_debugging( rect: Option<[i32; 4]>){unsafe{
     }
 
 }}
+
+/// This function resets the timing and counting information carried by a global struct.
+///
+/// This function should be set at the frame end, the end of `circuit_sim` as to accurately
+/// calculate count and timing averages.
 pub fn reset_frame_debugging(){unsafe{
     GLOBAL_DEBUG_COUNT += 1;
 

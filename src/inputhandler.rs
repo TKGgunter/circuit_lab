@@ -1,7 +1,7 @@
-//! This module is contains structs and functions that handle event input.
+//! This module contains structs and functions that handle event input.
 //!
-//! There are three basic structs defined by this module.
-//! They are `KeyboardInfo`, `MouseInfo`, and `TextInfo`.
+//! There are three basic structs defined by this module
+//! they are `KeyboardInfo`, `MouseInfo`, and `TextInfo`.
 //! `KeyboardInfo` holds current keyboard events. 
 //! `MouseInfo` holds current mouse events.
 //! `TextInfo` holds the most recent character, as defined by the operating system.

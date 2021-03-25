@@ -6,7 +6,7 @@
 use std::time::{Instant, Duration};
 
 
-/// StopWatch is an Instant helper function. 
+/// StopWatch is an Instant helper function used for timing.
 /// 
 /// ## Example
 /// ```

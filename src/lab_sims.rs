@@ -21,8 +21,9 @@
 //! ## Program structure
 //!
 //! `circuit_sim` begins with an initialization block, `app_storage.init`. 
-//! In this block window size is set, assets are initialized and configuration files are 
-//! loaded. If you wish to incorporate more assets they should be initialized here.
+//! In this block application properties, and assets are initialized and configured. 
+//! Configuration files are also loaded in this block. 
+//! If you wish to incorporate more assets they should be initialized here.
 //!
 //! TA mode is handled shortly after. 
 //! TA mode give the user the ability to author content. The retractable size panel 
@@ -601,8 +602,9 @@ pub enum MessageType{
 }
 
 /// LS_AppStorage contains data that must be stored across the frame boundary.
-/// LS_AppStorage contians the list of circuit elements that the user has placed in the
-/// user space.  
+///
+/// LS_AppStorage contians a vast amount of information including circuit elements placed by the user.
+/// If any informationg needs to be stored beyond the frame boundary it should be stored here.
 ///
 pub struct LS_AppStorage{
     pub init: bool,
@@ -1022,6 +1024,9 @@ fn uncompress_panelfile( panelfile: &PanelFile )->String{
 
 
 
+/// This function is the most important to the application. User interaction, rendering and so one
+/// is done here.
+///
 /// `circuit_sim` is the most important function in this module.
 /// Everything happens here. `circuit_sim` requires keyboard, text and mouse information
 /// structs as input. These structs contain all interactive data the application needs to run.
@@ -5195,14 +5200,14 @@ fn rotate_bmp(src_bmp: &mut TGBitmap, angle: f32)->Option<TGBitmap>{unsafe{
 
 
 mod parser{
-//! This module contains simple parser for uses by the circuit simulation.
+//! This module a contains simple parser for the panels used by the circuit simulation.
 //! 
 //! The parser handles a simple custom markdown format. 
 //! The `parser` function parses a given string. 
 //! The parsing occurs in a single loop, where the program iterates through the characters
 //! of the string while peeking forward to determine keywords. 
 //! The parser returns an array of sections, and possible errors.
-//! A section is a single panel unit. Rendering of a section occurs does not occur in this
+//! A section is a single panel unit. Rendering of a section does not occur in this
 //! module.
 //! 
 //! 
@@ -5611,7 +5616,7 @@ mod matrixmath{
 //! This module is a simple linear algebra library 
 //! made to satisfy the requirements of this application.
 //! The library does not contain all linear algebra operations, nor does it attempt to.
-//! The purpose is again to provide functionality necessary to solve electrical circuits.
+//! The purpose is, again, to provide functionality necessary to solve electrical circuits.
 
 
     pub struct Matrix{
@@ -6037,8 +6042,8 @@ struct Pair{
 ///circuit.
 ///
 ///The function uses techniques defined in this paper, ["The Sparse Tableau Approach to Network Analysis and Design"](http://web.engr.oregonstate.edu/~karti/ece521/sta.pdf). The method
-///discribes constructing circuit as aset of linear equations to be solved using Gaussian
-///Elimination. More detailed notes can be found in the code.
+///discribes constructing circuit as aset of linear equations solved using Gaussian
+///elimination. More detailed notes can be found in the code.
 ///
 ///For an additional resource consult the textbook "Circuit Simulation" by Farid Najim.
 fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<usize>){
@@ -6689,26 +6694,13 @@ fn load_circuit_diagram(name: &str)->Vec<CircuitElement>{unsafe{
         panic!("File type is wrong.");
     }
 
-//TODO
-//changes need to be made so that we can change circuit struct 
-//but load old versions.
-//The idea is to move the read curser by sizeof_circuit_elements,
-//and add new struct parameters to end of struct.
-//We will need Seek or Cursor.
     let mut sizeof_circuit_elements = [0u8; size_of::<u64>()];
     f.read(&mut sizeof_circuit_elements);
     let sizeof_circuit_elements = transmute::< [u8; size_of::<u64>()], u64>(sizeof_circuit_elements);
 
-
-
-    //NOTE check the current size of to saved size of 
-    //if saved size of is larger we have a problem and 
-    //things will not work
     if size_of::<CircuitElement>() < sizeof_circuit_elements as usize{
         println!("It is highly likely that the load has failed.  Current CircitElement struct is smaller than saved struct");
     }
-
-
 
 
     let mut number_circuit_elements = [0u8; size_of::<u64>()];
@@ -6744,8 +6736,6 @@ fn load_circuit_diagram(name: &str)->Vec<CircuitElement>{unsafe{
 
 
 
-////NOTE
-//The following in redundant with code from app_main, xcopy fgc ai program
 #[derive(Clone)]
 struct TextBox{
     text_buffer: String,
@@ -7085,40 +7075,28 @@ fn render_charge_capacitor(bmp: &mut TGBitmap, charge: f32, capacitance: f32){//
 
 
 
+/// This function sets a matrix which dictates the initial direction a circuit element.
+///
+/// This function begins by guessing the direction of an element, then begins to correct the guess
+/// using the following rules:
+/// + for a given column the sum of rows must be zero
+/// + for a given row the sum of the absolute value must not be 2.
+/// + for a given row the sum minus the negative element value must not be 0.
 fn undirected_to_directed_matrix(m : &mut Matrix){
-    //NOTE rules:
-    //sum of columns must be zero, sum of rows mag must be less than some value.
 
     //NOTE
-    //1st we make a guess the direction of each pair.
+    //We guess the direction of each pair.
     for i in 0..m.columns{
         for j in (0..m.rows).rev(){
             let mut good = false;
 
             if *m.get_element(j, i) == 1f32{
-                /* Removed and everything seems to work...
-                for k in (0..m.columns).rev(){
-
-                    if k == i { continue; }
-
-                    if *m.get_element(j, k) == 1f32 { 
-                        good = true;
-                        break; 
-                    }
-                }
-
-                if good {  
-                    *m.get_element( j, i ) = -1f32; 
-                    break; 
-                }
-                */
                 *m.get_element( j, i ) = -1f32; 
                 break; 
             }
         }
     }
-    //NOTE
-    //now we try to correct that guess.
+
     for j in 0..m.rows{
         let mut count = 0f32;
         let mut sum = 0f32;
@@ -7132,7 +7110,6 @@ fn undirected_to_directed_matrix(m : &mut Matrix){
             if *m.get_element(j, i) != 0f32 { c_index.push(i); }
         }
 
-       //if j == 6 { println!("init: sum {}   count {}",sum, count); }
         if sum.abs() < count { continue; }
 
         //flip other element
@@ -7152,7 +7129,6 @@ fn undirected_to_directed_matrix(m : &mut Matrix){
 
             if !row_interesting { continue; }
             j_index.push( (_j, column_of_interest) );
-       //if j == 6 { println!("???"); }
 
 
             count = 0f32;
@@ -7161,27 +7137,19 @@ fn undirected_to_directed_matrix(m : &mut Matrix){
                 sum   += *m.get_element(_j, _i);
                 count += (*m.get_element(_j, _i)).abs();
             }
-            //if j == 7 {
-            //   println!("ASDF {:?}", m); 
-            //   println!("ASDF {}  {:?}",sum, (j, _j, column_of_interest)); 
-            //}
-            //if sum.abs() < count - 2f32 {
+
             if sum as f32 - (*m.get_element(_j, column_of_interest)) * -1f32 != 0f32 
             && count != 2f32{
-                //TODO we must now change the things
-            //if j == 7 { println!("sum {} {:?}", sum, (j, _j, column_of_interest)); }
                 *m.get_element(_j, column_of_interest) *=-1f32;
                 *m.get_element(j, column_of_interest) *=-1f32;
                 change_made = true;
             }
-           //println!("ASDF {} {:?} ", j, m); 
         }
         if  !change_made {
             *m.get_element(j_index[1].0, j_index[1].1) *=-1f32;
             *m.get_element(j, j_index[1].1) *=-1f32;
         }
     }
-    //panic!("{:?}", m);
 }
 
 #[test]

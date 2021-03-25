@@ -1,10 +1,10 @@
 //! This module contains the main event loop for the linux operating system.
 //!
-//! This application uses x11 for window management on linux.  Is includes basic
+//! This application, on linux, uses x11 for window management.  This module includes basic
 //! input event gathering, keyboard and mouse events.  The primary functions of 
 //! interest are `make_window` and `update_screen`. 
-//! `make_window` contains the event loop and `update_screen` updates the x11 buffer
-//! with the contents of our backbuffer.
+//! `make_window` contains the event loop and `update_screen` updates the x11 
+//! buffer with the contents of our backbuffer.
 //!
 
 

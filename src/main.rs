@@ -2,30 +2,30 @@
 //! is circuit simulation software specifically designed to assist teachers in designing and
 //! deploying circuit labs for beginning physics/engineering  students.
 //! The program runs on Windows, MacOs and Linux operating systems.
-//! The program was written in in the [rust](https://www.rust-lang.org/) programming language. 
+//! The program was written in the [rust](https://www.rust-lang.org/) programming language. 
 //!
 //!
 //! # How to read this documentation
 //!
-//! This documentation is meant to serve as guide for future developers. It is meant help user get started
-//! when attempting further develop the program. If you are new to rust please take a look at
+//! This documentation is meant to serve as guide for future developers. It is meant help developers who wish
+//! to further develop this program. If you are new to rust please take a look 
 //! [here](https://www.rust-lang.org/learn/get-started), the rust installation guide, and
-//! [here](https://doc.rust-lang.org/book/), a beginner to intermediate guide for those getting
+//! [here](https://doc.rust-lang.org/book/), a beginner to intermediate guide which might be useful for those getting
 //! started or want to learn abit more.
 //!
 //!
 //!
 //! # Getting started
 //!
-//! Compilation is done using rust's default compile and associated tools. 
+//! Compilation is done using rust's default compilation and packaging tool, `cargo`.
 //! To compile a release build execute the following command: `cargo build --release`.
 //! To compile and run a release build execute: `cargo run --release`.
-//! Note first time compilation will attempt to download a set of external dependencies from rust's
+//! Note, first time compilation will attempt to download external dependencies from rust's
 //! package registry. 
 //!
 //!
 //! The main logic path begins in `main.rs` then diverges depending on the operating system.
-//! These paths converge with `lab_sim.rs`. Logic specific to the circuit simulation can be found
+//! These paths converge in `lab_sim.rs`. Logic specific to the circuit simulation can be found
 //! in `lab_sims.rs`. Various helper modules have been developed to help make development easier.
 //! The dominant logic paths and helper modules can be found below.
 //!
@@ -42,8 +42,8 @@
 //!        |           |            |
 //!        |           |            |
 //!        V           V            V
-//!      unix/        macos/     windows/
-//!      mod.rs       mod.rs      mod.rs
+//!      unix/       macos/     windows/
+//!      mod.rs      mod.rs      mod.rs
 //!        |           |            |
 //!        ->      lab_sims.rs     <-
 //!
