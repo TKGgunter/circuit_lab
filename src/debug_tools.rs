@@ -239,8 +239,8 @@ pub fn draw_debuginfo(canvas: &mut WindowCanvas){unsafe{
                 draw_string(canvas, &format!("{}", _k), x, y, GLOBAL_DEBUG_RENDER.font_color, GLOBAL_DEBUG_RENDER.font_size); //TAG
                 draw_string(canvas, &format!("{:8}", v.count), x+75, y, GLOBAL_DEBUG_RENDER.font_color, GLOBAL_DEBUG_RENDER.font_size);//TOTAL Counts
                 draw_string(canvas, &format!("{:>8}", v.count_per_frame), x+200, y, GLOBAL_DEBUG_RENDER.font_color, GLOBAL_DEBUG_RENDER.font_size);
-                draw_string(canvas, &format!("{:>8.2?}", v.durations/v.count as u32), x+320, y, GLOBAL_DEBUG_RENDER.font_color, GLOBAL_DEBUG_RENDER.font_size);
-                draw_string(canvas, &format!("{:>8.2?}", v.durations/v.count as u32 * v.count_per_frame as u32), x+420, y, GLOBAL_DEBUG_RENDER.font_color, GLOBAL_DEBUG_RENDER.font_size);
+                draw_string(canvas, &format!("{:>8.2?}", v.durations/(v.count + 1) as u32), x+320, y, GLOBAL_DEBUG_RENDER.font_color, GLOBAL_DEBUG_RENDER.font_size);
+                draw_string(canvas, &format!("{:>8.2?}", v.durations/(v.count + 1) as u32 * v.count_per_frame as u32), x+420, y, GLOBAL_DEBUG_RENDER.font_color, GLOBAL_DEBUG_RENDER.font_size);
                 y -= GLOBAL_DEBUG_RENDER.font_size as i32;
                 if y < GLOBAL_DEBUG_RENDER.font_size as i32 { break; }
             }

@@ -85,7 +85,7 @@ static mut BUFFER : Vec<u8> = Vec::new();
 fn update_window<T: NSWindow + std::marker::Copy>(bitmap: &mut WindowCanvas, window: &T ){unsafe{
 //TODO
 //This method is leaking memory. I think I'm doing everything right and this is cocoa thing but who knows.
-
+DEBUG_timeit!{"upwin",{
     let bitmapWidth  = window.contentView().bounds().size.width as usize;
     let bitmapHeight = window.contentView().bounds().size.height as usize;
     let bytesPerPixel = 4;
@@ -139,6 +139,7 @@ fn update_window<T: NSWindow + std::marker::Copy>(bitmap: &mut WindowCanvas, win
     let _ : id = msg_send![BACKBUFFER.image, addRepresentation: BACKBUFFER.backbuffer];
     let _ : id = msg_send![window.contentView().layer(), setContents: BACKBUFFER.image];
 
+}}
 }}
 
 
@@ -225,6 +226,7 @@ pub fn make_window<'a>() {unsafe{
 //remember me to resize from the app
 //    window.setContentSize_(NSSize::new(500., 500.));
 ///////////////////
+    init_debugging( Some([0, 0, 600, 500]) );
 
 
     window.setDelegate_(delegate!("MyWindowDelegate", 
@@ -406,6 +408,7 @@ pub fn make_window<'a>() {unsafe{
             
         }
 
+DEBUG_timeit!{"swiz", {
         for i in 0..GLOBAL_BACKBUFFER.w * GLOBAL_BACKBUFFER.h{
             let _i = i * 4;
             let r = *(GLOBAL_BACKBUFFER.buffer as *mut u8).offset(_i as isize);
@@ -413,10 +416,10 @@ pub fn make_window<'a>() {unsafe{
             *(GLOBAL_BACKBUFFER.buffer as *mut u8).offset(_i as isize + 2) = r;
             *(GLOBAL_BACKBUFFER.buffer as *mut u8).offset(_i as isize + 3) =  255; //* mult as u8;
         } 
+}}
+        
         update_window( &mut GLOBAL_BACKBUFFER, &window );
 
-        let ten_millis = time::Duration::from_millis(10);
-        //thread::sleep(ten_millis);
         let temp =  now.elapsed() - elapsed;
 
 
@@ -440,12 +443,15 @@ pub fn make_window<'a>() {unsafe{
 
         old_specialkeys = specialkeys.clone();
         mouseinfo.double_lbutton = false;
-
+DEBUG_timeit!{"event", {
         let mut i = 0;
         loop  {
             i += 1;
+
+            //NOTE Thoth Gunter 10.10.5 there is atleast a 10ms lag between requesting and receiving events.
             let mut event = NSApp().nextEventMatchingMask_untilDate_inMode_dequeue_( NSEventMask::all().bits(), nil, NSDefaultRunLoopMode, YES);
             if event == nil { break; }
+
             let (x, y) =  (NSEvent::mouseLocation(event).x, NSEvent::mouseLocation(event).y);
             mouseinfo.x = x.round() as i32 - GLOBAL_WINDOWINFO.x;
             mouseinfo.y = y.round() as i32 - GLOBAL_WINDOWINFO.y;
@@ -529,7 +535,7 @@ pub fn make_window<'a>() {unsafe{
         }
         mouseinfo.delta_x = mouseinfo.x - mouseinfo.delta_x;
         mouseinfo.delta_y = mouseinfo.y - mouseinfo.delta_y;
-
+}}
         if specialkeys.ctrl != old_specialkeys.ctrl {
             keyboardinfo.key.push(KeyboardEnum::Ctrl);
             keyboardinfo.status.push(specialkeys.ctrl);
@@ -556,11 +562,9 @@ pub fn make_window<'a>() {unsafe{
         && stopwatch_lbutton.lap_time().as_millis() <= 500 {
             mouseinfo.double_lbutton = true;
         }
-
         
         if circuit_sim(&mut OsPackage{window_canvas: &mut GLOBAL_BACKBUFFER, window_info: &mut GLOBAL_WINDOWINFO},
                     &mut ls_app_storage, &keyboardinfo, &textinfo, &mouseinfo) != 0 { break; }
-
 
         if has_been_translocated {
             let window_height = GLOBAL_WINDOWINFO.h;
@@ -571,8 +575,11 @@ pub fn make_window<'a>() {unsafe{
             draw_string(&mut GLOBAL_BACKBUFFER, "its current directory to remove this status.", 2, window_height-124, C4_WHITE, 24f32);
         }
 
-        //draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:#.3?}", now.elapsed() - elapsed), 0, GLOBAL_BACKBUFFER.h-30, C4_WHITE, 26.0);
+        draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:#.3?}", now.elapsed() - elapsed), 0, GLOBAL_BACKBUFFER.h-30, C4_WHITE, 26.0);
         elapsed = now.elapsed();
+
+        draw_debuginfo(&mut GLOBAL_BACKBUFFER);
+        reset_frame_debugging();
 
 
     }

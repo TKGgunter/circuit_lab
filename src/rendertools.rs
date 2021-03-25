@@ -529,6 +529,7 @@ DEBUG_timeit!{"draw_string",{
 pub fn draw_rect( canvas: &mut WindowCanvas, rect: [i32; 4], color: [f32; 4], filled: bool ){unsafe{
     //TODO
     //- Set alpha on dst canvas use both dst and src to determine alpha
+DEBUG_timeit!{"draw_rect", {
 
     let buffer = canvas.buffer as *mut u32;
 
@@ -624,6 +625,7 @@ pub fn draw_rect( canvas: &mut WindowCanvas, rect: [i32; 4], color: [f32; 4], fi
             }
         }
     }
+}}
 }}
 
 #[derive(Clone, Debug, Copy)]
