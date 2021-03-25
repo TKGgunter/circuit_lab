@@ -35,6 +35,9 @@ use crate::{WindowCanvas, WindowInfo,
 use inputhandler::*;
 use crate::misc::*;
 
+#[macro_use]
+use crate::{timeit, DEBUG_timeit};
+use crate::debug_tools::*;
 
 
 
@@ -200,6 +203,8 @@ pub fn make_window() {unsafe{
     let mut old_window_info = GLOBAL_WINDOWINFO;
 
 
+     
+    //init_debugging( Some([0, 0, 600, 500]) );
 
 
     let mut exit = false;
@@ -395,6 +400,10 @@ pub fn make_window() {unsafe{
         let delta_time = stopwatch.lap_time();
         //draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:#.3?}", delta_time), 0, GLOBAL_BACKBUFFER.h-30, C4_WHITE, 26.0);//TODO we should avg things so we no flicker
         stopwatch.reset_lap_timer();
+
+        //draw_debuginfo(&mut GLOBAL_BACKBUFFER);
+        //reset_frame_debugging();
+        
         if exit {
             break;
         }

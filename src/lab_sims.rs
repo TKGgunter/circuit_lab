@@ -125,6 +125,10 @@ const DEFAULT_MESSAGE_ONSCREEN_DURATION : Duration = Duration::from_millis(5100)
 const ERROR_MESSAGE_ONSCREEN_DURATION   : Duration = Duration::from_millis(7500);
 
 
+const DELTA_MAX_TIME_PANEL_MOVE : f32 = 0.2E6;
+
+
+
 
 /// This funciton sets the static variable `GLOBAL_PROPERTIES_Z`.
 /// This is not thread safe.
@@ -1152,15 +1156,15 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
     }
 
     //NOTE Frame rate cap of 60 frames per sec.
-    {
-        match Duration::from_millis(16).checked_sub(app_storage.global_time.get_time()){
-            Some(d)=>{
-                std::thread::sleep(d);
-            },
-            _=>{}
-        }
-        app_storage.global_time.reset()
-    }
+    //{
+    //    match Duration::from_millis(16).checked_sub(app_storage.global_time.get_time()){
+    //        Some(d)=>{
+    //            std::thread::sleep(d);
+    //        },
+    //        _=>{}
+    //    }
+    //    app_storage.global_time.reset()
+    //}
 
 
     let circuit_element_canvas_x_offset = 25;
@@ -2788,7 +2792,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
     //Draw Background  Color
     draw_rect(&mut app_storage.menu_canvas.canvas, [0, 0, temp_w, temp_h], COLOR_MENU_BKG, true);
 
-    {//Render panels
+    if app_storage.menu_move_activated == true
+    || app_storage.menu_offscreen == false {//Render panels
         let i = app_storage.panel_index;
         let panel = &mut app_storage.arr_panels[i];
         let mut current_cursor_position = temp_h - 35;
@@ -3745,10 +3750,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         }
 
 
-        let delta_max_time = 0.2E6;
+        let delta_max_time = DELTA_MAX_TIME_PANEL_MOVE;
         if app_storage.menu_move_activated {
 
-            //let frac = global_time_delta.as_sec_f32() / Duration;::from_millis(16).as_sec_f32(); 
             let mut delta = (app_storage.timer.elapsed().as_micros() - app_storage.menu_move_activated_time) as f32;
             x = ((os_package.window_canvas.w - app_storage.menu_canvas.canvas.w) as f32 * ((delta_max_time + delta) / delta_max_time)) as i32; //TODO
 

@@ -514,9 +514,11 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
 pub fn draw_string( canvas: &mut WindowCanvas, string: &str, x: i32, y: i32,
              color: [f32; 4], size: f32 )->i32{
     let mut offset = 0;
+DEBUG_timeit!{"draw_string",{
     for it in string.chars(){
         offset += draw_char(canvas, it, x + offset, y, color, size);
     }
+}}
     return offset;
 }
 
@@ -603,6 +605,9 @@ pub fn draw_rect( canvas: &mut WindowCanvas, rect: [i32; 4], color: [f32; 4], fi
                 }
             }
         } else {
+
+            //TODO
+            //simd this
             for _j in _y.._y+_h{
                 let j = _j as isize;
                 for _i in x..x+_w{
@@ -956,6 +961,7 @@ pub fn draw_stbi_image( canvas: &mut WindowCanvas, bmp: &StbiImage, mut x: i32, 
 pub fn draw_bmp( canvas: &mut WindowCanvas, source_bmp: &TGBitmap, mut x: i32, mut y: i32, alpha: f32,
             mut _w: Option<i32>, mut _h: Option<i32>){unsafe{
 
+DEBUG_timeit!{ "draw_bmp", {
     if alpha < 0.0 {
         println!("A negative alpha as passed to drawBMP");
         return;
@@ -1049,6 +1055,7 @@ pub fn draw_bmp( canvas: &mut WindowCanvas, source_bmp: &TGBitmap, mut x: i32, m
         }
     }
 }}
+}}
 
 
 
@@ -1128,7 +1135,6 @@ pub fn draw_circle(canvas: &mut WindowCanvas, mut _x: i32, mut _y: i32, r: f32, 
 ///Draws a subcanvas to the canvas provided. x, and y dictate where the image is draws to the canvas.
 ///This point(x,y) is the center of the circle.
 pub fn draw_subcanvas(canvas: &mut WindowCanvas, subcanvas: &SubCanvas, mut x: i32, mut y: i32, alpha: f32 ){unsafe{
-
 
     //TODO we need to scale with dpi
     let buffer = canvas.buffer as *mut u32;

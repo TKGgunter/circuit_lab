@@ -224,8 +224,11 @@ pub fn draw_debuginfo(canvas: &mut WindowCanvas){unsafe{
     let mut x = _x + 0;
     let mut y = _y + h;
 
-    y -= 3*GLOBAL_DEBUG_RENDER.font_size as i32;//TODO this is trashy
-    draw_string(canvas, "   tag       |  counts   |  counts_per_frame  |  avg_duration", _x, y, GLOBAL_DEBUG_RENDER.font_color, GLOBAL_DEBUG_RENDER.font_size);
+    y -= GLOBAL_DEBUG_RENDER.font_size as i32;//TODO this is trashy
+    draw_string(canvas, "DEBUG:", _x, y, GLOBAL_DEBUG_RENDER.font_color, GLOBAL_DEBUG_RENDER.font_size);
+
+    y -= 2*GLOBAL_DEBUG_RENDER.font_size as i32;//TODO this is trashy
+    draw_string(canvas, "   tag       |  counts   |  counts_per_frame  |  avg_duration  |  tot_dur_frame", _x, y, GLOBAL_DEBUG_RENDER.font_color, GLOBAL_DEBUG_RENDER.font_size);
     y -= GLOBAL_DEBUG_RENDER.font_size as i32;//TODO this is trashy
 
     match GLOBAL_DEBUG_TIMEIT.as_mut(){
@@ -237,6 +240,7 @@ pub fn draw_debuginfo(canvas: &mut WindowCanvas){unsafe{
                 draw_string(canvas, &format!("{:8}", v.count), x+75, y, GLOBAL_DEBUG_RENDER.font_color, GLOBAL_DEBUG_RENDER.font_size);//TOTAL Counts
                 draw_string(canvas, &format!("{:>8}", v.count_per_frame), x+200, y, GLOBAL_DEBUG_RENDER.font_color, GLOBAL_DEBUG_RENDER.font_size);
                 draw_string(canvas, &format!("{:>8.2?}", v.durations/v.count as u32), x+320, y, GLOBAL_DEBUG_RENDER.font_color, GLOBAL_DEBUG_RENDER.font_size);
+                draw_string(canvas, &format!("{:>8.2?}", v.durations/v.count as u32 * v.count_per_frame as u32), x+420, y, GLOBAL_DEBUG_RENDER.font_color, GLOBAL_DEBUG_RENDER.font_size);
                 y -= GLOBAL_DEBUG_RENDER.font_size as i32;
                 if y < GLOBAL_DEBUG_RENDER.font_size as i32 { break; }
             }
