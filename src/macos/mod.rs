@@ -306,9 +306,12 @@ pub fn make_window<'a>() {unsafe{
     let mut current_path = std::env::current_exe().expect("could not find the exe path").to_str().unwrap().to_string();
     let mut exe_path = std::env::current_exe().expect("could not find the exe path");
     let mut has_been_translocated = false;
+    let mut in_target_path = true;
 
     exe_path.pop();
     if !exe_path.to_string_lossy().contains("target/release"){
+        in_target_path = false;
+
         if exe_path.to_string_lossy().contains("Contents/MacOS"){
 
             let os_10_12_and_above_fn = dynamic_lib_loading::get_fn( &security_lib, "SecTranslocateCreateOriginalPathForURL");
@@ -506,7 +509,8 @@ DEBUG_timeit!{"event", {
                 },
                 NSEventType::NSKeyDown => {
                     keydown = 1;
-                    if  NSEvent::keyCode(event) == 53 {
+                    if  NSEvent::keyCode(event) == 53 
+                    && in_target_path { //ESC
                         RUNNING = false;
                     }
                     keycode = NSEvent::keyCode(event) as usize;
