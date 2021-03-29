@@ -11,7 +11,7 @@ fn main() {
     // as calling rc.exe might be slow
     if std::env::var("PROFILE").unwrap() == "release" {
         let mut res = winres::WindowsResource::new();
-        res.set_icon("assets/icon.ico")
+        res.set_icon("assets/icon1.ico")
            .set_language(
                winapi::um::winnt::MAKELANGID(
                    winapi::um::winnt::LANG_ENGLISH,
