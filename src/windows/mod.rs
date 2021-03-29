@@ -42,6 +42,9 @@ use rendertools::*;
 
 use crate::misc::*;
 
+#[macro_use]
+use crate::{timeit, DEBUG_timeit};
+use crate::debug_tools::*;
 
 
 
@@ -84,6 +87,12 @@ pub fn make_window(){unsafe{
     //let mut app_storage = AppStorage::new();
     let mut ls_app_storage = LS_AppStorage::new();
     let mut stopwatch = StopWatch::new();
+
+    let mut exe_path = std::env::current_exe().expect("could not find the exe path");
+    let in_target_path = exe_path.to_string_lossy().contains("target/release");
+
+    init_debugging(Some([0, 0, 600, 500]));
+
 
 
     //NOTE
@@ -263,7 +272,9 @@ pub fn make_window(){unsafe{
                     if message.message == winapi::um::winuser::WM_QUIT{
                         break 'a;
                     }
-                    else if message.message == winapi::um::winuser::WM_KEYDOWN && message.wParam == winapi::um::winuser::VK_ESCAPE as usize{
+                    else if message.message == winapi::um::winuser::WM_KEYDOWN 
+                    && message.wParam == winapi::um::winuser::VK_ESCAPE as usize
+                    && !in_target_path {
                         break 'a;
                     }
 
@@ -301,8 +312,12 @@ pub fn make_window(){unsafe{
 
                 let delta_time = stopwatch.lap_time();
                 let gb_height = GLOBAL_BACKBUFFER.h;
-                //rendertools::draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:?}", delta_time), 0, gb_height-27, rendertools::C4_WHITE, 26.0);//TODO
+                rendertools::draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:?}", delta_time), 0, gb_height-27, rendertools::C4_WHITE, 26.0);//TODO
                 stopwatch.reset_lap_timer();
+
+                draw_debuginfo(&mut GLOBAL_BACKBUFFER);
+                reset_frame_debugging();
+
                 
                 if old_window_info != GLOBAL_WINDOWINFO{//TODO resize
                     user32::SetWindowPos(window_handle, user32::HWND_TOP, 0, 0, GLOBAL_WINDOWINFO.w, GLOBAL_WINDOWINFO.h, user32::SWP_NOREDRAW | user32::SWP_NOREPOSITION | user32::SWP_NOZORDER);

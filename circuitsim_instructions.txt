@@ -1,0 +1,175 @@
+README
+
+Author : Thoth Gunter
+email:  thothgunter@live.com
+
+Current package maintainer : Thoth Gunter
+email:  thothgunter@live.com
+
+NOTE: This README is for instructors. It contains information that 
+would allows students to spoil themselfs, solutions to side panel questions 
+and uncertainties for custom elements.
+
+*****UPATED(02/09/21)*****
+Tab is now used to exit teacher mode.
+Custom voltmeter/ammeter were added to simulation.
+Dll support instructions for windows users.
+
+
+*****UPATED(01/28/21)*****
+TA.txt must be added to the directory of the app to access ta mode.
+
+*****UPATED(01/08/21)*****
+Advanced users new functionality has been added. Check the advanced section for details.
+
+
+Introduction:
+This package contains a circuit simulation program usable on Windows, MacOs and Linux machines.
+The simulation is intended to be used by TAs, professors and students.
+The following is a set of instructions intended to help on board instructors.
+
+
+General Warning:
+This program is near release, there maybe bugs that need to be swashed and features
+to be polished. If bugs are found please contact the developer at the address linked above.
+Be mindful of the additional files in the unzipped directory. 
+Some of these files maybe needed to generate side panels and circuit element panels. 
+If you use Linux, Terminal will be needed to configure the executable file.
+If you use MacOs you may need to use Terminal to configure the executable file.
+
+
+
+Windows:
+Windows user should double click application file "lab_sims_windows.exe". 
+Windows may ask you to verify that the application comes from a trusted source.
+You must agree to this for the program to run. If you are not able to run the 
+program and recieve a missing dll error. Search the dll folder provided for said 
+dll and copy/move the file from the dll folder to the folder containing the executable.
+If this does not work please contact the current package maintaner. 
+
+
+MacOs: ***UPDATED(12/18/2020)*****
+MacOs users should double click the file named "CircuitSim".
+The icon for this file is a set of circles, this is a temporary icon.
+By double clicking this file MacOS may warn you about the program being untrust worthy.
+To by pass this control click control click and press open. MacOS may warn you again
+but should give you the option to ignore. Ignore the warnings and the application should open.
+If the program does not open you may need to changes the executables permissions.
+To do this you will need to use the program Terminal. 
+Navigate using 'cd' into the directory labelled 'CircuitSim.app/MacOS' and use chmod
+to change the permissions of 'xcopyfgc'. If you do not understand these directions contact
+the package maintainer. 
+
+
+Linux: 
+Linux users will need to set execution permissions and run the program from the terminal.
+Begin my navigating to the correct directory. If you have not moved the files since you 
+it unzipped you should find the program at "Downloads/circuit_sim/".
+Navigate here using the following command "cd Downloads/circuit_sim/"
+To set executable permission by running "chmod 744 lab_sims_linux". 
+To run circuit sim "./lab_sims_linux"
+
+
+Bugs and Issues:
+If you encounter an issue with the simulation's results, like the circuit delivering 
+incorrect voltages, please save a circuit copy of the circuit and email it to me with
+ a description of the problem. If you experience a crash please send an email detailing what you did before the crash.
+If you are able to reproduce the crash please try and include a description of the steps 
+you went through.
+
+
+Advanced users:
+This program is to be used by both students and TAs/professors. As such there is a teacher mode.
+To enter TA mode save an empty file named "TA.txt" in the directory of the program.
+By pressing 'Tab' you enter TA mode. Press 'Tab' to exit TA mode.
+You will not be able to enter TA mode with "TA.txt" file.
+When 'Tab' is pressed "circuit_panels.txt" is written in the directory of the executable.
+By altering "circuit_panels.txt" one can alter the text displayed in the panel on  
+right side of the screen. Please use "circuit_panels.txt" as a template when altering the panel.
+By pressing 'Tab' a binary verion of "circuit_panels.txt" will be created with the file extention ".exp".
+
+
+===========================================
+Below are the current key words needed when working working in TA mode 
+(Keywords are indifferent to case.):
+#Section    Creates a new empty page
+
+#Header     Renders text in a bold font. Text can begin on the same line.
+
+#Text       Renders text that follows the command. Text can begin on the same line. If this command 
+            is not invoked no text will be displayed.
+
+#Image      Renders image in panel. Give local path (path from the directory of executable). 
+            If path is incorrect the program will render nothing.
+
+#Question   Renders following text and primes program to receive #AnswerCorrect, and #AnswerWrong.
+            If followed by command that is not #AnswerCorrect or #AnswerWrong, 
+            nothing will render.
+
+#AnswerCorrect  Renders the text that follows. This will not render if #Question is not the 
+#AnswerWrong    proceeding command. Only 7 answers are allowed. If there is no correct answer neither 
+                the question or answers are rendered.
+
+//          Comments can be written using double back slashes.
+===========================================
+
+NOTE:
+Errors associated with teacher mode are printed in a banner at the bottom of the application window. 
+If you perceive an error, but no error message was delivered please contact the current package mantainer.
+
+When exiting teacher mode "circuit_worksheet.exp" is save in the same directory.
+This file is a binary version of the text file, meant to hide any answers from students.
+If this file will load upon start up of the program, the text file will not.
+The text file may be over written when changing to teacher mode, be mindful.
+
+
+Advanced users can author custom circuit elements. While in TA mode navigate to the 'Custom' tag. 
+Once there notice the red save button at the bottom of the circuit element menu. If an element is
+clicked while in TA mode you can change the properties of that class of element. Users should note
+that any combination of properties can be constructed and there is no guarantee obscure combinations will 
+behave properly. 
+
+When using custom elements think of the circuit element menu as a factory creating circuit parts. 
+Resistance, voltage, capacitance,inductance, charge and flux are all properties that can be changed. 
+The uncertainty on the property can be defined here as well. Using the model of a factory uncertainty 
+dictates the variance of the property element by element. Meaning if you set the uncertainty of the resistance to 0.1
+with a resistance of 1.00.  Element 1 might have a resistance of 0.99, while element two a resistance 
+of 1.05.
+
+In addition to bias and noise instructor can also augment the nominal value of custom ammeters and 
+voltmeters with a 'drift' term. 'Drift' can be thought of as a correlation term. When 'Drift' is 
+1 measurements delivered from voltmeter/ammeter are total uncorrelated with the values from the 
+simulation. In this case measurements can drift where they please, as dictated by the noise.
+When 'drift' is 0 measured values are fully correlated with the values from the simulation, there
+is no 'drift'.  The equation for measurements using custom voltmeter/ammeter are as follows:
+
+drift :=  d 
+noise := std
+bias  := bias
+Gaussian sample := sample_normal()
+previous_measurement := p_m   <= this is after augmentations
+measurement from simulation := m
+
+Measurement displayed by custom voltmeter/ammeter: 
+d * p_m + (1-d) * (m + b) + sample_normal( std )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
