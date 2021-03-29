@@ -514,11 +514,11 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
 pub fn draw_string( canvas: &mut WindowCanvas, string: &str, x: i32, y: i32,
              color: [f32; 4], size: f32 )->i32{
     let mut offset = 0;
-DEBUG_timeit!{"draw_string",{
+//DEBUG_timeit!{"draw_string",{
     for it in string.chars(){
         offset += draw_char(canvas, it, x + offset, y, color, size);
     }
-}}
+//}}
     return offset;
 }
 
@@ -529,7 +529,7 @@ DEBUG_timeit!{"draw_string",{
 pub fn draw_rect( canvas: &mut WindowCanvas, rect: [i32; 4], color: [f32; 4], filled: bool ){unsafe{
     //TODO
     //- Set alpha on dst canvas use both dst and src to determine alpha
-DEBUG_timeit!{"draw_rect", {
+//DEBUG_timeit!{"draw_rect", {
 
     let buffer = canvas.buffer as *mut u32;
 
@@ -625,7 +625,7 @@ DEBUG_timeit!{"draw_rect", {
             }
         }
     }
-}}
+//}}
 }}
 
 #[derive(Clone, Debug, Copy)]
@@ -963,7 +963,7 @@ pub fn draw_stbi_image( canvas: &mut WindowCanvas, bmp: &StbiImage, mut x: i32, 
 pub fn draw_bmp( canvas: &mut WindowCanvas, source_bmp: &TGBitmap, mut x: i32, mut y: i32, alpha: f32,
             mut _w: Option<i32>, mut _h: Option<i32>){unsafe{
 
-DEBUG_timeit!{ "draw_bmp", {
+//DEBUG_timeit!{ "draw_bmp", {
     if alpha < 0.0 {
         println!("A negative alpha as passed to drawBMP");
         return;
@@ -1056,7 +1056,7 @@ DEBUG_timeit!{ "draw_bmp", {
             }
         }
     }
-}}
+//}}
 }}
 
 

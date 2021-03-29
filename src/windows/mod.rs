@@ -90,7 +90,7 @@ pub fn make_window(){unsafe{
     let mut stopwatch = StopWatch::new();
 
 
-    init_debugging(Some([0, 0, 600, 500]));
+    //init_debugging(Some([0, 0, 600, 500]));
 
 
 
@@ -311,11 +311,11 @@ pub fn make_window(){unsafe{
 
                 let delta_time = stopwatch.lap_time();
                 let gb_height = GLOBAL_BACKBUFFER.h;
-                rendertools::draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:?}", delta_time), 0, gb_height-27, rendertools::C4_WHITE, 26.0);//TODO
+                //rendertools::draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:?}", delta_time), 0, gb_height-27, rendertools::C4_WHITE, 26.0);
                 stopwatch.reset_lap_timer();
 
-                draw_debuginfo(&mut GLOBAL_BACKBUFFER);
-                reset_frame_debugging();
+                //draw_debuginfo(&mut GLOBAL_BACKBUFFER);
+                //reset_frame_debugging();
 
                 
                 if old_window_info != GLOBAL_WINDOWINFO{//TODO resize

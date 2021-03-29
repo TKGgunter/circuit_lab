@@ -789,12 +789,8 @@ welcome to the circuit simulation software lab. This software is designed for ea
 - To rotate left click and hold the edge of an element then drag your cursor to the desired orientation.
 
 #Section
+#Header Additional Tips:
 #Text
-
-Hello,
-welcome to the circuit simulation software lab. This software is designed for easy and intuitive construction of circuits, as well as their computation. It is an environment where lab TAs and professors can craft lessons for their students. The following panels are an example lab designed to help users acclimate to the software.
-
-Hints:
 + Left click, 2 finger click or double click to access circuit element properties. 
 + Circuit elements can be rotated using property's panel or on grid.
   Hover mouse over far edge of element until you see a rectangle. Click and hold to rotate.
@@ -4408,6 +4404,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 color = C4_GREY;
                 if mouseinfo.lclicked() {
                     app_storage.run_circuit = !app_storage.run_circuit;
+
+                    app_storage.selected_circuit_element =  SelectedCircuitElement::None;
+                    app_storage.selected_circuit_element_orientation = 0f32;
+                    app_storage.selected_circuit_properties = None;
 
                     if app_storage.run_circuit 
                     && app_storage.timer_init == false{
