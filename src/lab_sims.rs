@@ -1597,7 +1597,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                     it.selected_rotation = true;
                                 }
                             }
-                            let left_rect = [c1_x-7, c1_y-5, 10, 10];
+                            let left_rect = [c1_x-9, c1_y-5, 8, 10];
                             if in_rect(mouseinfo.x, mouseinfo.y, left_rect)
                             && !mouse_in_properties_rect(mouseinfo, &z_vec){
                                 //Left side
