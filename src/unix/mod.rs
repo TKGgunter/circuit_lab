@@ -202,9 +202,12 @@ pub fn make_window() {unsafe{
     let mut stopwatch_lbutton = StopWatch::new();
     let mut old_window_info = GLOBAL_WINDOWINFO;
 
+    let mut exe_path = std::env::current_exe().expect("could not find the exe path");
+    let in_target_path = exe_path.to_string_lossy().contains("target/release");
+
 
      
-    //init_debugging( Some([0, 0, 600, 500]) );
+    init_debugging( Some([0, 0, 600, 500]) );
 
 
     let mut exit = false;
@@ -352,7 +355,8 @@ pub fn make_window() {unsafe{
                     if XLookupString(&mut event.key as *mut _, 
                                     text.as_mut_ptr() as *mut _, 4, 
                                     &mut text_key as *mut _, null_mut()) == 1{
-                        if text[0] == 27{//ESC text code 
+                        if text[0] == 27
+                        && in_target_path {//ESC text code 
                             exit = true;
                         }
                         
@@ -398,11 +402,11 @@ pub fn make_window() {unsafe{
                     &mut ls_app_storage, &keyboardinfo, &textinfo, &mouseinfo) != 0 { break; }
 
         let delta_time = stopwatch.lap_time();
-        //draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:#.3?}", delta_time), 0, GLOBAL_BACKBUFFER.h-30, C4_WHITE, 26.0);//TODO we should avg things so we no flicker
+        draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:#.3?}", delta_time), 0, GLOBAL_BACKBUFFER.h-30, C4_WHITE, 26.0);//TODO we should avg things so we no flicker
         stopwatch.reset_lap_timer();
 
-        //draw_debuginfo(&mut GLOBAL_BACKBUFFER);
-        //reset_frame_debugging();
+        draw_debuginfo(&mut GLOBAL_BACKBUFFER);
+        reset_frame_debugging();
         
         if exit {
             break;
