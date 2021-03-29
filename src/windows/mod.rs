@@ -76,8 +76,9 @@ pub fn make_window(){unsafe{
 
 
     let mut exe_path = std::env::current_exe().expect("could not find the exe path");
-    if !exe_path.to_string_lossy().contains("target/release"){
-    winapi::um::wincon::FreeConsole();
+    let in_target_path = exe_path.to_string_lossy().contains("target\\release");
+    if !in_target_path{
+        winapi::um::wincon::FreeConsole();
     }
 
 
@@ -88,8 +89,6 @@ pub fn make_window(){unsafe{
     let mut ls_app_storage = LS_AppStorage::new();
     let mut stopwatch = StopWatch::new();
 
-    let mut exe_path = std::env::current_exe().expect("could not find the exe path");
-    let in_target_path = exe_path.to_string_lossy().contains("target/release");
 
     init_debugging(Some([0, 0, 600, 500]));
 
@@ -274,7 +273,7 @@ pub fn make_window(){unsafe{
                     }
                     else if message.message == winapi::um::winuser::WM_KEYDOWN 
                     && message.wParam == winapi::um::winuser::VK_ESCAPE as usize
-                    && !in_target_path {
+                    && in_target_path {
                         break 'a;
                     }
 

@@ -780,6 +780,20 @@ const example_lab : &str =
 Hello,
 welcome to the circuit simulation software lab. This software is designed for easy and intuitive construction of circuits, as well as their computation. It is an environment where lab TAs and professors can craft lessons for their students. The following panels are an example lab designed to help users acclimate to the software.
 
+#Header Quick Tips:
+#Text
+- To create a new element left click circuit element you desire using in the panel on the left.
+- Place a new element using a left click.
+- Release the creation tool by right clicking or left clicking on a previously placed element.
+- To move an element click and drag a previously placed element.
+- To rotate left click and hold the edge of an element then drag your cursor to the desired orientation.
+
+#Section
+#Text
+
+Hello,
+welcome to the circuit simulation software lab. This software is designed for easy and intuitive construction of circuits, as well as their computation. It is an environment where lab TAs and professors can craft lessons for their students. The following panels are an example lab designed to help users acclimate to the software.
+
 Hints:
 + Left click, 2 finger click or double click to access circuit element properties. 
 + Circuit elements can be rotated using property's panel or on grid.
@@ -1156,15 +1170,15 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
     }
 
     //NOTE Frame rate cap of 60 frames per sec.
-    //{
-    //    match Duration::from_millis(16).checked_sub(app_storage.global_time.get_time()){
-    //        Some(d)=>{
-    //            std::thread::sleep(d);
-    //        },
-    //        _=>{}
-    //    }
-    //    app_storage.global_time.reset()
-    //}
+    {
+        match Duration::from_millis(16).checked_sub(app_storage.global_time.get_time()){
+            Some(d)=>{
+                std::thread::sleep(d);
+            },
+            _=>{}
+        }
+        app_storage.global_time.reset()
+    }
 
 
     let circuit_element_canvas_x_offset = 25;
@@ -1242,7 +1256,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
     //Draw bkg color
     draw_rect(&mut os_package.window_canvas, [0, 0, window_w, window_h], COLOR_BKG, true);
-
 
 
     draw_grid(os_package.window_canvas, GRID_SIZE);
@@ -1460,15 +1473,18 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 element.orientation = app_storage.selected_circuit_element_orientation;
 
                 app_storage.arr_circuit_elements.push(element);
-                app_storage.selected_circuit_element = SelectedCircuitElement::None;
-                app_storage.selected_circuit_element_orientation = 0f32;
-                app_storage.selected_circuit_properties = None;
 
                 app_storage.circuit_textbox_hash.insert((element.unique_a_node, element.unique_b_node), CircuitElementTextBox::new());
             }
 
         },
         _=>{}
+    }
+
+    if mouseinfo.rclicked(){
+        app_storage.selected_circuit_element_orientation = 0f32;
+        app_storage.selected_circuit_element = SelectedCircuitElement::None;
+        app_storage.selected_circuit_properties = None;
     }
 
     let mut is_element_selected = false;
@@ -1498,6 +1514,14 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 let pw = PROPERTIES_W;
                 let ph = PROPERTIES_H;
                 z_vec.push(( px, py, pw, ph ));
+            }
+
+            let rect = [it.x, it.y, GRID_SIZE*4, GRID_SIZE*4];
+            if in_rect(mouseinfo.x, mouseinfo.y, rect) 
+            && mouseinfo.lbutton == ButtonStatus::Down{
+                app_storage.selected_circuit_element_orientation = 0f32;
+                app_storage.selected_circuit_element = SelectedCircuitElement::None;
+                app_storage.selected_circuit_properties = None;
             }
         }
 
