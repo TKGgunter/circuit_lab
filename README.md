@@ -10,17 +10,17 @@ The program was written in the [rust](https://www.rust-lang.org/) programming la
 If you are new to rust please take a look 
 [here](https://www.rust-lang.org/learn/get-started), the rust installation guide, and
 [here](https://doc.rust-lang.org/book/), a beginner to intermediate guide useful for those getting
-started or want to learn abit more.
+started.
 
 
 
 ## Getting started programming
 
 After the rust compiler has been installed work with the circuit simulation can begin. 
-Circuit simulation documentation can be accessed using the following command, `cargo doc --open`, entered into your favorite shell/terminal. 
-This command will compile the documentation and bring it up in your favorite browser. Don't be alarmed if takes a while
+Circuit simulation documentation can be accessed using the following command, `cargo doc --open`. Enter this command into your favorite shell/terminal. 
+The command will compile the documentation and bring it up in your favorite browser. Don't be alarmed if takes a while
 depending on the operating system it can take as long as a minute. 
-The documentation should be the started point for any who want to alter the source code.
+The documentation is the started point for those who want to alter the source code.
 
 
 To compile to source code use following command,
