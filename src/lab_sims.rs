@@ -127,7 +127,10 @@ const ERROR_MESSAGE_ONSCREEN_DURATION   : Duration = Duration::from_millis(7500)
 
 const DELTA_MAX_TIME_PANEL_MOVE : f32 = 0.2E6;
 
+const RUN_PAUSE_RECT : [i32; 4] = [40, 115, 150, 40];
+const CLEAR_RECT     : [i32; 4] = [40, 50, 150, 40];
 
+const SELECTED_OFFSET : i32 =  50/3;
 
 
 /// This funciton sets the static variable `GLOBAL_PROPERTIES_Z`.
@@ -1276,8 +1279,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         SelectedCircuitElement::Wire | SelectedCircuitElement::Custom | SelectedCircuitElement::CustomVoltmeter | SelectedCircuitElement::CustomAmmeter=> {
 
 
-            let x = mouseinfo.x - 50/3;
-            let y = mouseinfo.y - 50/3;
+            let x = mouseinfo.x - SELECTED_OFFSET;
+            let y = mouseinfo.y - SELECTED_OFFSET;
 
 
             let mut resize_bmp = TGBitmap::new(0,0);
@@ -1482,6 +1485,12 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         app_storage.selected_circuit_element = SelectedCircuitElement::None;
         app_storage.selected_circuit_properties = None;
     }
+    if mouseinfo.lbutton == ButtonStatus::Down
+    && (in_rect(mouseinfo.x, mouseinfo.y, RUN_PAUSE_RECT) || in_rect(mouseinfo.x, mouseinfo.y, CLEAR_RECT)){
+        app_storage.selected_circuit_element_orientation = 0f32;
+        app_storage.selected_circuit_element = SelectedCircuitElement::None;
+        app_storage.selected_circuit_properties = None;
+    }
 
     let mut is_element_selected = false;
     if app_storage.selected_circuit_element != SelectedCircuitElement::None {
@@ -1512,8 +1521,11 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 z_vec.push(( px, py, pw, ph ));
             }
 
-            let rect = [it.x, it.y, GRID_SIZE*4, GRID_SIZE*4];
-            if in_rect(mouseinfo.x, mouseinfo.y, rect) 
+            let it_rect = [it.x, it.y, GRID_SIZE*4, GRID_SIZE*4];
+            let _rect = [mouseinfo.x-SELECTED_OFFSET, mouseinfo.y-SELECTED_OFFSET, GRID_SIZE*4, GRID_SIZE*4];
+
+            //println!("{} {} {}", overlap_rect_area(it_rect, _rect), (2.5*GRID_SIZE as f32).powi(2) as i32, (4*GRID_SIZE).pow(2));
+            if overlap_rect_area(it_rect, _rect) >  (2.5*GRID_SIZE as f32).powi(2) as i32
             && mouseinfo.lbutton == ButtonStatus::Down{
                 app_storage.selected_circuit_element_orientation = 0f32;
                 app_storage.selected_circuit_element = SelectedCircuitElement::None;
@@ -4399,11 +4411,17 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         }
         {//TODO Draw simulate button
             let mut color = C4_DGREY;
-            let rect =  [40, 115, 150, 40];
+            let rect =  RUN_PAUSE_RECT;
             if in_rect(mouseinfo.x, mouseinfo.y, rect){
                 color = C4_GREY;
                 if mouseinfo.lclicked() {
-                    app_storage.run_circuit = !app_storage.run_circuit;
+                    if app_storage.arr_circuit_elements.len() >= 4 {//TODO this is not a good solution to the problem. 
+                                                                    //Breifly rending the wrong thing if there is no good circuit present 
+                                                                    //should not be addressed here
+                                                                    //but after we determine the
+                                                                    //status of the circuit.
+                        app_storage.run_circuit = !app_storage.run_circuit;
+                    }
 
                     app_storage.selected_circuit_element =  SelectedCircuitElement::None;
                     app_storage.selected_circuit_element_orientation = 0f32;
@@ -4444,7 +4462,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
             }
         }
         {//Clear screen button
-            let rect = [40, 50, 150, 40];
+            let rect = CLEAR_RECT;
             let mut bg_color = C4_DGREY;
             let txt_color = C4_LGREY;
             if in_rect(mouseinfo.x, mouseinfo.y, rect){
