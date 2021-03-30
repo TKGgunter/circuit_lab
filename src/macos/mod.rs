@@ -85,7 +85,7 @@ static mut BUFFER : Vec<u8> = Vec::new();
 fn update_window<T: NSWindow + std::marker::Copy>(bitmap: &mut WindowCanvas, window: &T ){unsafe{
 //TODO
 //This method is leaking memory. I think I'm doing everything right and this is cocoa thing but who knows.
-DEBUG_timeit!{"upwin",{
+
     let bitmapWidth  = window.contentView().bounds().size.width as usize;
     let bitmapHeight = window.contentView().bounds().size.height as usize;
     let bytesPerPixel = 4;
@@ -139,7 +139,6 @@ DEBUG_timeit!{"upwin",{
     let _ : id = msg_send![BACKBUFFER.image, addRepresentation: BACKBUFFER.backbuffer];
     let _ : id = msg_send![window.contentView().layer(), setContents: BACKBUFFER.image];
 
-}}
 }}
 
 
@@ -226,7 +225,6 @@ pub fn make_window<'a>() {unsafe{
 //remember me to resize from the app
 //    window.setContentSize_(NSSize::new(500., 500.));
 ///////////////////
-    init_debugging( Some([0, 0, 600, 500]) );
 
 
     window.setDelegate_(delegate!("MyWindowDelegate", 
@@ -411,7 +409,7 @@ pub fn make_window<'a>() {unsafe{
             
         }
 
-DEBUG_timeit!{"swiz", {
+
         for i in 0..GLOBAL_BACKBUFFER.w * GLOBAL_BACKBUFFER.h{
             let _i = i * 4;
             let r = *(GLOBAL_BACKBUFFER.buffer as *mut u8).offset(_i as isize);
@@ -419,7 +417,7 @@ DEBUG_timeit!{"swiz", {
             *(GLOBAL_BACKBUFFER.buffer as *mut u8).offset(_i as isize + 2) = r;
             *(GLOBAL_BACKBUFFER.buffer as *mut u8).offset(_i as isize + 3) =  255; //* mult as u8;
         } 
-}}
+
         
         update_window( &mut GLOBAL_BACKBUFFER, &window );
 
@@ -446,7 +444,7 @@ DEBUG_timeit!{"swiz", {
 
         old_specialkeys = specialkeys.clone();
         mouseinfo.double_lbutton = false;
-DEBUG_timeit!{"event", {
+
         let mut i = 0;
         loop  {
             i += 1;
@@ -459,7 +457,9 @@ DEBUG_timeit!{"event", {
             mouseinfo.x = x.round() as i32 - GLOBAL_WINDOWINFO.x;
             mouseinfo.y = y.round() as i32 - GLOBAL_WINDOWINFO.y;
 
-            
+            mouseinfo.wheel_delta = event.deltaZ() as _;
+//println!("{}", event.scrollingDeltaY());
+//println!("{}", mouseinfo.wheel_delta);
 
             use cocoa::appkit::NSEventModifierFlags;
             if i == 1{
@@ -539,7 +539,7 @@ DEBUG_timeit!{"event", {
         }
         mouseinfo.delta_x = mouseinfo.x - mouseinfo.delta_x;
         mouseinfo.delta_y = mouseinfo.y - mouseinfo.delta_y;
-}}
+
         if specialkeys.ctrl != old_specialkeys.ctrl {
             keyboardinfo.key.push(KeyboardEnum::Ctrl);
             keyboardinfo.status.push(specialkeys.ctrl);
@@ -579,11 +579,9 @@ DEBUG_timeit!{"event", {
             draw_string(&mut GLOBAL_BACKBUFFER, "its current directory to remove this status.", 2, window_height-124, C4_WHITE, 24f32);
         }
 
-        draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:#.3?}", now.elapsed() - elapsed), 0, GLOBAL_BACKBUFFER.h-30, C4_WHITE, 26.0);
+//        draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:#.3?}", now.elapsed() - elapsed), 0, GLOBAL_BACKBUFFER.h-30, C4_WHITE, 26.0);
         elapsed = now.elapsed();
 
-        draw_debuginfo(&mut GLOBAL_BACKBUFFER);
-        reset_frame_debugging();
 
 
     }
