@@ -207,7 +207,7 @@ pub fn make_window() {unsafe{
 
 
      
-    init_debugging( Some([0, 0, 600, 500]) );
+    //init_debugging( Some([0, 0, 600, 500]) );
 
 
     let mut exit = false;
@@ -402,11 +402,11 @@ pub fn make_window() {unsafe{
                     &mut ls_app_storage, &keyboardinfo, &textinfo, &mouseinfo) != 0 { break; }
 
         let delta_time = stopwatch.lap_time();
-        draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:#.3?}", delta_time), 0, GLOBAL_BACKBUFFER.h-30, C4_WHITE, 26.0);//TODO we should avg things so we no flicker
+        //draw_string(&mut GLOBAL_BACKBUFFER, &format!("{:#.3?}", delta_time), 0, GLOBAL_BACKBUFFER.h-30, C4_WHITE, 26.0);//TODO we should avg things so we no flicker
         stopwatch.reset_lap_timer();
 
-        draw_debuginfo(&mut GLOBAL_BACKBUFFER);
-        reset_frame_debugging();
+        //draw_debuginfo(&mut GLOBAL_BACKBUFFER);
+        //reset_frame_debugging();
         
         if exit {
             break;
