@@ -85,7 +85,6 @@ pub fn make_window(){unsafe{
 
 
     let instance = kernel32::GetModuleHandleW(null());
-    //let mut app_storage = AppStorage::new();
     let mut ls_app_storage = LS_AppStorage::new();
     let mut stopwatch = StopWatch::new();
 
@@ -100,7 +99,7 @@ pub fn make_window(){unsafe{
     // + 0x0020 allocates a unique device context for each window in class
     // + 0x0001 redraws window if resize or window movement vertical
     // + 0x0002 redraws window if resize or window movement horizontal 
-    let windows_string: Vec<u16> = OsStr::new("XCopyFGCWindowClass").encode_wide().chain(once(0)).collect();
+    let windows_string: Vec<u16> = OsStr::new("XCopyFGCWindowClass").encode_wide().collect();
     let windowclass = WNDCLASSW{style: 0x0020u32 | 0x0001u32 | 0x0002u32 | winapi::um::winuser::CS_DBLCLKS,
             lpfnWndProc: Some(window_callback),
             cbClsExtra: 0,
@@ -116,7 +115,6 @@ pub fn make_window(){unsafe{
 
     if rt_registarclassw == 0 { panic!("Error occurred when attempting to registar class window!"); }
     if rt_registarclassw != 0 {
-        let windows_string: Vec<u16> = OsStr::new("XCopyFGC Window").encode_wide().chain(once(0)).collect();
         //NOTE
         //https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-createwindowexa
         //
@@ -126,10 +124,16 @@ pub fn make_window(){unsafe{
         //         https://docs.microsoft.com/en-us/windows/win32/winmsg/window-styles
         //WS_OVERLAPPEDWINDOW         (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX) The window is an overlapped window. 
         //WS_VISIBLE                  The window is initially visible.
+
+        //TODO I don't think I need this, it doesn't work as is any way.
+        let windows_string: Vec<u16> = OsStr::new("Circuit Simulation Lab\0").encode_wide().collect();
+        let _string = String::from("Circuit Simulation Lab\0");
+
         let window_handle = CreateWindowExW(
                           WS_EX_ACCEPTFILES ,
                           windowclass.lpszClassName,
-                          windows_string.as_ptr(),
+                          //windows_string.as_ptr(),
+                          _string.as_ptr() as *const u16,
                           WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                           CW_USEDEFAULT,
                           CW_USEDEFAULT,
