@@ -2655,7 +2655,16 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                     draw_rect(&mut os_package.window_canvas, clear_rect, clear_rect_color, true);
                                     draw_string(&mut os_package.window_canvas, "Clear", clear_rect[0]+8, clear_rect[1]-4, C4_WHITE, 22.0);
                                 },
-                                None=>{},
+                                None=>{
+                                    offset_y += (properties_h/2 - 5).max(45);
+                                    draw_graph(&mut os_package.window_canvas, &[], &[], 
+                                               [properties_x+2, properties_y+properties_h-offset_y, properties_w-4, (properties_h/2).max(50)], 
+                                               5.0, 18.0, mouseinfo);
+
+                                    change_font(FONT_NOTOSANS_BOLD);
+                                    draw_string(&mut os_package.window_canvas, "No Data", properties_x+properties_w/2-50, properties_y+properties_h-offset_y+45, C4_BLACK, 30.0);
+                                    change_font(FONT_NOTOSANS);
+                                },
                             } 
                         } 
                         if it.circuit_element_type == SelectedCircuitElement::Ammeter || it.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
@@ -2701,7 +2710,15 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                     draw_string(&mut os_package.window_canvas, "Clear", clear_rect[0]+8, clear_rect[1]-4, C4_WHITE, 22.0);
 
                                 },
-                                None=>{},
+                                None=>{
+                                    offset_y += (properties_h/2 - 5).max(45);
+                                    draw_graph(&mut os_package.window_canvas, &[], &[], 
+                                               [properties_x+2, properties_y+properties_h-offset_y, properties_w-4, (properties_h/2).max(50)], 
+                                               5.0, 18.0, mouseinfo);
+                                    change_font(FONT_NOTOSANS_BOLD);
+                                    draw_string(&mut os_package.window_canvas, "No Data", properties_x+properties_w/2-50, properties_y+properties_h-offset_y+45, C4_DGREY, 30.0);
+                                    change_font(FONT_NOTOSANS);
+                                },
                             } 
                         }
                     }
@@ -4475,7 +4492,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 }
             }
             draw_rect(&mut os_package.window_canvas, rect, bg_color, true);
-            draw_string(&mut os_package.window_canvas, "Clear Board", rect[0]+5, rect[1]+4, txt_color, 30f32);
+            draw_string(&mut os_package.window_canvas, "Clear Board", rect[0]+10, rect[1]+4, txt_color, 30f32);
         }
 
 
@@ -6604,18 +6621,20 @@ fn draw_graph(canvas: &mut WindowCanvas, x: &[f32], y: &[f32], rect: [i32; 4], m
         draw_rect(canvas, [_x-1, _y-1, 3, 3], C4_DGREY, true);
     }
 
-    for i in 0..4{//Y-Axis
-        let tick_label = (i as f32 / 4.0 ) * y_range + min_y;
-        let _x = rect[0]-2;
-        let _y = rect[1] + ((i as f32 / 4.0 ) * _rect[3] as f32) as i32;
-        draw_string(canvas, &format!("{:.1}", tick_label), _x, _y, C4_BLACK, font_size);
-    }
+    if x.len() > 0 {
+        for i in 0..4{//Y-Axis
+            let tick_label = (i as f32 / 4.0 ) * y_range + min_y;
+            let _x = rect[0]-2;
+            let _y = rect[1] + ((i as f32 / 4.0 ) * _rect[3] as f32) as i32;
+            draw_string(canvas, &format!("{:.1}", tick_label), _x, _y, C4_BLACK, font_size);
+        }
 
-    for i in 0..4{//X-Axis
-        let tick_label = (i as f32 / 4.0 ) * x_range + min_x;
-        let _x = rect[0] + ((i as f32 / 4.0 ) * _rect[2] as f32) as i32 + (font_size/2f32) as i32;
-        let _y = rect[1] - (font_size/2f32) as i32 + 2;
-        draw_string(canvas, &format!("{:.1}", tick_label), _x, _y, C4_BLACK, font_size);
+        for i in 0..4{//X-Axis
+            let tick_label = (i as f32 / 4.0 ) * x_range + min_x;
+            let _x = rect[0] + ((i as f32 / 4.0 ) * _rect[2] as f32) as i32 + (font_size/2f32) as i32;
+            let _y = rect[1] - (font_size/2f32) as i32 + 2;
+            draw_string(canvas, &format!("{:.1}", tick_label), _x, _y, C4_BLACK, font_size);
+        }
     }
 
     if in_rect(mouseinfo.x, mouseinfo.y, _rect){
