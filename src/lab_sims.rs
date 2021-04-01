@@ -2632,8 +2632,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                         save_rect_color = C4_GREY;
                                         if mouseinfo.lclicked()
                                         && it.properties_z == get_global_properties_z() - 1{
-                                            save_csv(&format!("voltmeter_{}_{}.csv", node_a, node_b), &[&y_x[1], &y_x[0]], &["time(s)", "voltage(V)"]);
-                                            app_storage.messages.push( (MessageType::Default, format!("Message: voltmeter_{}_{}.csv saved.", node_a, node_b)) );
+
+                                            let filename = generate_csv_name(&format!("voltmeter_{}_{}.csv", node_a, node_b));
+                                            save_csv(&filename, &[&y_x[1], &y_x[0]], &["time(s)", "voltage(V)"]);
+                                            app_storage.messages.push( (MessageType::Default, format!("Message: {} saved.", filename)) );
                                         }
                                     }
                                     draw_rect(&mut os_package.window_canvas, save_rect, save_rect_color, true);
@@ -2687,8 +2689,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                         save_rect_color = C4_GREY;
                                         if mouseinfo.lclicked()
                                         && it.properties_z == get_global_properties_z() - 1{
-                                            save_csv(&format!("ammeter_{}_{}.csv", node_a, node_b), &[&y_x[1], &y_x[0]], &["time(s)", "current(A)"]);
-                                            app_storage.messages.push( (MessageType::Default, format!("Message: ammeter_{}_{}.csv saved.", node_a, node_b)) );
+                                            
+                                            let filename = generate_csv_name(&format!("ammeter_{}_{}.csv", node_a, node_b));
+                                            save_csv(&filename, &[&y_x[1], &y_x[0]], &["time(s)", "current(A)"]);
+                                            app_storage.messages.push( (MessageType::Default, format!("Message: {} saved.", filename, )) );
                                         }
                                     }
                                     draw_rect(&mut os_package.window_canvas, save_rect, save_rect_color, true);
@@ -6652,6 +6656,55 @@ fn draw_graph(canvas: &mut WindowCanvas, x: &[f32], y: &[f32], rect: [i32; 4], m
         draw_string(canvas, &_str, _x, _y, C4_BLACK, font_size);
     }
     
+}
+
+
+fn generate_csv_name(filename: &str)->String{
+    let _filename : Vec<&str>= filename.split('.').collect();
+    let extension = _filename[1];
+    let mut files = vec![];
+
+
+    let iter_dir = std::fs::read_dir("./").unwrap();
+    for it in iter_dir{
+        if !it.is_ok(){ continue; }
+        let ref_it = it.as_ref().unwrap().path();
+
+        if !ref_it.is_file(){ continue; }
+
+        match ref_it.extension(){
+            Some(temp_str)=>{
+                if temp_str != extension { continue; }
+                let ref_str = ref_it.to_str().unwrap();
+                let mut _temp = ref_str.to_string();
+                _temp.remove(0);
+                _temp.remove(0);
+                files.push(_temp);
+            },
+            None=>{}
+        }
+    }
+    //TODO loop through files check if proposed filename is in files. If not return a new file name
+    println!("{:?}", &files);
+    let mut i = 0;
+    let string_filename = filename.to_string();
+    while true {
+        if i == 0 {
+            //loop through the thingoo
+            if !files.contains(&string_filename){
+                return string_filename;
+            }
+        } else {
+            let new_filename = format!("{}_{}.{}", _filename[0], i, _filename[1]);
+            if !files.contains(&new_filename){
+                return new_filename;
+            }
+        }
+        i += 1;
+    }
+    
+
+    return filename.to_string();
 }
 
 
