@@ -109,9 +109,22 @@ const IMG_SAVE           : &[u8] = std::include_bytes!("../assets/save.bmp");
 const IMG_SAVE_ALT       : &[u8] = std::include_bytes!("../assets/save_alt.bmp");
 
 
+
+
+
 const TA_FILE_NAME : &str = "TA.txt";
+
 const CUSTOM_FILE_NAME : &str = "custom.cce";
-const CIRCUIT_FILE_NAME : &str = "circuit_worksheet.exp";
+const CUSTOM_FILE_EXT : &str = ".cce";
+
+const CIRCUIT_PANEL_FILE_NAME : &str = "circuit_worksheet.exp";
+const PANEL_FILE_EXT : &str = ".exp";
+
+const CIRCUIT_FILE_EXT : &str = ".cd";
+
+
+
+
 const TIME_STEP: f32 = 0.006;//TODO this should be frame rate independent
 
 const MAX_SAVED_MEASURMENTS : usize = 4000;
@@ -132,6 +145,28 @@ const CLEAR_RECT     : [i32; 4] = [40, 50, 150, 40];
 
 const SELECTED_OFFSET : i32 =  50/3;
 
+static mut CAMERA : [i32; 2] = [0, 0];
+
+fn get_camera()->[i32; 2]{unsafe{
+    return CAMERA;
+}}
+fn get_camera_x()->i32{unsafe{
+    return CAMERA[0];
+}}
+fn get_camera_y()->i32{unsafe{
+    return CAMERA[1];
+}}
+
+fn set_camera(c: [i32; 2]){unsafe{
+    CAMERA = c;
+}}
+
+fn set_camera_x(x: i32){unsafe{
+    CAMERA[0] = x;
+}}
+fn set_camera_y(y: i32){unsafe{
+    CAMERA[1] = y;
+}}
 
 /// This funciton sets the static variable `GLOBAL_PROPERTIES_Z`.
 /// This is not thread safe.
@@ -442,26 +477,26 @@ struct CircuitElement{
     b_node: usize,
 
     resistance: f32,                            
-    voltage: f32,                               
-    current: f32,                               
+    voltage:    f32,                               
+    current:    f32,                               
 
     unc_resistance: f32,                       
-    unc_voltage: f32,                          
-    unc_current: f32,                          
+    unc_voltage:    f32,                          
+    unc_current:    f32,                          
 
-    capacitance: f32,                         
-    inductance: f32,                          
-    charge:     f32,                          
+    capacitance:   f32,                         
+    inductance:    f32,                          
+    charge:        f32,                          
     magnetic_flux: f32,                       
 
-    unc_capacitance: f32,                    
-    unc_inductance: f32,                     
-    unc_charge:     f32,                     
+    unc_capacitance:   f32,                    
+    unc_inductance:    f32,                     
+    unc_charge:        f32,                     
     unc_magnetic_flux: f32,                  
     
-    max_voltage: f32,
+    max_voltage:       f32,
     d_voltage_over_dt: f32,
-    frequency: f32,
+    frequency:         f32,
 
     solved_voltage: Option<f32>, 
     solved_current: Option<f32>, 
@@ -478,13 +513,14 @@ struct CircuitElement{
     b_index: [Option<usize>; 3],//TODO do we use this?
 
     ac_source_type:  ACSourceType,            
+
     temp_step_voltage : f32,
-    alt_sim_time: f32,
+    alt_sim_time:       f32,
 
     properties_z: usize,
     label: TinyString,
 
-    bias: f32,
+    bias:  f32,
     noise: f32,
     drift: f32,
 
@@ -1114,12 +1150,12 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
         app_storage.save_textbox.text_buffer += "MyCircuit.cd";
         app_storage.ce_save_textbox.text_buffer += CUSTOM_FILE_NAME;
-        app_storage.panel_save_textbox.text_buffer += CIRCUIT_FILE_NAME;
+        app_storage.panel_save_textbox.text_buffer += CIRCUIT_PANEL_FILE_NAME;
 
 
-        if std::path::Path::new(CIRCUIT_FILE_NAME).is_file(){
+        if std::path::Path::new(CIRCUIT_PANEL_FILE_NAME).is_file(){
 
-            let pf = PanelFile::load(CIRCUIT_FILE_NAME);
+            let pf = PanelFile::load(CIRCUIT_PANEL_FILE_NAME);
             let buffer = miniz::uncompress(&pf.buffer, pf.original_length as usize);
             app_storage.lab_text = String::from_utf8_lossy(&buffer.expect("something went wrong with decompression")).to_string();
 
@@ -1246,7 +1282,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
              
 
             panel.buffer = compress_panelfile(&app_storage.lab_text);
-            panel.save(CIRCUIT_FILE_NAME);//TODO
+            panel.save(CIRCUIT_PANEL_FILE_NAME);//TODO
         }
     }
 
@@ -1257,7 +1293,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
     draw_rect(&mut os_package.window_canvas, [0, 0, window_w, window_h], COLOR_BKG, true);
 
 
-    draw_grid(os_package.window_canvas, GRID_SIZE);
+    draw_grid(os_package.window_canvas, GRID_SIZE, get_camera());
 
     change_font(FONT_MERRIWEATHER_LIGHT);
     let title_length = get_advance_string("Circuit Simulation", 46.0);
@@ -1466,8 +1502,12 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 }
 
 
-                element.x = (x as f32 / GRID_SIZE as f32).round() as i32 * GRID_SIZE;
-                element.y = (y as f32 / GRID_SIZE as f32).round() as i32 * GRID_SIZE;
+                let camera = get_camera();
+                element.x = (x as f32 / GRID_SIZE as f32).round() as i32 * GRID_SIZE - camera[0];
+                element.y = (y as f32 / GRID_SIZE as f32).round() as i32 * GRID_SIZE - camera[1];
+
+                //element.x = (x as f32 / GRID_SIZE as f32).round() as i32 * GRID_SIZE;
+                //element.y = (y as f32 / GRID_SIZE as f32).round() as i32 * GRID_SIZE;
 
                 element.orientation = app_storage.selected_circuit_element_orientation;
 
@@ -1491,14 +1531,23 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         app_storage.selected_circuit_element = SelectedCircuitElement::None;
         app_storage.selected_circuit_properties = None;
     }
+    if mouseinfo.lbutton == ButtonStatus::Down
+    && in_rect(mouseinfo.x, mouseinfo.y, [0, window_h - 2*GRID_SIZE, window_w, 2*GRID_SIZE]){
+        app_storage.selected_circuit_element_orientation = 0f32;
+        app_storage.selected_circuit_element = SelectedCircuitElement::None;
+        app_storage.selected_circuit_properties = None;
+    }
 
+    let mut is_element_rotate_selected = false;
     let mut is_element_selected = false;
+    let mut in_properties = false;
+    let mut is_properties_move = false;
     if app_storage.selected_circuit_element != SelectedCircuitElement::None {
         is_element_selected = true;
     }
 
 
-    {//Draw circuit
+    {//z  circuit
      //select circuit element
 
         fn mouse_in_properties_rect(mouseinfo: &MouseInfo, z_arr: &[(i32, i32, i32, i32)])->bool{
@@ -1512,6 +1561,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
         let mut z_vec = Vec::with_capacity(app_storage.arr_circuit_elements.len());
         for (i_it, it) in app_storage.arr_circuit_elements.iter().enumerate(){
+            let camera = get_camera();
+            let it_x = it.x + camera[0];
+            let it_y = it.y + camera[1];
+
             if it.properties_selected
             && it.properties_offset_x.is_some(){
                 let px = it.properties_offset_x.unwrap(); 
@@ -1521,7 +1574,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 z_vec.push(( px, py, pw, ph ));
             }
 
-            let it_rect = [it.x, it.y, GRID_SIZE*4, GRID_SIZE*4];
+
+            let it_rect = [it_x, it_y, GRID_SIZE*4, GRID_SIZE*4];
             let _rect = [mouseinfo.x-SELECTED_OFFSET, mouseinfo.y-SELECTED_OFFSET, GRID_SIZE*4, GRID_SIZE*4];
 
             //println!("{} {} {}", overlap_rect_area(it_rect, _rect), (2.5*GRID_SIZE as f32).powi(2) as i32, (4*GRID_SIZE).pow(2));
@@ -1562,29 +1616,35 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     SelectedCircuitElement::Voltmeter| SelectedCircuitElement::Ammeter | SelectedCircuitElement::Switch | SelectedCircuitElement::AC |
                     SelectedCircuitElement::Wire | SelectedCircuitElement::Custom | SelectedCircuitElement::CustomVoltmeter | SelectedCircuitElement::CustomAmmeter   => {
 
-                      
+
+
+
                         it.x = (it.x as f32 / GRID_SIZE as f32 ).round() as i32 * GRID_SIZE; 
                         it.y = (it.y as f32 / GRID_SIZE as f32 ).round() as i32 * GRID_SIZE;
 
-                        let mut rect = [it.x+2, it.y-4+25, 79+it.length, 40];
-                        let mut _mouse_in_rect = [it.x+2, it.y-4+25, 76+it.length, 40];
+                        let camera = get_camera();
+                        let it_x = it.x + camera[0];
+                        let it_y = it.y + camera[1];
 
-                        let mut c1_x = it.x + 2 - it.length;
-                        let mut c1_y = it.y + 41;
+                        let mut rect           = [it_x+2, it_y-4+25, 79+it.length, 40];
+                        let mut _mouse_in_rect = [it_x+2, it_y-4+25, 76+it.length, 40];
 
-                        let mut c2_x = it.x + it.length + 82;
-                        let mut c2_y = it.y + 41;
+                        let mut c1_x = it_x + 2 - it.length;
+                        let mut c1_y = it_y + 41;
+
+                        let mut c2_x = it_x + it.length + 82;
+                        let mut c2_y = it_y + 41;
 
 
                         if it.orientation.sin().abs() == 1.0 {
-                            rect = [it.x + 12, it.y, 50, 80 + it.length];
-                            _mouse_in_rect = [it.x + 12, it.y+4, 40, 73 + it.length];
+                            rect = [it_x + 12, it_y, 50, 80 + it.length];
+                            _mouse_in_rect = [it_x + 12, it_y+4, 40, 73 + it.length];
 
-                            c1_x = it.x + 4 + 38;
-                            c1_y = it.y ;
+                            c1_x = it_x + 4 + 38;
+                            c1_y = it_y ;
 
-                            c2_x = it.x + 4 + 38;
-                            c2_y = it.y + it.length + 3 + 80;
+                            c2_x = it_x + 4 + 38;
+                            c2_y = it_y + it.length + 3 + 80;
                         }
 
 
@@ -1608,8 +1668,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 it.properties_z = get_and_update_global_properties_z();
                                 if it.properties_offset_x.is_some() {
 
-                                    let mut properties_x = it.x+it.length+95; 
-                                    let mut properties_y = it.y-PROPERTIES_H/2;
+                                    let mut properties_x = it_x+it.length+95; 
+                                    let mut properties_y = it_y-PROPERTIES_H/2;
                                     it.properties_offset_x = Some(properties_x);
                                     it.properties_offset_y = Some(properties_y);
                                 }
@@ -1669,8 +1729,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         }
                         if it.selected_rotation {
                             it.initial_altered_rotation = {
-                                let d_x = (mouseinfo.x - (it.x + 40)) as f32;//NOTE 40 is half of the bitmap width
-                                let d_y = (mouseinfo.y - (it.y + 40)) as f32;//NOTE 40 is half the bitmap height
+                                let d_x = (mouseinfo.x - (it_x + 40)) as f32;//NOTE 40 is half of the bitmap width
+                                let d_y = (mouseinfo.y - (it_y + 40)) as f32;//NOTE 40 is half the bitmap height
 
                                 let mut theta  = (d_x/(d_y.powi(2) + d_x.powi(2)).sqrt()).acos();
                                 if d_y < 0f32 {
@@ -1688,7 +1748,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     },
                     _=>{}
                }
-            } else {
+            } else { //if Button status is Down
                 match &it.circuit_element_type{
                     SelectedCircuitElement::Resistor | SelectedCircuitElement::Battery | SelectedCircuitElement::Capacitor | SelectedCircuitElement::Inductor |
                     SelectedCircuitElement::Voltmeter| SelectedCircuitElement::Ammeter | SelectedCircuitElement::Switch | SelectedCircuitElement::AC |
@@ -1697,6 +1757,21 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             is_element_selected = true;
                             it.x += mouseinfo.delta_x;
                             it.y += mouseinfo.delta_y;
+                        }
+                        if it.selected_rotation {
+                            is_element_rotate_selected = true;
+                        }
+                        if it.properties_selected {
+                            let x = *it.properties_offset_x.as_ref().unwrap();
+                            let y = *it.properties_offset_y.as_ref().unwrap();
+
+                            if in_rect(mouseinfo.x, mouseinfo.y, [x, y, PROPERTIES_W, PROPERTIES_H]){
+                                in_properties = true;
+                            }
+
+                        }
+                        if it.properties_move_selected {
+                            is_properties_move = true;
                         }
                     },
                     _=>{}
@@ -1712,6 +1787,24 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         }
 
     }
+
+    if !is_element_selected 
+    && !is_element_rotate_selected 
+    && !in_rect(mouseinfo.x, mouseinfo.y, CLEAR_RECT)
+    && !in_rect(mouseinfo.x, mouseinfo.y, RUN_PAUSE_RECT)
+    && !in_rect(mouseinfo.x, mouseinfo.y, [circuit_element_canvas_x_offset,      circuit_element_canvas_y_offset, 
+                                           app_storage.circuit_element_canvas.canvas.w, app_storage.circuit_element_canvas.canvas.h])
+    && !(in_rect(mouseinfo.x, mouseinfo.y, [window_w - app_storage.menu_canvas.canvas.w,      0, 
+                                           app_storage.menu_canvas.canvas.w,  app_storage.menu_canvas.canvas.h])
+         && !app_storage.menu_offscreen)
+    && !in_rect(mouseinfo.x, mouseinfo.y, [0, window_h - GRID_SIZE, window_w, GRID_SIZE])
+    && !in_properties
+    && !is_properties_move
+    && mouseinfo.lbutton == ButtonStatus::Down{
+        set_camera_x(get_camera_x() + mouseinfo.delta_x);
+        set_camera_y(get_camera_y() + mouseinfo.delta_y);
+    }
+
     {
         //NOTE
         //Render loop
@@ -1725,21 +1818,26 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 SelectedCircuitElement::Wire | SelectedCircuitElement::Custom | SelectedCircuitElement::CustomVoltmeter | SelectedCircuitElement::CustomAmmeter=>{
 
 
+                    let camera = get_camera();
+                    let it_x = it.x + camera[0];
+                    let it_y = it.y + camera[1];
+                    //TODO this is an example    draw_bmp(&mut os_package.window_canvas, &_bmp, it.x+camera[0], it.y+camera[1], 0.98, None, None); //TODO
+
                     if is_element_selected {
 
-                        let mut c1_x = it.x + 2 - it.length;
-                        let mut c1_y = it.y + 41;
+                        let mut c1_x = it_x + 2 - it.length;
+                        let mut c1_y = it_y + 41;
 
-                        let mut c2_x = it.x + it.length + 82;
-                        let mut c2_y = it.y + 41;
+                        let mut c2_x = it_x + it.length + 82;
+                        let mut c2_y = it_y + 41;
 
                         if it.orientation.sin().abs() == 1.0 {
 
-                            c1_x = it.x + 4 + 38;
-                            c1_y = it.y ;
+                            c1_x = it_x + 4 + 38;
+                            c1_y = it_y ;
 
-                            c2_x = it.x + 4 + 38;
-                            c2_y = it.y + it.length + 3 + 80;
+                            c2_x = it_x + 4 + 38;
+                            c2_y = it_y + it.length + 3 + 80;
                         }
 
                         draw_circle(&mut os_package.window_canvas, c1_x, c1_y, 4.0, C4_WHITE); 
@@ -1750,22 +1848,22 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     && it.properties_selected {
                         
                         let font_size = 15f32;
-                        let mut offset_x = if it.orientation.sin().abs() < 0.001{ -5 } else { 1 };
-                        let mut offset_y = if it.orientation.sin().abs() < 0.001 { 0 } else { -10 };
+                        let mut offset_x = if it.orientation.sin().abs() < 0.001 { -5 } else { 1 };
+                        let mut offset_y = if it.orientation.sin().abs() < 0.001 { 0  } else { -10 };
                         
                         //NOTE
                         //unique_a 
                         let pos_x = if it.orientation.sin().abs() < 0.001 {
                                        let _oset = if it.orientation.sin().signum() == -1f32 { -4 } else { 0 };
-                                       it.x + ((it.orientation / 2f32).sin().abs() * (GRID_SIZE * 4) as f32) as i32 + 6 * it.orientation.sin().signum() as i32 + _oset
+                                       it_x + ((it.orientation / 2f32).sin().abs() * (GRID_SIZE * 4) as f32) as i32 + 6 * it.orientation.sin().signum() as i32 + _oset
                                     } else {
-                                       it.x + (it.orientation.sin().abs() * (GRID_SIZE * 2) as f32) as i32 
+                                       it_x + (it.orientation.sin().abs() * (GRID_SIZE * 2) as f32) as i32 
                                     };
 
                         let pos_y = if it.orientation.sin().abs() < 0.001 {
-                                       it.y + (it.orientation.cos().abs() * (GRID_SIZE * 2) as f32) as i32
+                                       it_y + (it.orientation.cos().abs() * (GRID_SIZE * 2) as f32) as i32
                                     } else {
-                                       it.y + (( (it.orientation - PI/ 2f32) / 2f32 ).sin().abs() * (GRID_SIZE * 4) as f32) as i32 + 7 * it.orientation.sin().signum() as i32
+                                       it_y + (( (it.orientation - PI/ 2f32) / 2f32 ).sin().abs() * (GRID_SIZE * 4) as f32) as i32 + 7 * it.orientation.sin().signum() as i32
                                     };
 
                         draw_string(&mut os_package.window_canvas, &format!("{}", it.unique_a_node), pos_x + offset_x, pos_y + offset_y, C4_WHITE, font_size);
@@ -1774,14 +1872,14 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         //unique_b
                         let pos_x = if it.orientation.sin().abs() < 0.001 { 
                                         let _oset = if it.orientation.sin().signum() == 1f32 { -4 } else { 0 };
-                                        it.x + ((it.orientation / 2f32).cos().abs() * (GRID_SIZE * 4) as f32) as i32  - 6 * it.orientation.sin().signum() as i32 + _oset
+                                        it_x + ((it.orientation / 2f32).cos().abs() * (GRID_SIZE * 4) as f32) as i32  - 6 * it.orientation.sin().signum() as i32 + _oset
                                     } else { 
-                                        it.x + (it.orientation.sin().abs() * (GRID_SIZE * 2) as f32) as i32 
+                                        it_x + (it.orientation.sin().abs() * (GRID_SIZE * 2) as f32) as i32 
                                     };
                         let pos_y = if it.orientation.sin().abs() < 0.001 {
-                                        it.y + (it.orientation.cos().abs() * (GRID_SIZE * 2) as f32) as i32
+                                        it_y + (it.orientation.cos().abs() * (GRID_SIZE * 2) as f32) as i32
                                     } else {
-                                        it.y + (( (it.orientation - PI/ 2f32) / 2f32 ).cos().abs() * (GRID_SIZE * 4) as f32) as i32 - 7 * it.orientation.sin().signum() as i32
+                                        it_y + (( (it.orientation - PI/ 2f32) / 2f32 ).cos().abs() * (GRID_SIZE * 4) as f32) as i32 - 7 * it.orientation.sin().signum() as i32
                                     };
                         draw_string(&mut os_package.window_canvas, &format!("{}", it.unique_b_node), pos_x + offset_x, pos_y + offset_y, C4_WHITE, font_size);
                     }
@@ -1852,8 +1950,9 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
 
                     if it.selected_rotation{
-                        let d_x = (mouseinfo.x - (it.x + 40)) as f32;//NOTE 40 is half of the bitmap width
-                        let d_y = (mouseinfo.y - (it.y + 40)) as f32;//NOTE 40 is half the bitmap height
+                        is_element_rotate_selected = true;
+                        let d_x = (mouseinfo.x - (it_x + 40)) as f32;//NOTE 40 is half of the bitmap width
+                        let d_y = (mouseinfo.y - (it_y + 40)) as f32;//NOTE 40 is half the bitmap height
 
                         let mut theta  = (d_x/(d_y.powi(2) + d_x.powi(2)).sqrt()).acos() - it.initial_altered_rotation;
                         {
@@ -1864,7 +1963,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
 
                         let _rbmp = rotate_bmp(&mut _bmp, theta).unwrap(); 
-                        draw_bmp(&mut os_package.window_canvas, &_rbmp, it.x, it.y, 0.7, None, None);
+                        draw_bmp(&mut os_package.window_canvas, &_rbmp, it_x, it_y, 0.7, None, None);
 
                         if mouseinfo.lclicked(){
                             //TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1906,22 +2005,24 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         }
                     }
 
+                    
                     if orientation == 0.0 {
+                        
                         let mut _bmp = rotate_bmp(&mut _bmp, it.orientation).unwrap();
-                        draw_bmp(&mut os_package.window_canvas, &_bmp, it.x, it.y, 0.98, None, None);
+                        draw_bmp(&mut os_package.window_canvas, &_bmp, it_x, it_y, 0.98, None, None); //TODO
                         if it.circuit_element_type == SelectedCircuitElement::Custom
                         || it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
                         || it.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
 
                             change_font(FONT_NOTOSANS_BOLD);
                             let _adv = get_advance_string(it.label.as_ref(), 20f32);
-                            draw_string(&mut os_package.window_canvas, it.label.as_ref(), it.x+_bmp.width/2-_adv/2-6, it.y + 3, C4_WHITE, 20f32);
+                            draw_string(&mut os_package.window_canvas, it.label.as_ref(), it_x+_bmp.width/2-_adv/2-6, it_y + 3, C4_WHITE, 20f32);
                             change_font(FONT_NOTOSANS);
                         }
                     }
                     else if orientation == 1.0 {
                         let mut _bmp = rotate_bmp(&mut _bmp, it.orientation).unwrap();
-                        draw_bmp(&mut os_package.window_canvas, &_bmp, it.x, it.y, 0.98, None, None);
+                        draw_bmp(&mut os_package.window_canvas, &_bmp, it_x, it_y, 0.98, None, None);
 
                         if it.circuit_element_type == SelectedCircuitElement::Custom
                         || it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
@@ -1929,7 +2030,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                             change_font(FONT_NOTOSANS_BOLD);
                             let _adv = get_advance_string(it.label.as_ref(), 20f32);
-                            draw_string(&mut os_package.window_canvas, it.label.as_ref(), it.x+_bmp.width/2, it.y+it.length/2-5, C4_WHITE, 20f32);
+                            draw_string(&mut os_package.window_canvas, it.label.as_ref(), it_x+_bmp.width/2, it_y+it.length/2-5, C4_WHITE, 20f32);
                             change_font(FONT_NOTOSANS);
                         }
                     }
@@ -1947,18 +2048,18 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             Some(CircuitElementDirection::AtoB)=>{
                                 if orientation == 0.0 {
                                     let rotated_bmp = rotate_bmp( &mut arrow_resize_bmp, PI).unwrap(); //TODO do this some where else further up stream maybe
-                                    draw_bmp( &mut os_package.window_canvas, &rotated_bmp, it.x + 30, it.y, 0.98, None, None);
+                                    draw_bmp( &mut os_package.window_canvas, &rotated_bmp, it_x + 30, it_y, 0.98, None, None);
                                 } else if orientation == 1.0 {
                                     let rotated_bmp = rotate_bmp(&mut arrow_resize_bmp, PI*3.0/2.0).unwrap();
-                                    draw_bmp( &mut os_package.window_canvas, &rotated_bmp, it.x+60, it.y +30, 0.98, None, None);
+                                    draw_bmp( &mut os_package.window_canvas, &rotated_bmp, it_x+60, it_y +30, 0.98, None, None);
                                 }
                             },
                             Some(CircuitElementDirection::BtoA)=>{
                                 if orientation == 0.0 {
-                                    draw_bmp( &mut os_package.window_canvas, &arrow_resize_bmp, it.x+30, it.y, 0.98, None, None);
+                                    draw_bmp( &mut os_package.window_canvas, &arrow_resize_bmp, it_x+30, it_y, 0.98, None, None);
                                 } else if orientation == 1.0 {
                                     let rotated_bmp = rotate_bmp(&mut arrow_resize_bmp, FRAC_PI_2).unwrap();
-                                    draw_bmp( &mut os_package.window_canvas, &rotated_bmp, it.x+60, it.y+30, 0.98, None, None);
+                                    draw_bmp( &mut os_package.window_canvas, &rotated_bmp, it_x+60, it_y+30, 0.98, None, None);
                                 }
                             },
                             None=>{},
@@ -2022,8 +2123,13 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 }
                 let label = format!("{}: ({} {})", label, node_a, node_b);
 
-                let mut properties_x = it.x+it.length+95; 
-                let mut properties_y = it.y-properties_h/2;
+
+                let camera = get_camera();
+                let it_x = it.x + camera[0];
+                let it_y = it.y + camera[1];
+
+                let mut properties_x = it_x+it.length+95; 
+                let mut properties_y = it_y-properties_h/2;
 
                 match it.properties_offset_x {
                     None => {
@@ -4063,13 +4169,21 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 app_storage.save_textbox.update(keyboardinfo, textinfo, mouseinfo);
                                 app_storage.save_textbox.draw(canvas, app_storage.timer.elapsed().as_secs_f32());
 
-                                if app_storage.arr_circuit_elements.len() != 0 
-                                && keyboardinfo.key.contains(&KeyboardEnum::Enter) {
-                                    //TODO verify correct file name endings
-                                    save_circuit_diagram(&app_storage.save_textbox.text_buffer, &app_storage.arr_circuit_elements);
+                                if keyboardinfo.key.contains(&KeyboardEnum::Enter) {
+                                    if app_storage.arr_circuit_elements.len() != 0 {
+                                        let mut filename = app_storage.save_textbox.text_buffer.to_string();
+                                        if !filename.contains(CIRCUIT_FILE_EXT) {
+                                            filename += CIRCUIT_FILE_EXT;
+                                        }
 
-                                    app_storage.messages.push( (MessageType::Default, format!("Message: {} saved.", &app_storage.save_textbox.text_buffer)) );
-                                    app_storage.save_toggle = false;
+                                        save_circuit_diagram(&filename, &app_storage.arr_circuit_elements);
+
+                                        app_storage.messages.push( (MessageType::Default, format!("Message: {} saved.", filename)) );
+                                        app_storage.save_toggle = false;
+                                    } else {
+                                        app_storage.messages.push( (MessageType::Error, "Error: no circuit elements to save.".to_string()) );
+                                        app_storage.save_toggle = false;
+                                    }
                                 }
                             },
                             SaveLoadEnum::Load=>{
@@ -4175,9 +4289,14 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                                           };
                                      
                                     panel.buffer = compress_panelfile(&app_storage.lab_text);
-                                    panel.save(&app_storage.panel_save_textbox.text_buffer);
 
-                                    app_storage.messages.push( (MessageType::Default, format!("Message: {} saved.", &app_storage.panel_save_textbox.text_buffer)) );
+                                    let mut filename = app_storage.panel_save_textbox.text_buffer.to_string();
+                                    if !filename.contains(PANEL_FILE_EXT) {
+                                        filename += PANEL_FILE_EXT;
+                                    }
+
+                                    panel.save(&filename);
+                                    app_storage.messages.push( (MessageType::Default, format!("Message: {} saved.", filename)) );
 
                                     app_storage.save_toggle = false;
                                 }
@@ -4272,10 +4391,14 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                                 if keyboardinfo.key.contains(&KeyboardEnum::Enter) {
                                     
+                                    let mut filename = app_storage.ce_save_textbox.text_buffer.to_string();
+                                    if !filename.contains(CUSTOM_FILE_EXT) {//TODO this should not be a contains but an ext check
+                                        filename += CUSTOM_FILE_EXT;
+                                    }
                                     
-                                    save_circuit_diagram(&app_storage.ce_save_textbox.text_buffer, &app_storage.custom_circuit_elements);
+                                    save_circuit_diagram(&filename, &app_storage.custom_circuit_elements);
 
-                                    app_storage.messages.push( (MessageType::Default, format!("Message: {} saved.", &app_storage.ce_save_textbox.text_buffer)) );
+                                    app_storage.messages.push( (MessageType::Default, format!("Message: {} saved.", filename)) );
 
                                     app_storage.save_toggle = false;
                                 }
@@ -4691,25 +4814,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 };
 
 
-                    //Depricated 02/08/2021
-                    //let jt_x2 = (jt.orientation.cos().abs()*(GRID_SIZE * 4) as f32 ) as i32 + jt_x1;
-                    //let jt_y2 = (jt.orientation.sin().abs()*(GRID_SIZE * 4) as f32 ) as i32 + jt_y1;
-
-
-
-                    //if jt.circuit_element_type == SelectedCircuitElement::Battery {
-                    //    println!("{} {}", i, j);
-                    //    println!("battery {} {} {} {} {} {} {}", jt_x1, jt_y1, jt_x2, jt_y2, jt.x, jt.y, jt.orientation);
-                    //    println!("it      {} {} {} {}", it_x1, it_y1, it_x2, it_y2);
-                    //    println!("mouse {} {}", mouseinfo.x, mouseinfo.y);
-                    //}
-
-                    //if jt.circuit_element_type == SelectedCircuitElement::Resistor {
-                    //    println!("{} {}", i, j);
-                    //    println!("resistor {} {} {} {} {} {} {}", jt_x1, jt_y1, jt_x2, jt_y2, jt.x, jt.y, jt.orientation);
-                    //    println!("it      {} {} {} {}", it_x1, it_y1, it_x2, it_y2);
-                    //    println!("mouse {} {}", mouseinfo.x, mouseinfo.y);
-                    //}
 
 
                     if (it_x1 == jt_x1 && it_y1 == jt_y1) 
@@ -4786,6 +4890,52 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                     Some(n)=>{ if i == n { break; } },
                                 }
                             }
+                        }
+                    } else {
+                        //line seg 1: it_x1 it_y1,  it_x2 it_y2
+                        //line seg 2: jt_x1 jt_y1,  jt_x2 jt_y2
+                        let e1 = edgefunction_i32(&[it_x1, it_y1], &[jt_x1, jt_y1], &[jt_x2, jt_y2]);
+                        let e2 = edgefunction_i32(&[jt_x1, jt_y1], &[it_x2, it_y2], &[it_x1, it_y1]);
+
+                        let e3 = edgefunction_i32(&[jt_x2, jt_y2], &[jt_x1, jt_y1], &[it_x2, it_y2]);
+                        let e4 = edgefunction_i32(&[it_x1, it_y1], &[it_x2, it_y2], &[jt_x2, jt_y2]);
+
+                        let error_message = "Error: Please connect elements at their edges.".to_string();
+                        if e1 == 0f32
+                        && e2 == 0f32
+                        && e3 == 0f32
+                        && e4 == 0f32{
+                            //
+                        } else 
+                        if e1 == e3
+                        && e2 == e4{
+                            if !app_storage.messages.contains(&(MessageType::Error, error_message.clone())){
+                                app_storage.messages.push((MessageType::Error, error_message));
+                            }
+                        } else {
+                            let mut a = false;
+                            if e1 == 0f32 
+                            && e2*e3*e4 != 0f32{
+                                a = true;
+                            }
+                            if e2 == 0f32
+                            && e1*e3*e4 != 0f32{
+                                a = true;
+                            }
+                            if e3 == 0f32
+                            && e1*e2*e4 != 0f32{
+                                a = true;
+                            }
+                            if e1*e2*e3 != 0f32 
+                            && e4 == 0f32{
+                                a = true;
+                            }
+                            if a {
+                                if !app_storage.messages.contains(&(MessageType::Error, error_message.clone())){
+                                    app_storage.messages.push((MessageType::Error, error_message));
+                                }
+                            }
+
                         }
                     }
                 }
@@ -5633,16 +5783,16 @@ LOL
 
 
 
-pub fn draw_grid(canvas: &mut WindowCanvas, grid_size: i32){
+pub fn draw_grid(canvas: &mut WindowCanvas, grid_size: i32, offset: [i32;2]){
     let canvas_w = canvas.w;
     let canvas_h = canvas.h;
 
-    for i in 0..canvas_w/grid_size{
-        let x = i * grid_size - 1;
+    for i in -offset[0]/grid_size..(canvas_w-offset[0])/grid_size{
+        let x = i * grid_size - 1 + offset[0];
         draw_rect(canvas, [x, 0, 2, canvas_h], COLOR_GRID, true);
     }
-    for i in 0..canvas_h/grid_size{
-        let y = i * grid_size - 1;
+    for i in -offset[1]/grid_size..(canvas_h-offset[1])/grid_size{
+        let y = i * grid_size - 1 + offset[1];
         draw_rect(canvas, [0, y, canvas_w, 2], COLOR_GRID, true);
     }
 }
@@ -6612,8 +6762,8 @@ fn draw_graph(canvas: &mut WindowCanvas, x: &[f32], y: &[f32], rect: [i32; 4], m
 
     let _y_range = (max_y - min_y).abs();
 
-    max_y += 1.05*_y_range.max(1.0);
-    min_y -= 1.05*_y_range.max(1.0);
+    max_y += 0.25*_y_range.max(1.0);
+    min_y -= 0.25*_y_range.max(1.0);
 
     let y_range = (max_y - min_y).abs().max(1.0);
     
@@ -6660,7 +6810,11 @@ fn draw_graph(canvas: &mut WindowCanvas, x: &[f32], y: &[f32], rect: [i32; 4], m
 
 
 fn generate_csv_name(filename: &str)->String{
+    //TODO if the saved file has many periods we may experience an error
     let _filename : Vec<&str>= filename.split('.').collect();
+    if _filename.len() != 2 {
+        return filename.to_string();
+    }
     let extension = _filename[1];
     let mut files = vec![];
 
@@ -6685,7 +6839,6 @@ fn generate_csv_name(filename: &str)->String{
         }
     }
     //TODO loop through files check if proposed filename is in files. If not return a new file name
-    println!("{:?}", &files);
     let mut i = 0;
     let string_filename = filename.to_string();
     while true {
@@ -6695,7 +6848,8 @@ fn generate_csv_name(filename: &str)->String{
                 return string_filename;
             }
         } else {
-            let new_filename = format!("{}_{}.{}", _filename[0], i, _filename[1]);
+            let l = _filename.len();
+            let new_filename = format!("{}_{}.{}", _filename[0], i, _filename[l-1]);
             if !files.contains(&new_filename){
                 return new_filename;
             }
@@ -7451,6 +7605,29 @@ fn sample_normal(std: f32)->f32{unsafe{
 }}
 
 
+
+
+#[inline]
+fn edgefunction_i32(p: &[i32; 2], v0: &[i32; 2], v1: &[i32; 2])->f32{
+    let _p = [p[0] as f32, p[1] as f32];
+    let _v0 = [v0[0] as f32, v0[1] as f32];
+    let _v1 = [v1[0] as f32, v1[1] as f32];
+
+    edgefunction(&_p, &_v0, &_v1)
+}
+#[inline]
+fn edgefunction(p: &[f32; 2], v0: &[f32; 2], v1: &[f32; 2])->f32{
+    let x0 = [p[0] - v0[0],  p[1] - v0[1]];
+    let x1 = [v1[0] - v0[0],  v1[1] - v0[1]];
+
+    return calc2D_cross_product(x0, x1);
+}
+
+#[inline]
+fn calc2D_cross_product(x0: [f32; 2], x1: [f32; 2])->f32{
+    let cross_product = x0[0] * x1[1] - x0[1] * x1[0];
+    return cross_product;
+}
 
 
 
