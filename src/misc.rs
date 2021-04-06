@@ -2,6 +2,8 @@
 //! no consistent theme.
 //!
 //!
+#![allow(unused)]
+
 
 use std::time::{Instant, Duration};
 

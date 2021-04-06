@@ -49,13 +49,13 @@
 //!
 //!
 
+#![allow(unused_must_use)]
 
 
 use crate::rendertools::*;
 use crate::inputhandler::*;
-use crate::{WindowCanvas, OsPackage, SETICON, set_icon};
-use crate::stb_tt_sys::*;
-use crate::stb_image_sys::{StbiImage, stbi_load_from_memory_32bit};
+use crate::{WindowCanvas, OsPackage, set_icon};
+use crate::stb_image_sys::{stbi_load_from_memory_32bit};
 use crate::miniz;
 use crate::{FONT_NOTOSANS, FONT_NOTOSANS_BOLD};
 use crate::misc::*;
@@ -63,6 +63,7 @@ use crate::ui_tools;
 use matrixmath::*;
 
 
+#[allow(unused_attributes)]  
 #[macro_use]
 use crate::{timeit, DEBUG_timeit};
 use crate::debug_tools::*;
@@ -70,13 +71,11 @@ use crate::debug_tools::*;
 
 
 use std::io::prelude::*;
-use std::ptr::{null, null_mut};
 
 use std::f32::consts::PI;
 use std::f32::consts::FRAC_PI_2;
 
 
-use std::thread::sleep;
 use std::time::{Instant, Duration};
 
 use rand::thread_rng;
@@ -147,29 +146,36 @@ const SELECTED_OFFSET : i32 =  50/3;
 
 static mut CAMERA : [i32; 2] = [0, 0];
 
+#[allow(unused)]
 fn get_camera()->[i32; 2]{unsafe{
     return CAMERA;
 }}
+#[allow(unused)]
 fn get_camera_x()->i32{unsafe{
     return CAMERA[0];
 }}
+#[allow(unused)]
 fn get_camera_y()->i32{unsafe{
     return CAMERA[1];
 }}
 
+#[allow(unused)]
 fn set_camera(c: [i32; 2]){unsafe{
     CAMERA = c;
 }}
 
+#[allow(unused)]
 fn set_camera_x(x: i32){unsafe{
     CAMERA[0] = x;
 }}
+#[allow(unused)]
 fn set_camera_y(y: i32){unsafe{
     CAMERA[1] = y;
 }}
 
 /// This funciton sets the static variable `GLOBAL_PROPERTIES_Z`.
 /// This is not thread safe.
+#[allow(unused)]
 fn set_global_properties_z(x: usize){unsafe{
     GLOBAL_PROPERTIES_Z = x;
 }}
@@ -342,7 +348,7 @@ enum CircuitElementDirection{
 struct CircuitElementTextBox{
     resistance_textbox  : TextBox,
     voltage_textbox     : TextBox,
-    current_textbox     : TextBox,
+    //current_textbox     : TextBox,
     capacitance_textbox : TextBox,
     inductance_textbox  : TextBox,
     charge_textbox      : TextBox,
@@ -353,7 +359,7 @@ struct CircuitElementTextBox{
 
     unc_resistance_textbox  : TextBox,
     unc_voltage_textbox     : TextBox,
-    unc_current_textbox     : TextBox,
+    //unc_current_textbox     : TextBox,
     unc_capacitance_textbox : TextBox,
     unc_inductance_textbox  : TextBox,
     unc_charge_textbox      : TextBox,
@@ -382,7 +388,7 @@ impl CircuitElementTextBox{
         CircuitElementTextBox{
             resistance_textbox  : fn_textbox(),
             voltage_textbox     : fn_textbox(),
-            current_textbox     : fn_textbox(),
+            //current_textbox     : fn_textbox(),
             capacitance_textbox : fn_textbox(),
             inductance_textbox  : fn_textbox(),
             charge_textbox      : fn_textbox(),
@@ -393,7 +399,7 @@ impl CircuitElementTextBox{
 
             unc_resistance_textbox  : fn_textbox(),
             unc_voltage_textbox     : fn_textbox(),
-            unc_current_textbox     : fn_textbox(),
+            //unc_current_textbox     : fn_textbox(),
             unc_capacitance_textbox : fn_textbox(),
             unc_inductance_textbox  : fn_textbox(),
             unc_charge_textbox      : fn_textbox(),
@@ -421,7 +427,7 @@ impl CircuitElementTextBox{
         CircuitElementTextBox{
             resistance_textbox  : fn_textbox(),
             voltage_textbox     : fn_textbox(),
-            current_textbox     : fn_textbox(),
+            //current_textbox     : fn_textbox(),
             capacitance_textbox : fn_textbox(),
             inductance_textbox  : fn_textbox(),
             charge_textbox      : fn_textbox(),
@@ -434,7 +440,7 @@ impl CircuitElementTextBox{
 
             unc_resistance_textbox  : fn_textbox(),
             unc_voltage_textbox     : fn_textbox(),
-            unc_current_textbox     : fn_textbox(),
+            //unc_current_textbox     : fn_textbox(),
             unc_capacitance_textbox : fn_textbox(),
             unc_inductance_textbox  : fn_textbox(),
             unc_charge_textbox      : fn_textbox(),
@@ -644,12 +650,12 @@ pub enum MessageType{
     Default
 }
 
-/// LS_AppStorage contains data that must be stored across the frame boundary.
+/// LsAppStorage contains data that must be stored across the frame boundary.
 ///
-/// LS_AppStorage contians a vast amount of information including circuit elements placed by the user.
+/// LsAppStorage contians a vast amount of information including circuit elements placed by the user.
 /// If any informationg needs to be stored beyond the frame boundary it should be stored here.
 ///
-pub struct LS_AppStorage{
+pub struct LsAppStorage{
     pub init: bool,
 
     pub menu_canvas: SubCanvas,
@@ -659,7 +665,6 @@ pub struct LS_AppStorage{
 
     pub timer: Instant,
     stop_watch: f32,
-    duration: f32, 
     timer_init: bool,
 
     circuit_element_canvas: SubCanvas,
@@ -731,9 +736,9 @@ pub struct LS_AppStorage{
 
 
 
-impl LS_AppStorage{
-    pub fn  new()->LS_AppStorage{
-        LS_AppStorage{
+impl LsAppStorage{
+    pub fn  new()->LsAppStorage{
+        LsAppStorage{
             init: false,
 
             menu_canvas: SubCanvas::new(0,0),
@@ -743,7 +748,6 @@ impl LS_AppStorage{
 
             timer: Instant::now(),
             stop_watch: 0f32,//StopWatch::new(),
-            duration: 0f32, //Duration::new(0,0),
             timer_init: false,
 
             circuit_element_canvas: SubCanvas::new(0,0),
@@ -810,7 +814,7 @@ impl LS_AppStorage{
     }
 }
 
-const example_lab : &str = 
+const EXAMPLE_LAB : &str = 
 "//
 //
 #Section
@@ -1030,9 +1034,9 @@ impl PanelFile{
         use std::io::prelude::*;
         
         let mut f = std::fs::File::create(name).expect("File could not be created.");
-        f.write_all( b"PF" );
+        f.write_all( b"PF" ).expect("write all has been interrupted.");
         unsafe{
-            f.write_all( &std::mem::transmute::<u64, [u8; 8]>(self.original_length) );
+            f.write_all( &std::mem::transmute::<u64, [u8; 8]>(self.original_length) ).expect("write all has been interrupted.");
         } 
         f.write( &self.buffer );
     }
@@ -1044,7 +1048,7 @@ impl PanelFile{
         let mut f = std::fs::File::open(name).expect("File could not be created.");
         
         let mut file_header_buffer = [0u8;2];
-        f.read( &mut file_header_buffer);
+        f.read( &mut file_header_buffer).expect("Could not read from file.");
         if file_header_buffer[0] as char == 'P' 
         && file_header_buffer[1] as char == 'F'{
         } else {
@@ -1052,7 +1056,7 @@ impl PanelFile{
         }
         
         let mut org_size_buffer = [0u8;8];
-        f.read(&mut org_size_buffer);
+        f.read(&mut org_size_buffer).expect("Could not read from file.");
         unsafe{
             panelfile.original_length = std::mem::transmute(org_size_buffer);
         }
@@ -1067,6 +1071,7 @@ fn compress_panelfile( text: &str )->Vec<u8>{
     return compressed.expect("compress panelfile");
 }
 
+#[allow(unused)]
 fn uncompress_panelfile( panelfile: &PanelFile )->String{
     let len = panelfile.original_length;
     let uncompressed = miniz::uncompress(&panelfile.buffer, len as usize);
@@ -1112,7 +1117,7 @@ fn uncompress_panelfile( panelfile: &PanelFile )->String{
 /// important function in this section. The circuit simulation is done using the
 /// sparse tableau network analysis approach, using Gaussian elimination to solve the 
 /// resulting matrix. You can find the text [here](http://web.engr.oregonstate.edu/~karti/ece521/sta.pdf).
-pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, keyboardinfo: &KeyboardInfo, textinfo: &TextInfo, mouseinfo: &MouseInfo)->i32{
+pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, keyboardinfo: &KeyboardInfo, textinfo: &TextInfo, mouseinfo: &MouseInfo)->i32{
 
     let window_w = os_package.window_canvas.w;
     let window_h = os_package.window_canvas.h;
@@ -1160,7 +1165,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
             app_storage.lab_text = String::from_utf8_lossy(&buffer.expect("something went wrong with decompression")).to_string();
 
         } else {
-            app_storage.lab_text = example_lab.to_string();
+            app_storage.lab_text = EXAMPLE_LAB.to_string();
         }
 
         let (panels, errors) = parse_and_panel_filebuffer(&app_storage.lab_text);
@@ -1248,7 +1253,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         let circuit_panel_path = std::path::Path::new("circuit_panels.txt");
         if !circuit_panel_path.exists(){
             let mut f = std::fs::File::create(circuit_panel_path).expect("Could not create file.");
-            f.write_all(app_storage.lab_text.as_bytes());
+            f.write_all(app_storage.lab_text.as_bytes()).expect("write all has been interrupted.");
 
             let date_modified = circuit_panel_path.metadata().expect("Could not retrieve panel file meta data!").modified().unwrap();
             app_storage.panel_previously_modified  = date_modified;
@@ -1560,7 +1565,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         }
 
         let mut z_vec = Vec::with_capacity(app_storage.arr_circuit_elements.len());
-        for (i_it, it) in app_storage.arr_circuit_elements.iter().enumerate(){
+        for (_, it) in app_storage.arr_circuit_elements.iter().enumerate(){
             let camera = get_camera();
             let it_x = it.x + camera[0];
             let it_y = it.y + camera[1];
@@ -1626,7 +1631,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         let it_x = it.x + camera[0];
                         let it_y = it.y + camera[1];
 
-                        let mut rect           = [it_x+2, it_y-4+25, 79+it.length, 40];
                         let mut _mouse_in_rect = [it_x+2, it_y-4+25, 76+it.length, 40];
 
                         let mut c1_x = it_x + 2 - it.length;
@@ -1637,7 +1641,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
 
                         if it.orientation.sin().abs() == 1.0 {
-                            rect = [it_x + 12, it_y, 50, 80 + it.length];
                             _mouse_in_rect = [it_x + 12, it_y+4, 40, 73 + it.length];
 
                             c1_x = it_x + 4 + 38;
@@ -1668,8 +1671,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 it.properties_z = get_and_update_global_properties_z();
                                 if it.properties_offset_x.is_some() {
 
-                                    let mut properties_x = it_x+it.length+95; 
-                                    let mut properties_y = it_y-PROPERTIES_H/2;
+                                    let properties_x = it_x+it.length+95; 
+                                    let properties_y = it_y-PROPERTIES_H/2;
                                     it.properties_offset_x = Some(properties_x);
                                     it.properties_offset_y = Some(properties_y);
                                 }
@@ -1811,7 +1814,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         let mut arrow_resize_bmp = sampling_reduction_bmp(&app_storage.arrow_bmp, 20, 20);
 
         let mut delete_list = vec![];
-        for (i_it, it) in app_storage.arr_circuit_elements.iter_mut().enumerate(){
+        for (_, it) in app_storage.arr_circuit_elements.iter_mut().enumerate(){
             match &it.circuit_element_type{
                 SelectedCircuitElement::Resistor | SelectedCircuitElement::Battery | SelectedCircuitElement::Capacitor | SelectedCircuitElement::Inductor |
                 SelectedCircuitElement::Voltmeter| SelectedCircuitElement::Ammeter | SelectedCircuitElement::Switch | SelectedCircuitElement::AC | 
@@ -1848,8 +1851,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     && it.properties_selected {
                         
                         let font_size = 15f32;
-                        let mut offset_x = if it.orientation.sin().abs() < 0.001 { -5 } else { 1 };
-                        let mut offset_y = if it.orientation.sin().abs() < 0.001 { 0  } else { -10 };
+                        let offset_x = if it.orientation.sin().abs() < 0.001 { -5 } else { 1 };
+                        let offset_y = if it.orientation.sin().abs() < 0.001 { 0  } else { -10 };
                         
                         //NOTE
                         //unique_a 
@@ -1884,10 +1887,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         draw_string(&mut os_package.window_canvas, &format!("{}", it.unique_b_node), pos_x + offset_x, pos_y + offset_y, C4_WHITE, font_size);
                     }
 
-                    let node_a = it.unique_a_node;
-                    let node_b = it.unique_b_node;
 
-                    let mut temp_bmp = TGBitmap::new(0,0); //TODO ugh this is nasty
+                    let temp_bmp;
                     let mut bmp = &app_storage.resistor_bmp;
 
                     if it.circuit_element_type == SelectedCircuitElement::Battery{
@@ -1950,7 +1951,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
 
                     if it.selected_rotation{
-                        is_element_rotate_selected = true;
                         let d_x = (mouseinfo.x - (it_x + 40)) as f32;//NOTE 40 is half of the bitmap width
                         let d_y = (mouseinfo.y - (it_y + 40)) as f32;//NOTE 40 is half the bitmap height
 
@@ -2084,7 +2084,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         z_vec.sort_by( |a, b| b.1.cmp(&a.1) );
         for zt in z_vec.iter().rev(){
             let it = &mut app_storage.arr_circuit_elements[zt.0];
-            let i_it = zt.0;
+            
             let px = match it.properties_offset_x{
                 Some(px) => {px},
                 None => { 0 },
@@ -2207,7 +2207,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     let textbox = app_storage.circuit_textbox_hash.get_mut(&(it.unique_a_node, it.unique_b_node)).expect("could not find textbox");
 
 
-                    fn do_text_box_things( tb: &mut TextBox, properties_x: i32, properties_y: i32, properties_w: i32, properties_h: i32, properties_z: usize,
+                    fn do_text_box_things( tb: &mut TextBox, properties_x: i32, properties_y: i32, _properties_w: i32, properties_h: i32, properties_z: usize,
                                            textinfo: &TextInfo, mouseinfo: &MouseInfo, keyboardinfo: &KeyboardInfo,
                                            it_property: &mut f32, window_canvas: &mut WindowCanvas, time: f32,
                                            offset_x : &mut i32, offset_y: i32){
@@ -2945,7 +2945,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
 
     //////////////////////////////////////////////////////////////////////
-    let mut string_y = 0;
     let temp_w = app_storage.menu_canvas.canvas.w;
     let temp_h = app_storage.menu_canvas.canvas.h;
     //Draw Background  Color
@@ -3240,7 +3239,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                 let mut temp_str = it.label.as_ref().to_string();
                 temp_str.truncate(8);
-                let mut string_length = get_advance_string(&temp_str, 23.0);
+                let string_length = get_advance_string(&temp_str, 23.0);
                 draw_string(&mut app_storage.circuit_element_canvas.canvas, &temp_str, rect[0]-8 + rect[2]/2 - string_length/2, rect[1]-5, C4_WHITE, 23.0);
 
                 if in_rect(mouseinfo.x, mouseinfo.y, _rect){
@@ -3435,7 +3434,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                     if it.circuit_element_type == SelectedCircuitElement::CustomVoltmeter
                     || it.circuit_element_type == SelectedCircuitElement::CustomAmmeter{
-                        use ui_tools::*;
                         {
                             let rstr_len = draw_string(&mut os_package.window_canvas, "Bias: ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
                             do_text_box_things( &mut c_textbox.bias_textbox, properties_rect[0] + rstr_len, prop_y_offset,
@@ -3494,7 +3492,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
                         let textbox_x = properties_rect[0] + properties_rect[2] - textbox_width;
                         {
-                            let rstr_len = draw_string(&mut os_package.window_canvas, "Resistance(Ω): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            draw_string(&mut os_package.window_canvas, "Resistance(Ω): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
                             do_text_box_things( &mut c_textbox.resistance_textbox, textbox_x, prop_y_offset,
                                                    textinfo, mouseinfo, keyboardinfo,
                                                    &mut it.resistance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
@@ -3511,7 +3509,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         }
 
                         {
-                            let vstr_len = draw_string(&mut os_package.window_canvas, "Voltage(V): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            draw_string(&mut os_package.window_canvas, "Voltage(V): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
                             do_text_box_things( &mut c_textbox.voltage_textbox, textbox_x, prop_y_offset,
                                                    textinfo, mouseinfo, keyboardinfo,
                                                    &mut it.voltage, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
@@ -3544,7 +3542,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         //}
 
                         {
-                            let cstr_len = draw_string(&mut os_package.window_canvas, "Capacitance(F): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            draw_string(&mut os_package.window_canvas, "Capacitance(F): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
                             do_text_box_things( &mut c_textbox.capacitance_textbox, textbox_x, prop_y_offset,
                                                    textinfo, mouseinfo, keyboardinfo,
                                                    &mut it.capacitance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
@@ -3560,7 +3558,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         }
 
                         {
-                            let istr_len = draw_string(&mut os_package.window_canvas, "Inductance(H): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            draw_string(&mut os_package.window_canvas, "Inductance(H): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
                             do_text_box_things( &mut c_textbox.inductance_textbox, textbox_x, prop_y_offset,
                                                    textinfo, mouseinfo, keyboardinfo,
                                                    &mut it.inductance, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
@@ -3576,7 +3574,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         }
 
                         {
-                            let cstr_len = draw_string(&mut os_package.window_canvas, "Charge(C): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            draw_string(&mut os_package.window_canvas, "Charge(C): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
                             do_text_box_things( &mut c_textbox.charge_textbox, textbox_x, prop_y_offset,
                                                    textinfo, mouseinfo, keyboardinfo,
                                                    &mut it.charge, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
@@ -3592,7 +3590,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         }
 
                         {
-                            let mfstr_len = draw_string(&mut os_package.window_canvas, "Flux(Wb): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
+                            draw_string(&mut os_package.window_canvas, "Flux(Wb): ", properties_rect[0], prop_y_offset, C4_WHITE, PANEL_FONT);
                             do_text_box_things( &mut c_textbox.magflux_textbox, textbox_x, prop_y_offset,
                                                    textinfo, mouseinfo, keyboardinfo,
                                                    &mut it.magnetic_flux, &mut os_package.window_canvas, app_storage.timer.elapsed().as_secs_f32(),
@@ -3912,7 +3910,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         let delta_max_time = DELTA_MAX_TIME_PANEL_MOVE;
         if app_storage.menu_move_activated {
 
-            let mut delta = (app_storage.timer.elapsed().as_micros() - app_storage.menu_move_activated_time) as f32;
+            let delta = (app_storage.timer.elapsed().as_micros() - app_storage.menu_move_activated_time) as f32;
             x = ((os_package.window_canvas.w - app_storage.menu_canvas.canvas.w) as f32 * ((delta_max_time + delta) / delta_max_time)) as i32; //TODO
 
             if app_storage.menu_offscreen {
@@ -3942,7 +3940,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
         let mut icon_rect = [window_w-65, window_h-28, 26, 26];
         let mut _icon_rect = [window_w-65, window_h-28, 26, 26];
         let mut rect = [window_w-icon_rect[2]-300, icon_rect[1]-35, 110, 31];
-        let mut canvas;
+        let canvas;
         draw_bmp(&mut os_package.window_canvas, icon, icon_rect[0], icon_rect[1], 0.98, Some(icon_rect[2]), Some(icon_rect[3]));
 
         draw_bmp(&mut app_storage.menu_canvas.canvas, icon, 30, icon_rect[1], 0.98, Some(icon_rect[2]), Some(icon_rect[3]));
@@ -4340,7 +4338,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                     app_storage.lab_text.clear();
                                     app_storage.lab_text.insert_str( 0, &String::from_utf8_lossy(&buffer.expect("something went wrong with decompression")) );
 
-                                    let (mut panels, mut errors) = parse_and_panel_filebuffer(&app_storage.lab_text);
+                                    let (mut panels, errors) = parse_and_panel_filebuffer(&app_storage.lab_text);
 
                                     app_storage.arr_panels.clear();
                                     app_storage.arr_panels.append( &mut panels );
@@ -4488,7 +4486,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                 let rect = [0, 0, window_w, PANEL_FONT as i32 + 8];
                 let alpha = 
                 { 
-                    let mut x = message_stopwatch.get_time().as_millis() as f32 * 0.001;
+                    let x = message_stopwatch.get_time().as_millis() as f32 * 0.001;
                     let max_duration = if messages[index].0 == MessageType::Default {
                                         DEFAULT_MESSAGE_ONSCREEN_DURATION.as_millis() as f32 * 0.001
                                     } else {
@@ -4822,7 +4820,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                     || (it_x1 == jt_x2 && it_y1 == jt_y2) 
                     {
                         //TODO reset the current nodes it the nodes are not touched during this process
-                        if (it_x1 == jt_x1 && it_y1 == jt_y1) {
+                        if it_x1 == jt_x1 && it_y1 == jt_y1 {
                             app_storage.arr_circuit_elements[i].a_node  = it.a_node.min(jt.a_node);
                             app_storage.arr_circuit_elements[j].a_node  = it.a_node.min(jt.a_node);
 
@@ -4839,7 +4837,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 }
                             }
                         } 
-                        if (it_x2 == jt_x2 && it_y2 == jt_y2) {
+                        if it_x2 == jt_x2 && it_y2 == jt_y2 {
                             app_storage.arr_circuit_elements[i].b_node  = it.b_node.min(jt.b_node);
                             app_storage.arr_circuit_elements[j].b_node  = it.b_node.min(jt.b_node);
 
@@ -4857,7 +4855,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 }
                             }
                         }
-                        if (it_x2 == jt_x1 && it_y2 == jt_y1) {
+                        if it_x2 == jt_x1 && it_y2 == jt_y1 {
                             app_storage.arr_circuit_elements[i].b_node  = it.b_node.min(jt.a_node);
                             app_storage.arr_circuit_elements[j].a_node  = it.b_node.min(jt.a_node); 
 
@@ -4874,7 +4872,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                                 }
                             }
                         }
-                        if (it_x1 == jt_x2 && it_y1 == jt_y2) {
+                        if it_x1 == jt_x2 && it_y1 == jt_y2 {
                             app_storage.arr_circuit_elements[i].a_node  = it.a_node.min(jt.b_node);
                             app_storage.arr_circuit_elements[j].b_node  = it.a_node.min(jt.b_node);
 
@@ -4911,26 +4909,40 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                         && e2 == e4{
                             if !app_storage.messages.contains(&(MessageType::Error, error_message.clone())){
                                 app_storage.messages.push((MessageType::Error, error_message));
+                                println!("A");
                             }
                         } else {
                             let mut a = false;
                             if e1 == 0f32 
-                            && e2*e3*e4 != 0f32{
+                            && e2*e3*e4 != 0f32
+                            && (e2*e3*e4).signum() == e2.signum()
+                            && (e2*e3*e4).signum() == e3.signum(){
                                 a = true;
                             }
                             if e2 == 0f32
-                            && e1*e3*e4 != 0f32{
+                            && e1*e3*e4 != 0f32
+                            && (e1*e3*e4).signum() == e1.signum()
+                            && (e1*e3*e4).signum() == e3.signum(){
                                 a = true;
                             }
                             if e3 == 0f32
-                            && e1*e2*e4 != 0f32{
+                            && e1*e2*e4 != 0f32
+                            && (e1*e2*e4).signum() == e1.signum()
+                            && (e1*e2*e4).signum() == e2.signum(){
                                 a = true;
                             }
                             if e1*e2*e3 != 0f32 
-                            && e4 == 0f32{
+                            && e4 == 0f32
+                            && (e1*e2*e3).signum() == e1.signum() 
+                            && (e1*e2*e3).signum() == e2.signum() {
                                 a = true;
                             }
-                            if a {
+                            if a 
+                            && !(it_x1 == jt_x1 && it_y1 == jt_y1)
+                            && !(it_x2 == jt_x2 && it_y2 == jt_y2)
+                            && !(it_x2 == jt_x1 && it_y2 == jt_y1)
+                            && !(it_x1 == jt_x2 && it_y1 == jt_y2)
+                            {
                                 if !app_storage.messages.contains(&(MessageType::Error, error_message.clone())){
                                     app_storage.messages.push((MessageType::Error, error_message));
                                 }
@@ -4944,7 +4956,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
 
 
             
-            let (mut c_matrix, pairs, hashmap) = compute_circuit(&mut app_storage.arr_circuit_elements);
+            let (mut c_matrix, pairs, _) = compute_circuit(&mut app_storage.arr_circuit_elements);
             if pairs.len() == 0 {
                 app_storage.run_circuit = false;
             }
@@ -5068,7 +5080,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LS_AppStorage, 
                             volts_times[1].remove(0);
                         }
 
-                        let element = app_storage.arr_circuit_elements[it.orig_element_index];
                         volts_times[0].push(print_voltage);
                         volts_times[1].push(ce_time);
                         //volts_times[1].push(app_storage.sim_time);
@@ -5131,7 +5142,7 @@ pub struct Panel{
 }
 
 
-struct MultiQuestion{
+pub struct MultiQuestion{
     question: String,
     choices: Vec<String>,
     answer_index: Option<usize>,
@@ -5379,7 +5390,6 @@ fn rotate_bmp(src_bmp: &mut TGBitmap, angle: f32)->Option<TGBitmap>{unsafe{
 
         return Some(dst_bmp);
     }
-    return None;
 }}
 
 
@@ -5444,9 +5454,10 @@ mod parser{
 //!
 //! ```
 
+#![allow(unused)]
 use crate::lab_sims::MessageType;
 
-const example : &str =
+const EXAMPLE : &str =
 "//comments should be ignored
 #Section 
 #Header Beginning
@@ -5514,8 +5525,6 @@ LOL
     }
 
 
-    enum Mode{
-    }
     pub fn parse(input: &str)->(Vec<Section>, Vec<(MessageType, String)>){//TODO maybe return errors?
         use Content::*;
         let mut char_arr : Vec<char> = input.chars().collect();
@@ -5606,7 +5615,6 @@ LOL
                     }
                 }
             } else {
-                let mut token_buffer = "text".to_string();
             }
 
             
@@ -5806,6 +5814,7 @@ mod matrixmath{
 //! made to satisfy the requirements of this application.
 //! The library does not contain all linear algebra operations, nor does it attempt to.
 //! The purpose is, again, to provide functionality necessary to solve electrical circuits.
+#![allow(unused)]
 
 
     pub struct Matrix{
@@ -6237,8 +6246,7 @@ struct Pair{
 ///For an additional resource consult the textbook "Circuit Simulation" by Farid Najim.
 fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<usize>){
     
-    let mut rt = Matrix::zeros(0,0);
-    let mut queue = vec![0]; 
+    let rt = Matrix::zeros(0,0);
     if graph[0].discovered{ //TODO not sure what this is about
         return (rt, vec![], Vec::new());
     }
@@ -6272,7 +6280,7 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
         let mut remove_element = vec![];
         for (j, jt) in unique_nodes.iter().enumerate(){ 
             let mut n = 0;
-            for (i, it) in unique_elements.iter().enumerate(){ 
+            for (_, it) in unique_elements.iter().enumerate(){ 
                 if it.b_node == *jt
                 || it.a_node == *jt{
                     n+=1;
@@ -6306,34 +6314,7 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
 
 
 
-    fn is_pair_good(current_pair_index: usize, pairs: &mut Vec<Pair>, exit_node: usize)->bool{
-        //TODO 
-        //This function attempts to trace current_pair back to the exit_node. If it cannot the pair is bad.
-        //By definition the original function should handle this. We will keep it because it might be useful in the future.
-        let current_pair = pairs[current_pair_index];
-        if current_pair.in_node == exit_node{
-            pairs[current_pair_index].good = true;
-            return true;
-        } 
-        for i in 0..pairs.len(){
-            
-            if current_pair.in_node == pairs[i].out_node{
-                
-                let b = is_pair_good(i, pairs, exit_node);
-                pairs[current_pair_index].good |= b;
-                return b;
-            }
-        }
-        return false;
-    }
-
-
-    let mut init_index = 0;
-    let exit_node = unique_nodes[init_index]; 
-
-    let mut queue = vec![unique_nodes[init_index]]; //TODO we are making an assumption here
     let mut pairs = vec![];
-    let mut init = true;
 
 
     for (i, it) in unique_elements.iter().enumerate(){
@@ -6432,26 +6413,13 @@ fn compute_circuit(graph : &mut Vec<CircuitElement>)->(Matrix, Vec<Pair>, Vec<us
             if *m.get_element(out_node, i) == 1.0{
                 it.out_node = temp_in;
             }
-            let v_in = *m.get_element(in_node, i); 
-            let v_out = *m.get_element(out_node, i);
 
         }
     }
 
 
 
-//println!("Pairs:");
-//    for i in 0..pairs.len(){
-//        if !pairs[i].good { 
-//            is_pair_good(i, &mut pairs, exit_node);
-//        }
-//        println!("{:?}", pairs[i]);
-//    }
 
-//println!("GOOD Pairs:");
-//    for i in 0..good_pairs.len(){
-//        println!("{:?}", good_pairs[i]);
-//    }
 
     
 
@@ -6841,7 +6809,7 @@ fn generate_csv_name(filename: &str)->String{
     //TODO loop through files check if proposed filename is in files. If not return a new file name
     let mut i = 0;
     let string_filename = filename.to_string();
-    while true {
+    loop {
         if i == 0 {
             //loop through the thingoo
             if !files.contains(&string_filename){
@@ -6858,12 +6826,10 @@ fn generate_csv_name(filename: &str)->String{
     }
     
 
-    return filename.to_string();
 }
 
 
 fn save_csv( filename: &str, data: &[&[f32]], data_labels: &[&str]){
-    use std::io::Write;
     use std::fs::File;
 
     if data.len() != data_labels.len(){
@@ -6914,12 +6880,12 @@ fn save_circuit_diagram(name: &str, circuit: &[CircuitElement]){unsafe{
     //'resistance' 'voltage' 'current' 'capacitance' 'inductance' 'charge' 'magnetic_flux']
 
     let mut f = std::fs::File::create(name).expect("File could not be created.");
-    f.write_all(b"CD");
-    f.write_all(&transmute::<u64, [u8; size_of::<u64>()]>(size_of::<CircuitElement>() as u64));
-    f.write_all(&transmute::<u64, [u8; size_of::<u64>()]>(circuit.len() as u64));
+    f.write_all(b"CD").expect("write all has been interrupted.");
+    f.write_all(&transmute::<u64, [u8; size_of::<u64>()]>(size_of::<CircuitElement>() as u64)).expect("write all has been interrupted.");
+    f.write_all(&transmute::<u64, [u8; size_of::<u64>()]>(circuit.len() as u64)).expect("write all has been interrupted.");
 
     for it in circuit.iter(){
-        f.write_all( &transmute::<CircuitElement, [u8; size_of::<CircuitElement>()]>(*it) );
+        f.write_all( &transmute::<CircuitElement, [u8; size_of::<CircuitElement>()]>(*it) ).expect("write all has been interrupted.");
     }
 }}
 
@@ -6930,7 +6896,7 @@ fn load_circuit_diagram(name: &str)->Vec<CircuitElement>{unsafe{
     let mut f = std::fs::File::open(name).expect("File could not be created.");
 
     let mut file_header_buffer = [0u8;2];
-    f.read( &mut file_header_buffer);
+    f.read( &mut file_header_buffer).expect("Could not read from file.");
 
     if file_header_buffer[0] as char == 'C' 
     && file_header_buffer[1] as char == 'D'{
@@ -6939,7 +6905,7 @@ fn load_circuit_diagram(name: &str)->Vec<CircuitElement>{unsafe{
     }
 
     let mut sizeof_circuit_elements = [0u8; size_of::<u64>()];
-    f.read(&mut sizeof_circuit_elements);
+    f.read(&mut sizeof_circuit_elements).expect("Could not read from file.");
     let sizeof_circuit_elements = transmute::< [u8; size_of::<u64>()], u64>(sizeof_circuit_elements);
 
     if size_of::<CircuitElement>() < sizeof_circuit_elements as usize{
@@ -6948,7 +6914,7 @@ fn load_circuit_diagram(name: &str)->Vec<CircuitElement>{unsafe{
 
 
     let mut number_circuit_elements = [0u8; size_of::<u64>()];
-    f.read(&mut number_circuit_elements);
+    f.read(&mut number_circuit_elements).expect("Could not read from file.");
 
     let number_circuit_elements = transmute::< [u8; size_of::<u64>()], u64>(number_circuit_elements);
     let mut rt = Vec::with_capacity(number_circuit_elements as usize);
@@ -6957,8 +6923,8 @@ fn load_circuit_diagram(name: &str)->Vec<CircuitElement>{unsafe{
 
     let mut _it = vec![0u8; sizeof_circuit_elements as usize];
     let mut max_id = 0;
-    for i in 0..number_circuit_elements{
-        f.read(&mut _it);
+    for _ in 0..number_circuit_elements{
+        f.read(&mut _it).expect("Could not read from file.");
 
         
         let mut element  = CircuitElement::empty();
@@ -7019,7 +6985,7 @@ impl TextBox{
         }
     }
     pub fn update(&mut self, keyboardinfo : &KeyboardInfo, textinfo: &TextInfo, mouseinfo: &MouseInfo){
-        fn placeCursor(_self: &mut TextBox, mouseinfo: &MouseInfo){//Look for where to place cursor
+        fn place_cursor(_self: &mut TextBox, mouseinfo: &MouseInfo){//Look for where to place cursor
             let mut position = 0;
             for (i, it) in _self.text_buffer.chars().enumerate() {
                 //IF mouse is between old position and new position then we place cursor
@@ -7051,7 +7017,7 @@ impl TextBox{
                mouseinfo.lbutton == ButtonStatus::Down{
                 self.active = true;
 
-                placeCursor(self, mouseinfo);
+                place_cursor(self, mouseinfo);
             }
             return;
         }
@@ -7068,7 +7034,7 @@ impl TextBox{
                    [self.x+self.offset_x+4, self.y+self.offset_y + 4, self.max_render_length , self.text_size as i32]) &&
                    mouseinfo.lbutton == ButtonStatus::Down
                 {//Look for where to place cursor
-                    placeCursor(self, mouseinfo);
+                    place_cursor(self, mouseinfo);
 
                 }
 
@@ -7184,8 +7150,8 @@ fn render_current_wire(bmp: &mut TGBitmap, count: f32){//NOTE ideas for showing 
 
 //TODO we are doing too much computation make cleaner
             let color_r = 255 - ((2.0 * PI * i as f32 / a_width as f32 - count).sin().powi(2)*100f32) as u8;
-            let color_g = 255 - ((2.0 * PI * i as f32 / a_width as f32 - count).sin().powi(2)*255f32) as u8;;
-            let color_b = 255 - ((2.0 * PI * i as f32 / a_width as f32 - count).sin().powi(2)*255f32) as u8;;
+            let color_g = 255 - ((2.0 * PI * i as f32 / a_width as f32 - count).sin().powi(2)*255f32) as u8;
+            let color_b = 255 - ((2.0 * PI * i as f32 / a_width as f32 - count).sin().powi(2)*255f32) as u8;
 
             bmp.rgba[offset + 0] = color_b;
             bmp.rgba[offset + 1] = color_g; 
@@ -7268,12 +7234,10 @@ fn render_charge_capacitor(bmp: &mut TGBitmap, charge: f32, capacitance: f32){//
 
 
     let max = 255f32;
-    let max_u8 = 255;
-    let half_max = 255f32 * 0.5;
     let half_max_u8 = (255f32 * 0.5) as u8;
     let x       = -4f32 + 6f32 * charge.abs() / capacitance;
 
-    let mut r_color     = (max / (1f32+x.exp())) as u8;
+    let r_color     = (max / (1f32+x.exp())) as u8;
 
     let mut color_r = 255;
     let mut color_g = r_color;
@@ -7332,7 +7296,6 @@ fn undirected_to_directed_matrix(m : &mut Matrix){
     //We guess the direction of each pair.
     for i in 0..m.columns{
         for j in (0..m.rows).rev(){
-            let mut good = false;
 
             if *m.get_element(j, i) == 1f32{
                 *m.get_element( j, i ) = -1f32; 
@@ -7515,7 +7478,7 @@ impl TinyString{
     //TODO
     //check meaning of clone and copy in rust
     pub fn copystr(&mut self, s: &str){
-        let mut bytes = s.as_bytes();
+        let bytes = s.as_bytes();
 
         self.cursor = 0;
         for i in 0.. bytes.len(){
@@ -7525,6 +7488,7 @@ impl TinyString{
         }
     }
 
+    #[allow(unused)]
     pub fn fromstr(string: &str)->TinyString{
         let mut ts = TinyString::new();
         ts.copystr(string);
@@ -7534,6 +7498,7 @@ impl TinyString{
 
     //TODO
     //check meaning of clone and copy in rust
+    #[allow(unused)]
     pub fn copy(&mut self, s: &TinyString){
         for i in 0..s.len(){
             //TODO
@@ -7543,8 +7508,9 @@ impl TinyString{
         self.cursor = s.len();
     }
 
+    #[allow(unused)]
     pub fn is_samestr(&self, s: &str)->bool{
-        let mut bytes = s.as_bytes();
+        let bytes = s.as_bytes();
         if self.len() !=  bytes.len(){ return false; }
         for i in 0..self.len(){
             if self.buffer[i] != bytes[i]{ return false; }
@@ -7598,11 +7564,11 @@ impl core::fmt::Debug for TinyString{
 
 /// The function pulls a random number from a Gaussian distribution with a standard devivation as
 /// given by the user.
-fn sample_normal(std: f32)->f32{unsafe{
+fn sample_normal(std: f32)->f32{
     let one_over_sqrt_2 = 0.70710678118;
     let dst = Normal::new(0.0, std*one_over_sqrt_2).unwrap();
     return dst.sample(&mut thread_rng());
-}}
+}
 
 
 
@@ -7620,11 +7586,11 @@ fn edgefunction(p: &[f32; 2], v0: &[f32; 2], v1: &[f32; 2])->f32{
     let x0 = [p[0] - v0[0],  p[1] - v0[1]];
     let x1 = [v1[0] - v0[0],  v1[1] - v0[1]];
 
-    return calc2D_cross_product(x0, x1);
+    return calc2d_cross_product(x0, x1);
 }
 
 #[inline]
-fn calc2D_cross_product(x0: [f32; 2], x1: [f32; 2])->f32{
+fn calc2d_cross_product(x0: [f32; 2], x1: [f32; 2])->f32{
     let cross_product = x0[0] * x1[1] - x0[1] * x1[0];
     return cross_product;
 }

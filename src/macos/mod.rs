@@ -295,7 +295,7 @@ pub fn make_window<'a>() {unsafe{
 
 
 
-    let mut ls_app_storage = LS_AppStorage::new();
+    let mut ls_app_storage = LsAppStorage::new();
 
     let security_lib = dynamic_lib_loading::open_lib("/System/Library/Frameworks/Security.framework/Security", dynamic_lib_loading::RTLD_LAZY).expect("Security framework not present.");
 

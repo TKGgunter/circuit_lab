@@ -54,7 +54,8 @@
 
 
 
-#![allow(warnings)]  //TODO
+//#![allow(warnings)]  //TODO
+#![allow(unused_results)]
 
 extern crate stb_tt_sys;
 extern crate stb_image_sys;
@@ -62,31 +63,16 @@ extern crate miniz;
 
 
 use std::ptr::{null, null_mut};
-use std::iter::once;
-use std::mem;
 
 
 mod inputhandler;
-use inputhandler::*;
-
 mod ui_tools;
-
-
-
 mod lab_sims;
-use lab_sims::*;
-
-
+mod os_util;
+mod debug_tools;
+mod misc;
 mod rendertools;
 use rendertools::{TGBitmapHeaderInfo, TGBitmap };
-
-
-mod os_util;
-
-mod debug_tools;
-
-mod misc;
-use misc::*;
 
 
 #[cfg(target_os = "windows")]

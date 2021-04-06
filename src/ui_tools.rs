@@ -1,8 +1,12 @@
+#![allow(unused)]
+
+
 use crate::{WindowCanvas, OsPackage};
 use crate::rendertools::*;
 use crate::inputhandler::*;
 use crate::misc::*;
 use std::ptr::{null, null_mut};
+
 
 //NOTE this is not thread safe.
 //Every thing is in global space, not too nice when working with canvases of multiple sizes
@@ -258,7 +262,7 @@ impl TextBox{
         }
     }
     pub fn update(&mut self, keyboardinfo : &KeyboardInfo, textinfo: &TextInfo, mouseinfo: &MouseInfo){
-        fn placeCursor(_self: &mut TextBox, mouseinfo: &MouseInfo){//Look for where to place cursor
+        fn place_cursor(_self: &mut TextBox, mouseinfo: &MouseInfo){//Look for where to place cursor
             let mut position = 0;
             for (i, it) in _self.text_buffer.chars().enumerate() {
                 //IF mouse is between old position and new position then we place cursor
@@ -287,7 +291,7 @@ impl TextBox{
                mouseinfo.lbutton == ButtonStatus::Down{
                 self.active = true;
 
-                placeCursor(self, mouseinfo);
+                place_cursor(self, mouseinfo);
             }
             return;
         }
@@ -304,7 +308,7 @@ impl TextBox{
                    [self.x+4, self.y + 4, self.max_render_length , self.text_size as i32]) &&
                    mouseinfo.lbutton == ButtonStatus::Down
                 {//Look for where to place cursor
-                    placeCursor(self, mouseinfo);
+                    place_cursor(self, mouseinfo);
 
                 }
 
@@ -407,11 +411,11 @@ struct Storage{
     active: bool,
     f: f32
 }
-static mut storage : Storage = Storage{ init: false, char_arr: ['\0';100], f: 0f32, cursor: 0, active: false};
+static mut STORAGE : Storage = Storage{ init: false, char_arr: ['\0';100], f: 0f32, cursor: 0, active: false};
 //TODO
 pub fn ui_test(os_package: &mut OsPackage, keyboardinfo: &KeyboardInfo, textinfo: &TextInfo, mouseinfo: &MouseInfo)->i32{unsafe{
-    if storage.init == false {
-        storage.init = true;
+    if STORAGE.init == false {
+        STORAGE.init = true;
         unsafe{ set_canvas(&mut crate::GLOBAL_BACKBUFFER); }
         change_font(&crate::FONT_NOTOSANS);
     }
@@ -428,7 +432,7 @@ pub fn ui_test(os_package: &mut OsPackage, keyboardinfo: &KeyboardInfo, textinfo
         println!("QRQEWF");
     }
 
-    storage.f = gb_horizslider(storage.f, [10, 50, 100, 15], mouseinfo).frac;
+    STORAGE.f = gb_horizslider(STORAGE.f, [10, 50, 100, 15], mouseinfo).frac;
 //TODO do textbox test... but I think we are good.
 
     return 0;

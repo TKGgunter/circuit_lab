@@ -15,7 +15,7 @@
 //!use crate::debug_tools::*;
 //! ```
 
-
+#![allow(unused)]
 
 use std::collections::HashMap;
 use std::time::{Instant, Duration};

@@ -196,7 +196,7 @@ pub fn make_window() {unsafe{
     let mut textinfo = TextInfo{character: Vec::with_capacity(10), timing:Vec::new()};
     let mut keyboardinfo = KeyboardInfo{key: Vec::new(), status:Vec::new()};
 
-    let mut ls_app_storage = LS_AppStorage::new();
+    let mut ls_app_storage = LsAppStorage::new();
 
     let mut stopwatch = StopWatch::new();
     let mut stopwatch_lbutton = StopWatch::new();

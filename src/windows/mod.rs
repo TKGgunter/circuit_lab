@@ -85,7 +85,7 @@ pub fn make_window(){unsafe{
 
 
     let instance = kernel32::GetModuleHandleW(null());
-    let mut ls_app_storage = LS_AppStorage::new();
+    let mut ls_app_storage = LsAppStorage::new();
     let mut stopwatch = StopWatch::new();
 
 
