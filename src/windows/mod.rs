@@ -303,7 +303,7 @@ pub fn make_window(){unsafe{
 
                 match &SETICON {
                     Some(bmp)=>{
-                        println!("Attempting to changing app icon... not completed.");
+                    //NOTE we do not set the icon like this
                     },
                     None=>{}
                 }
