@@ -25,7 +25,7 @@ use cocoa::base::{selector, nil, NO, YES, id};
 use cocoa::quartzcore::CALayer;
 use cocoa::foundation::{NSRect, NSPoint, NSSize, NSAutoreleasePool, NSProcessInfo,
                         NSString, NSDefaultRunLoopMode, NSData, NSDictionary};
-use cocoa::appkit::{NSApp, NSApplication, NSApplicationActivationPolicyRegular, NSWindow, NSEventMask,
+use cocoa::appkit::{NSApp, NSApplication, NSApplicationActivationPolicyRegular, NSWindow, NSEventMask, NSEventPhase,
                     NSBackingStoreBuffered, NSMenu, NSMenuItem, NSWindowStyleMask, NSColor, NSView, NSEvent,
                     NSRunningApplication, NSApplicationActivateIgnoringOtherApps, NSImage, NSEventType, NSScreen};
 
@@ -457,9 +457,6 @@ pub fn make_window<'a>() {unsafe{
             mouseinfo.x = x.round() as i32 - GLOBAL_WINDOWINFO.x;
             mouseinfo.y = y.round() as i32 - GLOBAL_WINDOWINFO.y;
 
-            mouseinfo.wheel_delta = event.deltaZ() as _;
-//println!("{}", event.scrollingDeltaY());
-//println!("{}", mouseinfo.wheel_delta);
 
             use cocoa::appkit::NSEventModifierFlags;
             if i == 1{
@@ -526,6 +523,19 @@ pub fn make_window<'a>() {unsafe{
                     keycode = NSEvent::keyCode(event) as usize;
                 },
                 NSEventType::NSFlagsChanged => {
+                },
+                NSEventType::NSScrollWheel => {
+                    //NOTE mouse scrolling is weird and is not consistent
+                    if NSEvent::momentumPhase(event) == NSEventPhase::NSEventPhaseNone
+                    && NSEvent::phase(event) != NSEventPhase::NSEventPhaseNone{
+                        
+                        if NSEvent::phase(event) != NSEventPhase::NSEventPhaseChanged{
+                            let v = NSEvent::scrollingDeltaY(event) as i32;
+                            mouseinfo.wheel_delta += v.signum() * v.abs().min(1);
+                        }
+                    } else {
+                        mouseinfo.wheel_delta = (NSEvent::scrollingDeltaY(event) * 10f64) as _;
+                    }
                 },
                 _=>{}
             }
