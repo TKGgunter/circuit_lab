@@ -1542,6 +1542,12 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
         app_storage.selected_circuit_element = SelectedCircuitElement::None;
         app_storage.selected_circuit_properties = None;
     }
+    if mouseinfo.wheel_delta != 0 
+    && app_storage.selected_circuit_element != SelectedCircuitElement::None{
+        app_storage.selected_circuit_element_orientation += mouseinfo.wheel_delta.signum() as f32 * PI/2f32;
+    }
+
+
 
     let mut is_element_rotate_selected = false;
     let mut is_element_selected = false;
@@ -1776,6 +1782,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
                             is_element_selected = true;
                             it.x += mouseinfo.delta_x;
                             it.y += mouseinfo.delta_y;
+
+                            if mouseinfo.wheel_delta != 0 {
+                                it.orientation += mouseinfo.wheel_delta.signum() as f32 * PI/2f32;
+                            }
                         }
                         if it.selected_rotation {
                             is_element_rotate_selected = true;
@@ -4472,6 +4482,11 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
         let message_index = &mut app_storage.message_index;
         let message_stopwatch = &mut app_storage.message_timer;
 
+        if messages.len() > 5 {//NOTE caps the number of messages. This should really be done by taking times.
+            for _ in 0..5-messages.len() {
+                messages.remove(0);
+            }
+        }
         if messages.len() > 0 {
             let index = match message_index {
                 Some(_index)=>{
