@@ -74,6 +74,7 @@ pub fn make_window(){unsafe{
     use std::ffi::OsStr;
     use std::os::windows::ffi::OsStrExt;
 
+    let _string = String::from("Circuit Simulation Lab\0");
 
     let mut exe_path = std::env::current_exe().expect("could not find the exe path");
     let in_target_path = exe_path.to_string_lossy().contains("target\\release");
@@ -127,7 +128,6 @@ pub fn make_window(){unsafe{
 
         //TODO I don't think I need this, it doesn't work as is any way.
         let windows_string: Vec<u16> = OsStr::new("Circuit Simulation Lab\0").encode_wide().collect();
-        let _string = String::from("Circuit Simulation Lab\0");
 
         let window_handle = CreateWindowExW(
                           WS_EX_ACCEPTFILES ,
