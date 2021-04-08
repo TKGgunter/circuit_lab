@@ -1583,13 +1583,13 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
             let it_rect = [it_x, it_y, GRID_SIZE*4, GRID_SIZE*4];
             let _rect = [mouseinfo.x-SELECTED_OFFSET, mouseinfo.y-SELECTED_OFFSET, GRID_SIZE*4, GRID_SIZE*4];
 
-            //println!("{} {} {}", overlap_rect_area(it_rect, _rect), (2.5*GRID_SIZE as f32).powi(2) as i32, (4*GRID_SIZE).pow(2));
             if overlap_rect_area(it_rect, _rect) >  (2.5*GRID_SIZE as f32).powi(2) as i32
             && mouseinfo.lbutton == ButtonStatus::Down{
                 app_storage.selected_circuit_element_orientation = 0f32;
                 app_storage.selected_circuit_element = SelectedCircuitElement::None;
                 app_storage.selected_circuit_properties = None;
             }
+
         }
 
         //NOTE
@@ -1690,9 +1690,13 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
 
                                 if mouseinfo.lbutton == ButtonStatus::Down{
                                     it.selected_rotation = true;
+
+                                    app_storage.selected_circuit_element_orientation = 0f32;
+                                    app_storage.selected_circuit_element = SelectedCircuitElement::None;
+                                    app_storage.selected_circuit_properties = None;
                                 }
                             }
-                            let left_rect = [c1_x-9, c1_y-5, 8, 10];
+                            let left_rect = [c1_x-9, c1_y-5, 10, 10];
                             if in_rect(mouseinfo.x, mouseinfo.y, left_rect)
                             && !mouse_in_properties_rect(mouseinfo, &z_vec){
                                 //Left side
@@ -1702,6 +1706,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
 
                                 if mouseinfo.lbutton == ButtonStatus::Down{
                                     it.selected_rotation = true;
+
+                                    app_storage.selected_circuit_element_orientation = 0f32;
+                                    app_storage.selected_circuit_element = SelectedCircuitElement::None;
+                                    app_storage.selected_circuit_properties = None;
                                 }
                             }
                         } else if it.orientation.sin().abs() == 1f32{//Vertical
@@ -1715,6 +1723,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
 
                                 if mouseinfo.lbutton == ButtonStatus::Down{
                                     it.selected_rotation = true;
+
+                                    app_storage.selected_circuit_element_orientation = 0f32;
+                                    app_storage.selected_circuit_element = SelectedCircuitElement::None;
+                                    app_storage.selected_circuit_properties = None;
                                 }
                             }
                             let left_rect = [c1_x-6, c1_y-7, 10, 10];//TODO these should be 11x11 to have the result render symmetrically 
@@ -1727,6 +1739,10 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
 
                                 if mouseinfo.lbutton == ButtonStatus::Down{
                                     it.selected_rotation = true;
+
+                                    app_storage.selected_circuit_element_orientation = 0f32;
+                                    app_storage.selected_circuit_element = SelectedCircuitElement::None;
+                                    app_storage.selected_circuit_properties = None;
                                 }
                             }
                         }
