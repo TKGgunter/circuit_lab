@@ -305,6 +305,7 @@ pub fn make_window() {unsafe{
         mouseinfo.lbutton = ButtonStatus::Up;
         mouseinfo.rbutton = ButtonStatus::Up;
         mouseinfo.double_lbutton = false;
+        mouseinfo.wheel_delta = 0;
 
         mouseinfo.delta_x = mouseinfo.x;
         mouseinfo.delta_y = mouseinfo.y;
@@ -388,6 +389,17 @@ pub fn make_window() {unsafe{
                 ClientMessage=>{
                     if event.client_message.data.get_long(0) == wm_delete_window as i64{
                         exit = true;
+                    }
+                },
+                ButtonPress=>{
+                    //NOTE Mousewheel things
+                    if event.button.button == 4 {
+                        mouseinfo.wheel_delta = 1;
+                        mouseinfo.wheel += 1;
+                    }
+                    if event.button.button == 5 {
+                        mouseinfo.wheel_delta = -1;
+                        mouseinfo.wheel -= 1;
                     }
                 },
                 _=>{
