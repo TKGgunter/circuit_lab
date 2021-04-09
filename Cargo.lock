@@ -31,6 +31,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "circuitsim"
+version = "0.1.0"
+dependencies = [
+ "cocoa",
+ "core-foundation 0.9.1",
+ "core-graphics 0.13.0",
+ "miniz",
+ "objc",
+ "rand",
+ "rand_distr",
+ "stb_image-sys",
+ "stb_tt-sys",
+ "winapi",
+ "winres",
+ "x11",
+]
+
+[[package]]
 name = "cocoa"
 version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -329,22 +347,4 @@ checksum = "77ecd092546cb16f25783a5451538e73afc8d32e242648d54f4ae5459ba1e773"
 dependencies = [
  "libc",
  "pkg-config",
-]
-
-[[package]]
-name = "xcopyfgc"
-version = "0.1.0"
-dependencies = [
- "cocoa",
- "core-foundation 0.9.1",
- "core-graphics 0.13.0",
- "miniz",
- "objc",
- "rand",
- "rand_distr",
- "stb_image-sys",
- "stb_tt-sys",
- "winapi",
- "winres",
- "x11",
 ]

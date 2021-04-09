@@ -1,5 +1,5 @@
 [package]
-name = "xcopyfgc"
+name = "circuitsim"
 version = "0.1.0"
 authors = ["TKGgunter <thothgunter@live.com>"]
 edition = "2018"
