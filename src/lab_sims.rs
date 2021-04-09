@@ -829,7 +829,8 @@ welcome to the circuit simulation software lab. This software is designed for ea
 - Place a new element using a left click.
 - Release the creation tool by right clicking or left clicking on a previously placed element.
 - To move an element click and drag a previously placed element.
-- To rotate left click and hold the edge of an element then drag your cursor to the desired orientation.
+- To rotate use the mouse wheel or equilvalent with trackpad
+- Or left click and hold the edge of an element then drag your cursor to the desired orientation.
 
 #Section
 #Header Additional Tips:
@@ -925,101 +926,6 @@ Are 'R2v2' resistors perfect 2Ω resistors?
 END
 #text
 Thanks for using the lab circuit software. 
-#section
-#Header APPLICATION DESIGN HISTORY
-#text Following contains history of application development.
-
-#Section
-#Text
-Update(02/09/2021)
-+ Fixed sign conventions for voltmeter and ammeter.
-+ Changed voltmeter and ammeter icons to include led indicators.
-+ Future proof backward save files.
-+ Gaussian sampling is now fixed.
-+ Implemented fixes for icon and element rotation.
-+ Exiting TA mode now requires Tab.
-+ Other bug fixes and ui updates.
-
-
-#Section
-#Text
-Update(01/26/2021)
-+ Changed from uniform to Gaussian uncertainties
-+ Implemented screen shot.
-+ Added TA password.
-+ User generated elements are now destroyed when in overlapping circuit element menu box.
-+ Users can now toggle current arrows.
-+ Standardizing linux macos and linux side panel visuals.
-+ Set frame rate cap.
-+ Fixed bugs for circuit compute.
-+ Update default side panel.
-
-#Section
-#Text
-Update(01/08/2021)
-+ error banner now implemented
- - errors shown when circuit solution contains NaNs
- - errors shown for TA side panel errors (can not find image, no 'answer' to question, etc.) 
-+ Delete key now works to remove text input
-+ Property panels now contain a 'z' coordinate value. The last panel interacted with will not be placed in front of others.
-+ When interacting with property panels input no longer impact panels or circuit elements obscured by panel
-+ For graphs (x, y) information information relative to the mouse locatation was implemeted.
-+ Custom, TA defined, circuit elements have been implemented.
-+ For custom circuit elements uncertainties can be defined. Uncertainty distribution is currently uniform.
-+ small graphics fixes and bugs.
-
-
-#Section
-#Text
-Update(12/17/2020)
-+Users can now type circuit element parameters
-+Window resize now works on all os
-+Graphics oddities with window resizing now corrected
-+App now longer panics when img is unavailable on startup
-+App now resizes to a larger window on startup
-+Fixed circuit loop bug **THIS IS BIG** More complicated circuit now work consistently
-+MacOS version how has simple executable with icons
-+Capacitor animation for negative charges fixed
-+AC type now loaded after save
-+many small fixes
-
-#Section
-#Text
-Update(12/04/2020):
-+ Graph tweaks
-+ duplicate buttons
-+ grid rotate element
-+ switch and ac elements added
-+ current and capacitor animations
-+ macos window resize remove
-+ changes made to wire rendering
-
-#Section
-#Text
-Update(11/30/2020):
-+ Solver now includes switch and AC elements.
-+ Tweaks are made to ui, including graphs.
-+ Circuit elements are now be duplicated in an effort to make it easier to add new elements.
-
-
-#Section
-#Text
-Update(11/??/2020):
-+ solver now includes inductor and capacitor elements.
-+ current directions now consistent with battery.
-+ solver updates continuously over time.
-+ 'TA' mode now included. Use 'Tab' to enter 'TA' mode and 'Tab' to package work.
-  + 'TA' mode allows instructors to alter the content of the side panels.
-+ To exit teacher mode press the 'Space' key.
-
-
-#section
-#text
-Note:
-+ Circuit elements must be connected at the edges to be recognized as connected.
-Update(10/28/2020):
-+ solver now includes voltmeter and ammeters.
-+ MacOs version now has functioning 'Teacher Mode'
 
 ";
 
@@ -1305,7 +1211,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
 
     draw_string(&mut os_package.window_canvas, "Circuit Simulation", window_w/2-title_length/2, window_h-60, COLOR_TEXT, 46.0);
     change_font(FONT_NOTOSANS);
-
 
 
 
@@ -1608,7 +1513,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
                 it.selected = false;
                 it.selected_rotation = false;
 
-                let rect1 = [it.x, it.y, 80, 80];
+                let camera = get_camera();
+                let rect1 = [it.x+camera[0], it.y+camera[1], 80, 80];
                 let rect2 = [circuit_element_canvas_x_offset,
                              circuit_element_canvas_y_offset,
                              app_storage.circuit_element_canvas.canvas.w,

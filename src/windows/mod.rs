@@ -74,14 +74,14 @@ pub fn make_window(){unsafe{
     use std::ffi::OsStr;
     use std::os::windows::ffi::OsStrExt;
 
-    let _string = String::from("Circuit Simulation Lab\0");
+    //TODO for some reason this does not alloc. I need to fix.
+    let _string = "Circuit Simulation Lab\0";
 
     let mut exe_path = std::env::current_exe().expect("could not find the exe path");
     let in_target_path = exe_path.to_string_lossy().contains("target\\release");
     if !in_target_path{
         winapi::um::wincon::FreeConsole();
     }
-
 
 
 
