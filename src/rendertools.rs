@@ -345,7 +345,7 @@ pub fn draw_char( canvas: &mut WindowCanvas, character: char, mut x: i32, mut y:
             let mut text_alpha = [0f32;4];
 
             for i in 0..cheight as isize{
-                if i + y as isize  > gheight {continue;}
+                if i + y as isize  >= gheight {continue;}
                 if i + y as isize  <= 0 {continue;}
 
                 for j in (0..cwidth as isize).step_by(4){
