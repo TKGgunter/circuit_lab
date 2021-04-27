@@ -4681,7 +4681,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
                                                                                  //(it.x+(40 as f32 * it.orientation.sin().abs()) as i32, 
                                                                                  // it.y+(40 as f32 * it.orientation.cos().abs()) as i32) 
                                                                                 },
-                                          _=>{ panic!("ASDF"); } //TODO more informative panic
+                                          _=>{ panic!("ASDF {:?}", it.circuit_element_type); } //TODO more informative panic
                                         };
                     let (jt_x1, jt_y1) = match jt.circuit_element_type { 
                                           SelectedCircuitElement::Resistor  |
@@ -4712,7 +4712,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
                                                                                  //(jt.x+(40 as f32 * jt.orientation.sin().abs()) as i32, 
                                                                                  // jt.y+(40 as f32 * jt.orientation.cos().abs()) as i32) 
                                                                                }, //TODO handle rotations
-                                          _=>{ panic!("ASDF"); }  //TODO more informative panic
+                                          _=>{ panic!("ASDF {:?}", jt.circuit_element_type); }  //TODO more informative panic
                                         };
 
 
