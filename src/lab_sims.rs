@@ -3210,6 +3210,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
 
                         let mut circuit_element = CircuitElement::empty();
                         circuit_element.label.copystr(&format!("Custom {}", index));
+                        circuit_element.circuit_element_type = SelectedCircuitElement::Custom;
 
                         app_storage.custom_circuit_elements.push(circuit_element);
                         app_storage.custom_circuit_cursor = index as usize;

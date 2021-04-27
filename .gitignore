@@ -8,3 +8,6 @@
 **/*.app
 **/*.exp
 **/*.DS_Store
+TA.txt
+*.cd
+*.exp

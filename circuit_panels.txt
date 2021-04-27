@@ -1,0 +1,112 @@
+//
+//
+#Section
+#Text
+
+Hello,
+welcome to the circuit simulation software lab. This software is designed for easy and intuitive construction of circuits, as well as their computation. It is an environment where lab TAs and professors can craft lessons for their students. The following panels are an example lab designed to help users acclimate to the software.
+
+#Header Quick Tips:
+#Text
+- To create a new element left click circuit element you desire using in the panel on the left.
+- Place a new element using a left click.
+- Release the creation tool by right clicking or left clicking on a previously placed element.
+- To move an element click and drag a previously placed element.
+- To rotate use the mouse wheel or equilvalent with trackpad
+- Or left click and hold the edge of an element then drag your cursor to the desired orientation.
+
+#Section
+#Header Additional Tips:
+#Text
++ Left click, 2 finger click or double click to access circuit element properties. 
++ Circuit elements can be rotated using property's panel or on grid.
+  Hover mouse over far edge of element until you see a rectangle. Click and hold to rotate.
++ Circuit element properties can be changed by typing.
++ Click the download button on the upper right hand of the screen, or top of this panel to save and load circuits.
+  When saving circuits be sure to press 'Enter' to complete the save.
++ Current arrows can be toggled using the icon on the top right, behind this panel.
++ A screen shot can be taken using the camera icon on the top right, behind this panel.
+
+
+#Section
+#Header Introduction:
+#Text
+Circuits are the way with which we make electricity do useful things. And it is through the study of circuits, that we are able to produce many of the tools we use today. In 1827 Ohm published "The Galvanic Circuit Studied Mathematically", which experimentally established the relationship between current, I, and potential difference, V. You will verify these relationships.
+
+
+Voltage, Current and Resistance:
+The most simple of circuits contain a battery, the source of the electromotive force, and a resistor, a component through which electricity does work.
+The circuit below is one such circuit. Recreate this circuit. Using the panel to the left and place the components on the graph board.
+#image circuit.png
+
+#Section
+#Text
+By pressing "Run" the simulation will begin. Double or right click the battery element to access its property. Increase and decrease the voltage, note the circuit's behavior. 
+NOTE: Each circuit element can be adjusted using their property panel.
+
+#Question
+What occurred when you increased the voltage?
+#answerwrong  The speed of the red strips was the same.
+#answercorrect The red strips began to move faster.
+#answerwrong  The speed slowed down.
+
+#Section
+#Text 
+The red strips symbolize electrons as they move through the circuit. While noticing visual differences is useful, measurements should be obtained using an ammeter. The ammeter measures current, while the voltmeter measures voltage. Take measurements of the current to determine how voltage and resistance impact the current of a circuit.  Given a data set one can ascertain the relationship between current, voltage and resistance.
+
+#image circuit_ammeter.png
+
+#Question
+Construct a simple circuit measure the current for a set of voltages between -2V and 3V.  Using this data set what is the relationship between current and voltage?
+#answercorrect linear
+#answerwrong  quadratic
+#answerwrong  power
+
+
+#Section
+#Text
+Scientist often notice patterns in the data they collect then try to construct a mathematical representation of the phenomena encountered. Repeat the measurement from the last slide changing the resistance instead of the voltage. Using the data collected attempt to construct a formula that uses the voltage and resistance to determine the current. Use this to answer the question below. Feel free to check your answers using the simulator.
+#Question Assuming a simple resistor, battery circuit what combination of voltage and resistance gives a current of 2.75A?
+#answerwrong Voltage: 7V, Resistance: 8Ω 
+#answerwrong Voltage: 5V, Resistance: 2Ω
+#answercorrect Voltage: 8.25V, Resistance: 3Ω
+
+#Section
+#Text
+So far you've set the values of circuit components by hand. In the real world the properties of components may not be known, or are known to some finite precision. The 'Custom' tab contains circuit elements with hidden properties.  In this menu you'll find an element labelled 'Resistor_1'.  Use what you learned from previous exercises to determine the resistance of this element.
+
+#Question
+What is the resistance of 'Resistor_1'?
+#answerwrong 4Ω 
+#answercorrect 5Ω 
+#answerwrong 2.5Ω 
+
+#Section
+#Text
+During your studies you may recall your professors and TAs highlighting the impact of uncertainties.  When a resistor, for example, is made the manufacturer will guarantee its value to a certain level of precision. In the 'Custom' tab you will find a circuit element labelled 'R2v1'. Imagine you are constructing an apparatus using this resistor. According to the manufacturer this resistor has 2Ω of resistance. They guarantee the difference in resistance for each resistor to be less than mΩ. Your advisor is skeptical and asks you to measure multiple 'R2v1' resistors to verify their claims.
+
+#Question
+Are the 'R2v1' resistors precise to a mΩ?
+#answerwrong Yes
+#answercorrect No
+
+
+#Section
+#Text
+Your advisor contacts the manufacturer and informs them of the issue with 'R2v1'. The manufacturer delivers a new version of the resistor, 'R2v2'.
+Measure this new resistors, and take note of their variance and mean.
+
+#Question
+Are 'R2v2' resistors perfect 2Ω resistors?
+#answerwrong Yes
+#answercorrect No
+
+
+
+#section
+#Header 
+
+END
+#text
+Thanks for using the lab circuit software. 
+
