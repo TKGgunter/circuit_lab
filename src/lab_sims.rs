@@ -3206,13 +3206,13 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
                 if in_rect(mouseinfo.x, mouseinfo.y, _rect){
                     draw_rect(&mut app_storage.circuit_element_canvas.canvas,  rect, C4_YELLOW, false);
                     if mouseinfo.lclicked(){
-                        app_storage.create_custom_circuit = true;
 
                         let mut circuit_element = CircuitElement::empty();
                         circuit_element.label.copystr(&format!("Custom {}", index));
                         circuit_element.circuit_element_type = SelectedCircuitElement::Custom;
 
                         app_storage.custom_circuit_elements.push(circuit_element);
+                        app_storage.panel_custom_circuit = true;
                         app_storage.custom_circuit_cursor = index as usize;
                     }
                 }
@@ -4651,7 +4651,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
 
                 for j in i+1..app_storage.arr_circuit_elements.len(){
                     let jt = app_storage.arr_circuit_elements[j].clone();
-                    //TODO handle bmps
                     let (it_x1, it_y1) = match it.circuit_element_type { 
                                           SelectedCircuitElement::Resistor  |
                                           SelectedCircuitElement::Battery   |
@@ -4665,7 +4664,6 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
                                           SelectedCircuitElement::CustomVoltmeter  |
                                           SelectedCircuitElement::CustomAmmeter    |
                                           SelectedCircuitElement::Capacitor => { 
-                                                                                 ////////////////
                                                                                  let _x = if it.orientation.sin().abs() < 0.001 {
                                                                                     it.x + ((it.orientation / 2f32).sin().abs() * (GRID_SIZE * 4) as f32) as i32
                                                                                  } else {
@@ -4678,11 +4676,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
                                                                                     it.y + (( (it.orientation - PI/ 2f32) / 2f32 ).sin().abs() * (GRID_SIZE * 4) as f32) as i32
                                                                                  };
                                                                                  (_x, _y)
-                                                                                 ////////////////
-                                                                                 //(it.x+(40 as f32 * it.orientation.sin().abs()) as i32, 
-                                                                                 // it.y+(40 as f32 * it.orientation.cos().abs()) as i32) 
                                                                                 },
-                                          _=>{ panic!("ASDF {:?}", it.circuit_element_type); } //TODO more informative panic
+                                          _=>{ panic!("ASDF {:?}", it.circuit_element_type); }
                                         };
                     let (jt_x1, jt_y1) = match jt.circuit_element_type { 
                                           SelectedCircuitElement::Resistor  |
@@ -4710,10 +4705,8 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
                                                                                  };
                                                                                  (_x, _y)
 
-                                                                                 //(jt.x+(40 as f32 * jt.orientation.sin().abs()) as i32, 
-                                                                                 // jt.y+(40 as f32 * jt.orientation.cos().abs()) as i32) 
-                                                                               }, //TODO handle rotations
-                                          _=>{ panic!("ASDF {:?}", jt.circuit_element_type); }  //TODO more informative panic
+                                                                               },
+                                          _=>{ panic!("ASDF {:?}", jt.circuit_element_type); } 
                                         };
 
 
