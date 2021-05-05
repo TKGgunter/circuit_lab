@@ -1732,7 +1732,7 @@ pub fn circuit_sim(os_package: &mut OsPackage, app_storage: &mut LsAppStorage, k
     && !(in_rect(mouseinfo.x, mouseinfo.y, [window_w - app_storage.menu_canvas.canvas.w,      0, 
                                            app_storage.menu_canvas.canvas.w,  app_storage.menu_canvas.canvas.h])
          && !app_storage.menu_offscreen)
-    && !in_rect(mouseinfo.x, mouseinfo.y, [0, window_h - GRID_SIZE, window_w, GRID_SIZE])
+    && !in_rect(mouseinfo.x, mouseinfo.y, [0, window_h - GRID_SIZE, window_w, 5*GRID_SIZE])
     && !in_properties
     && !is_properties_move
     && mouseinfo.lbutton == ButtonStatus::Down{
