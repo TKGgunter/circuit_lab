@@ -9,7 +9,7 @@ build= "build.rs"
 
 
 [package.metadata.winres]
-LegalCopyright = "Copyright © ???"
+LegalCopyright = "Copyright MIT"
 
 
 
@@ -47,5 +47,4 @@ path = "winapi-0.3.8"
 version = "0.3.8"
 features = ["winuser", "windef", "wingdi", "winnt", "libloaderapi", "memoryapi", "processenv", "wincon",
             "mmdeviceapi", "combaseapi", "audioclient", "dsound", "impl-default", "errhandlingapi", "hidpi"] 
-
 
