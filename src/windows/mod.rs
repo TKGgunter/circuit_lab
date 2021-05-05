@@ -74,7 +74,7 @@ pub fn make_window(){unsafe{
     use std::ffi::OsStr;
     use std::os::windows::ffi::OsStrExt;
 
-    //TODO for some reason this does not alloc. I need to fix.
+    //TODO for some reason this does not alloc some times. And when I move to a global scope it never works. I don't understand.
     let _string = "Circuit Simulation Lab\0";
 
     let mut exe_path = std::env::current_exe().expect("could not find the exe path");
