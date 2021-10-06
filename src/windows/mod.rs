@@ -16,6 +16,7 @@
 extern crate winapi;
 use winapi::um::winuser as user32;
 use winapi::um::wingdi as gdi32;
+use winapi::um::errhandlingapi::GetLastError;
 
 use winapi::shared::windef::{HWND, RECT, HDC};//, HWND__, HDC__}; TODO up for removal
 use winapi::um::wingdi::{BITMAPINFO, BITMAPINFOHEADER, SRCCOPY, RGBQUAD};
@@ -75,7 +76,7 @@ pub fn make_window(){unsafe{
     use std::os::windows::ffi::OsStrExt;
 
     //TODO for some reason this does not alloc some times. And when I move to a global scope it never works. I don't understand.
-    let _string = "Circuit Simulation Lab\0";
+    let window_title_string = "Circuit Simulation Lab\0";
 
     let mut exe_path = std::env::current_exe().expect("could not find the exe path");
     let in_target_path = exe_path.to_string_lossy().contains("target\\release");
@@ -100,7 +101,10 @@ pub fn make_window(){unsafe{
     // + 0x0020 allocates a unique device context for each window in class
     // + 0x0001 redraws window if resize or window movement vertical
     // + 0x0002 redraws window if resize or window movement horizontal 
-    let windows_string: Vec<u16> = OsStr::new("XCopyFGCWindowClass").encode_wide().collect();
+
+    //TODO this string is encoded as utf8, if we used non-ascii characters this may not map to utf16 properly.
+    let windows_string = "XCopyFGCWindowClass\0";
+
     let windowclass = WNDCLASSW{style: 0x0020u32 | 0x0001u32 | 0x0002u32 | winapi::um::winuser::CS_DBLCLKS,
             lpfnWndProc: Some(window_callback),
             cbClsExtra: 0,
@@ -110,7 +114,7 @@ pub fn make_window(){unsafe{
             hCursor: LoadCursorW(null_mut(), IDC_ARROW),
             hbrBackground: null_mut(),
             lpszMenuName: null(),
-            lpszClassName: windows_string.as_ptr()};
+            lpszClassName: windows_string.as_ptr() as *const u16};
 
     let rt_registarclassw = RegisterClassW(&windowclass as *const WNDCLASSW);
 
@@ -126,14 +130,11 @@ pub fn make_window(){unsafe{
         //WS_OVERLAPPEDWINDOW         (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX) The window is an overlapped window. 
         //WS_VISIBLE                  The window is initially visible.
 
-        //TODO I don't think I need this, it doesn't work as is any way.
-        let windows_string: Vec<u16> = OsStr::new("Circuit Simulation Lab\0").encode_wide().collect();
 
         let window_handle = CreateWindowExW(
                           WS_EX_ACCEPTFILES ,
                           windowclass.lpszClassName,
-                          //windows_string.as_ptr(),
-                          _string.as_ptr() as *const u16,
+                          window_title_string.as_ptr() as *const u16,
                           WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                           CW_USEDEFAULT,
                           CW_USEDEFAULT,
@@ -148,8 +149,9 @@ pub fn make_window(){unsafe{
 
 
 
-        if window_handle == null_mut(){ panic!("Error Window_handle did not alloc!"); }
-        if window_handle != null_mut(){
+        if window_handle == null_mut() { 
+            panic!("Error Window_handle did not alloc! {}", GetLastError());
+        }  else {
 
             let mut mouseinfo = MouseInfo::new();
             let mut textinfo = TextInfo{character: Vec::with_capacity(10), timing:Vec::new()};
@@ -346,8 +348,6 @@ pub fn make_window(){unsafe{
                 frame_counter += 1;
                 //TODO sleep?
             }
-        } else{
-
         }
     } else{
 
