@@ -1,8 +1,20 @@
-Circuit Lab Simulation software, developed by Sleep Ibis LLC and funded by Northwestern University,
+Circuit Lab Simulation software, developed by Sleep Ibis LLC(Thoth Gunter) and funded by Northwestern University,
 is circuit simulation software specifically designed to assist teachers in designing and
 deploying circuit labs for beginning physics/engineering  students.
 The program runs on Windows, MacOs and Linux operating systems.
 The program was written in the [rust](https://www.rust-lang.org/) programming language.
+
+For more information please visit, [https://tkggunter.github.io/circuitsim/](https://tkggunter.github.io/circuitsim/circuitsim/).
+
+
+
+<iframe src="https://tkggunter.github.io/circuitlab_1.mp4" type="video/mp4" width="500px" height="300px">
+</iframe>
+
+<iframe src="https://tkggunter.github.io/circuitlab_2.mp4" type="video/mp4" width="500px" height="300px">
+</iframe>
+
+
 
 
 ## Getting started with Rust
