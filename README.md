@@ -8,11 +8,14 @@ For more information please visit, [https://tkggunter.github.io/circuitsim/](htt
 
 
 
-<iframe src="https://tkggunter.github.io/circuitlab_1.mp4" type="video/mp4" width="500px" height="300px">
-</iframe>
+<video src="https://user-images.githubusercontent.com/2480218/137017547-a7dcb2ef-8e06-4d27-8d60-6117492061b1.mp4" width="10%"></video>
 
-<iframe src="https://tkggunter.github.io/circuitlab_2.mp4" type="video/mp4" width="500px" height="300px">
-</iframe>
+
+
+
+https://user-images.githubusercontent.com/2480218/137017597-e804d773-ba54-4eb7-acbf-b6109e1ecee2.mp4
+
+
 
 
 
