@@ -4,19 +4,7 @@ deploying circuit labs for beginning physics/engineering  students.
 The program runs on Windows, MacOs and Linux operating systems.
 The program was written in the [rust](https://www.rust-lang.org/) programming language.
 
-For more information please visit, [https://tkggunter.github.io/circuitsim/](https://tkggunter.github.io/circuitsim/circuitsim/).
-
-
-
-<video src="https://user-images.githubusercontent.com/2480218/137017547-a7dcb2ef-8e06-4d27-8d60-6117492061b1.mp4" width="10%"></video>
-
-
-
-
-https://user-images.githubusercontent.com/2480218/137017597-e804d773-ba54-4eb7-acbf-b6109e1ecee2.mp4
-
-
-
+For more information and video examples please visit, [https://tkggunter.github.io/circuitsim/](https://tkggunter.github.io/circuitsim/circuitsim/).
 
 
 
